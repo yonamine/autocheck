@@ -1,13 +1,30 @@
-find_package(LLVM REQUIRED CONFIG)
+find_package(Clang REQUIRED CONFIG PATHS ${CLANG_DIR} NO_DEFAULT_PATH)
+message(STATUS "Using ClangConfig.cmake in: ${CLANG_DIR}")
 
-include_directories(${LLVM_INCLUDE_DIRS} ${AUTOCHECK_ROOT_SRC_DIR}/src/llvm-project/llvm/include)
-separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
-add_definitions(${LLVM_DEFINITIONS_LIST})
+list(APPEND CMAKE_MODULE_PATH ${LLVM_CMAKE_DIR} ${CLANG_CMAKE_DIR})
+include(AddLLVM)
+include(AddClang)
 
-add_executable(autocheck autocheck.cpp)
+include_directories(
+    ${LLVM_INCLUDE_DIRS}
+    ${CLANG_INCLUDE_DIRS}
+    ${AUTOCHECK_ROOT_SRC_DIR}/src/include
+)
 
-llvm_map_components_to_libnames(llvm_libs support core)
-target_link_libraries(autocheck ${llvm_libs})
+set(LLVM_LINK_COMPONENTS
+    ${LLVM_TARGETS_TO_BUILD}
+    Option
+    Support
+)
+
+add_clang_executable(autocheck autocheck.cpp)
+clang_target_link_libraries(autocheck
+    PRIVATE
+    clangBasic
+    clangFrontend
+    clangStaticAnalyzerFrontend
+    clangTooling
+)
 set_target_properties(autocheck
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
