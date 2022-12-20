@@ -25,10 +25,12 @@ static cl::OptionCategory AutocheckCategory("Autocheck options");
 
 static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
 
+// TODO Write help text
 static cl::extrahelp MoreHelp("\nMore help text...\n");
 
 class ExampleAction : public clang::ASTFrontendAction {
-  std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance &CI, StringRef InFile) override {
+  std::unique_ptr<clang::ASTConsumer>
+  CreateASTConsumer(clang::CompilerInstance &CI, StringRef InFile) override {
     return nullptr;
   }
 
@@ -41,14 +43,16 @@ class ExampleAction : public clang::ASTFrontendAction {
 int main(int argc, const char **argv) {
   outs() << "=== Autocheck - Modern and Free Autosar checker\n";
 
-  auto ExpectedParser = CommonOptionsParser::create(argc, argv, AutocheckCategory);
+  auto ExpectedParser =
+      CommonOptionsParser::create(argc, argv, AutocheckCategory);
   if (!ExpectedParser) {
     llvm::errs() << ExpectedParser.takeError();
     return 1;
   }
   CommonOptionsParser &OptionsParser = ExpectedParser.get();
-  
-  ClangTool Tool(OptionsParser.getCompilations(), OptionsParser.getSourcePathList());
+
+  ClangTool Tool(OptionsParser.getCompilations(),
+                 OptionsParser.getSourcePathList());
 
   return Tool.run(newFrontendActionFactory<ExampleAction>().get());
 }
