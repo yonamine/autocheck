@@ -9,6 +9,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "AutocheckContext.h"
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/StaticAnalyzer/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
@@ -28,7 +29,17 @@ static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
 // TODO Write help text
 static cl::extrahelp MoreHelp("\nMore help text...\n");
 
+static cl::list<std::string> Warnings("W",
+                                      cl::desc("Enable the specified warning"),
+                                      cl::value_desc("warning"), cl::ZeroOrMore,
+                                      cl::AlwaysPrefix, cl::ValueRequired,
+                                      cl::cat(AutocheckCategory));
+
 class ExampleAction : public clang::ASTFrontendAction {
+public:
+  ExampleAction(autocheck::AutocheckContext &Context) : Context(Context) {}
+
+protected:
   std::unique_ptr<clang::ASTConsumer>
   CreateASTConsumer(clang::CompilerInstance &CI, StringRef InFile) override {
     return nullptr;
@@ -38,6 +49,9 @@ class ExampleAction : public clang::ASTFrontendAction {
     outs() << "Processing " << getCurrentFile() << "\n";
     return false;
   }
+
+private:
+  autocheck::AutocheckContext &Context;
 };
 
 int main(int argc, const char **argv) {
@@ -54,5 +68,31 @@ int main(int argc, const char **argv) {
   ClangTool Tool(OptionsParser.getCompilations(),
                  OptionsParser.getSourcePathList());
 
-  return Tool.run(newFrontendActionFactory<ExampleAction>().get());
+  // Initialize context.
+  autocheck::AutocheckContext Context;
+  if (Warnings.getNumOccurrences() > 0) {
+    for (const std::string &Warning : Warnings) {
+      if (!Context.enableWarning(Warning)) {
+        // TODO: Use DiagnosticsEngine to emit this warning.
+        llvm::errs() << "unknown warning '" << Warning << "'\n";
+      }
+    }
+  } else {
+    Context.enableWarning("all");
+  }
+
+  // Create and run autocheck checks.
+  class ActionFactory : public FrontendActionFactory {
+  public:
+    ActionFactory(autocheck::AutocheckContext &Context) : Context(Context) {}
+
+    std::unique_ptr<clang::FrontendAction> create() override {
+      return std::make_unique<ExampleAction>(Context);
+    }
+
+  private:
+    autocheck::AutocheckContext &Context;
+  };
+  ActionFactory Factory(Context);
+  return Tool.run(&Factory);
 }
