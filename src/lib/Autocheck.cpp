@@ -9,6 +9,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "AutocheckAction.h"
 #include "AutocheckContext.h"
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/StaticAnalyzer/Frontend/FrontendActions.h"
@@ -35,24 +36,20 @@ static cl::list<std::string> Warnings("W",
                                       cl::AlwaysPrefix, cl::ValueRequired,
                                       cl::cat(AutocheckCategory));
 
-class ExampleAction : public clang::ASTFrontendAction {
-public:
-  ExampleAction(autocheck::AutocheckContext &Context) : Context(Context) {}
+ArgumentsAdjuster
+getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
+  return [Context](const CommandLineArguments &Args, StringRef /*unused*/) {
+    CommandLineArguments AdjustedArgs(Args);
 
-protected:
-  std::unique_ptr<clang::ASTConsumer>
-  CreateASTConsumer(clang::CompilerInstance &CI, StringRef InFile) override {
-    return nullptr;
-  }
+    CommandLineArguments WarningsToEnable;
+    // TODO: Insert warning flags in WarningsToEnable.
 
-  bool BeginSourceFileAction(clang::CompilerInstance &CI) override {
-    outs() << "Processing " << getCurrentFile() << "\n";
-    return false;
-  }
-
-private:
-  autocheck::AutocheckContext &Context;
-};
+    if (!WarningsToEnable.empty())
+      AdjustedArgs.insert(llvm::find(AdjustedArgs, "--"),
+                          WarningsToEnable.cbegin(), WarningsToEnable.cend());
+    return AdjustedArgs;
+  };
+}
 
 int main(int argc, const char **argv) {
   outs() << "=== Autocheck - Modern and Free Autosar checker\n";
@@ -81,13 +78,16 @@ int main(int argc, const char **argv) {
     Context.enableWarning("all");
   }
 
+  // Set up built-in warning flags.
+  Tool.appendArgumentsAdjuster(getBuiltinWarningAdjuster(Context));
+
   // Create and run autocheck checks.
   class ActionFactory : public FrontendActionFactory {
   public:
     ActionFactory(autocheck::AutocheckContext &Context) : Context(Context) {}
 
     std::unique_ptr<clang::FrontendAction> create() override {
-      return std::make_unique<ExampleAction>(Context);
+      return std::make_unique<autocheck::AutocheckAction>(Context);
     }
 
   private:

@@ -19,8 +19,10 @@ set(LLVM_LINK_COMPONENTS
 
 add_clang_executable(autocheck 
     "lib/Autocheck.cpp"
+    "lib/AutocheckAction.cpp"
     "lib/AutocheckContext.cpp"
     "lib/Diagnostics/AutocheckDiagnostic.cpp"
+    "lib/Diagnostics/AutocheckDiagnosticConsumer.cpp"
 )
 clang_target_link_libraries(autocheck
     PRIVATE
