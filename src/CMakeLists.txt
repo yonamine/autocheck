@@ -1,10 +1,3 @@
-find_package(Clang REQUIRED CONFIG PATHS ${CLANG_DIR} NO_DEFAULT_PATH)
-message(STATUS "Using ClangConfig.cmake in: ${CLANG_DIR}")
-
-list(APPEND CMAKE_MODULE_PATH ${LLVM_CMAKE_DIR} ${CLANG_CMAKE_DIR})
-include(AddLLVM)
-include(AddClang)
-
 include_directories(
     ${LLVM_INCLUDE_DIRS}
     ${CLANG_INCLUDE_DIRS}

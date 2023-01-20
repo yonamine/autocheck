@@ -36,6 +36,13 @@ static cl::list<std::string> Warnings("W",
                                       cl::AlwaysPrefix, cl::ValueRequired,
                                       cl::cat(AutocheckCategory));
 
+static cl::opt<std::string> Verify(
+    "verify",
+    cl::desc("Verify diagnostic output using comment directives that start "
+             "with prefixes in the comma-separated sequence <prefixes>"),
+    cl::value_desc("prefixes"), cl::ValueOptional, cl::init("expected"),
+    cl::cat(AutocheckCategory));
+
 ArgumentsAdjuster
 getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
   return [Context](const CommandLineArguments &Args, StringRef /*unused*/) {
@@ -47,6 +54,16 @@ getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
     if (!WarningsToEnable.empty())
       AdjustedArgs.insert(llvm::find(AdjustedArgs, "--"),
                           WarningsToEnable.cbegin(), WarningsToEnable.cend());
+    return AdjustedArgs;
+  };
+}
+
+ArgumentsAdjuster getVerifyModeAdjuster(const std::string &Verify) {
+  return [Verify](const CommandLineArguments &Args, StringRef /*unused*/) {
+    CommandLineArguments AdjustedArgs(Args);
+    CommandLineArguments VerifyArgs{"-Xclang", "-verify=" + Verify};
+    AdjustedArgs.insert(llvm::find(AdjustedArgs, "--"), VerifyArgs.cbegin(),
+                        VerifyArgs.cend());
     return AdjustedArgs;
   };
 }
@@ -80,6 +97,13 @@ int main(int argc, const char **argv) {
 
   // Set up built-in warning flags.
   Tool.appendArgumentsAdjuster(getBuiltinWarningAdjuster(Context));
+
+  // Set up verify mode.
+  if (Verify.getNumOccurrences() > 0) {
+    if (Verify.empty())
+      Verify = "expected";
+    Tool.appendArgumentsAdjuster(getVerifyModeAdjuster(Verify));
+  }
 
   // Create and run autocheck checks.
   class ActionFactory : public FrontendActionFactory {

@@ -7,6 +7,7 @@ Following AUTOSAR guidelines can be easy and free!
 - git
 - cmake
 - ninja
+- python 3 (for tests)
 
 ## Clone the repo
 
@@ -45,7 +46,7 @@ After the first build, you can just run `ninja` or `ninja autocheck` to compile 
         -DLLVM_TARGETS_TO_BUILD="X86" \
         -DLLVM_ENABLE_ASSERTIONS=ON \
         -DLLVM_ENABLE_PROJECTS="clang"
-    $ ninja clang
+    $ ninja
     $ cd ..
     ```
 3. Build autocheck
@@ -59,7 +60,14 @@ After the first build, you can just run `ninja` or `ninja autocheck` to compile 
 ## Run the tool
 
 From the build directory run:
-```
+```console
 $ ./bin/autocheck 
 === Autocheck - Modern and Free Autosar checker
+```
+
+## Run tests
+
+From the build directory run:
+```console
+$ ninja check-autocheck
 ```

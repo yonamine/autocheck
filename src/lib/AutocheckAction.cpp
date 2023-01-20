@@ -12,6 +12,8 @@
 #include "AutocheckAction.h"
 
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
+#include "clang/Basic/SourceManager.h"
+#include "clang/Lex/Preprocessor.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace autocheck {
@@ -29,6 +31,16 @@ bool AutocheckAction::BeginInvocation(clang::CompilerInstance &CI) {
 void AutocheckAction::ExecuteAction() {
   // TODO: Perform checks.
   llvm::outs() << "Processing " << getCurrentFile() << "\n";
+
+  clang::Preprocessor &PP = getCompilerInstance().getPreprocessor();
+  clang::SourceManager &SM = getCompilerInstance().getSourceManager();
+
+  clang::Token Tok;
+  PP.EnterMainSourceFile();
+
+  do {
+    PP.Lex(Tok);
+  } while (Tok.isNot(clang::tok::eof));
 }
 
 } // namespace autocheck
