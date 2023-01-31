@@ -16,7 +16,8 @@
 namespace autocheck {
 
 enum class AutocheckWarnings {
-  // TODO: List autocheck rules.
+#define DIAG(ENUM, FLAG, MESSAGE, RULE) ENUM,
+#include "Diagnostics/AutocheckWarnings.def"
 };
 
 } // namespace autocheck

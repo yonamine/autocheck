@@ -10,14 +10,15 @@
 //===----------------------------------------------------------------------===//
 
 #include "AutocheckContext.h"
+#include "Diagnostics/AutocheckWarnings.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/Support/raw_ostream.h"
 
 namespace autocheck {
 
 const std::unordered_map<std::string, AutocheckWarnings>
     AutocheckContext::WarningMap{
-      // TODO: Add command line flag to warning mappings.
+#define DIAG(ENUM, FLAG, MESSAGE, RULE) {FLAG, AutocheckWarnings::ENUM},
+#include "Diagnostics/AutocheckWarnings.def"
     };
 
 bool AutocheckContext::enableWarning(const std::string &Warning) {

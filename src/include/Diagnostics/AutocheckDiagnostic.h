@@ -13,16 +13,16 @@
 #ifndef DIAGNOSTICS_AUTOCHECK_DIAGNOSIC_H
 #define DIAGNOSTICS_AUTOCHECK_DIAGNOSIC_H
 
+#include "Diagnostics/AutocheckWarnings.h"
 #include "clang/Basic/Diagnostic.h"
-#include "llvm/ADT/StringRef.h"
+#include "clang/Basic/SourceLocation.h"
 
 namespace autocheck {
 
 class AutocheckDiagnostic {
 public:
   static void Diag(clang::DiagnosticsEngine &DE,
-                   const clang::SourceLocation &Loc, llvm::StringRef Message,
-                   llvm::StringRef Rule);
+                   const clang::SourceLocation &Loc, AutocheckWarnings Warning);
 };
 
 } // namespace autocheck

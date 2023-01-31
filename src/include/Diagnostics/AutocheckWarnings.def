@@ -1,0 +1,22 @@
+//===--- AutocheckWarnings.def - Autocheck diagnostic data ----------------===//
+//
+// Part of the Autocheck Project, under the Apache License v2.0 with Syrmia
+// Exceptions. See LICENSE for details.
+//
+//===----------------------------------------------------------------------===//
+//
+// This file contains all data regarding autocheck diagnostics wrapped as macros
+// to be used in other files. 
+// 
+// Signature of the macro is:
+// DIAG(ENUM, FLAG, MESSAGE, RULE)
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef DIAG
+#error "DIAG macro not defined"
+#endif
+
+// TODO: Fill diagnostics data.
+
+#undef DIAG
