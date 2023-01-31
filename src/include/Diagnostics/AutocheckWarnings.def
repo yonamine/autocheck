@@ -17,6 +17,46 @@
 #error "DIAG macro not defined"
 #endif
 
-// TODO: Fill diagnostics data.
+DIAG(hashhashOpUsed, "hash-hash-op-used",
+     "The # and ## operators should not be used", "M16-3-2")
+DIAG(clibHeaderUsed, "clib-header-used",
+     "The C library facilities shall only be accessed through C++ library "
+     "headers",
+     "A18-0-1")
+DIAG(csignalUsed, "csignal-used",
+     "The signal handling facilities of <csignal> shall not be used", "M18-7-1")
+DIAG(cstdioUsed, "cstdio-used",
+     "The stream input/output library <cstdio> shall not be used", "M27-0-1")
+DIAG(ctimeUsed, "ctime-used",
+     "The time handling functions of library <ctime> shall not be used",
+     "M18-0-4")
+DIAG(localeHeaderUsed, "locale-header-used",
+     "The library <clocale> (locale.h) and the setlocale function shall not be "
+     "used",
+     "A18-0-3")
+DIAG(pragmaDirectiveUsed, "pragma-directive-used",
+     "The #pragma directive shall not be used", "A16-7-1")
+DIAG(headerExtension, "header-extension",
+     "Header files, that are defined locally in the project, shall have a file "
+     "name extension of one of: \".h\", \".hpp\" or \".hxx\"",
+     "A3-1-2")
+DIAG(errnoUsed, "errno-used", "The error indicator errno shall not be used",
+     "M19-3-1")
+DIAG(offsetofUsed, "offsetof-used", "The macro offsetof shall not be used",
+     "M18-2-1")
+DIAG(setjmpLongjmpUsed, "setjmp-longjmp-used",
+     "The setjmp macro and the longjmp function shall not be used", "M17-0-5")
+DIAG(bothHashOpUsed, "both-hash-op-used",
+     "There shall be at most one occurrence of the # or ## operators in a "
+     "single macro definition",
+     "M16-3-1")
+DIAG(expansionToDefined, "expansion-to-defined",
+     "The defined pre-processor operator shall only be used in one of the two "
+     "standard forms",
+     "M16-1-1")
+DIAG(reservedIdentifiers, "reserved-identifiers",
+     "Reserved identifiers, macros and functions in the C++ standard library "
+     "shall not be defined, redefined or undefined",
+     "A17-0-1")
 
 #undef DIAG

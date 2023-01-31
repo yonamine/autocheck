@@ -44,7 +44,13 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
 
   // Convert built-in warnings to autocheck warnings.
   switch (Info.getID()) {
-    // TODO: Convert warnings.
+  case clang::diag::warn_pp_macro_is_reserved_id:
+  case clang::diag::ext_pp_redef_builtin_macro:
+  case clang::diag::ext_pp_undef_builtin_macro:
+    Diags.Clear();
+    AutocheckDiagnostic::Diag(Diags, Info.getLocation(),
+                              AutocheckWarnings::reservedIdentifiers);
+    return;
   }
 
   Client->HandleDiagnostic(DiagLevel, Info);
