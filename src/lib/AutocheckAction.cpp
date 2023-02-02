@@ -12,7 +12,7 @@
 #include "AutocheckAction.h"
 
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
-#include "Lex/AutocheckPPCallbacks.h"
+#include "Lex/AutocheckLex.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Preprocessor.h"
 #include "llvm/Support/raw_ostream.h"
@@ -30,13 +30,18 @@ bool AutocheckAction::BeginInvocation(clang::CompilerInstance &CI) {
 }
 
 void AutocheckAction::ExecuteAction() {
-  // TODO: Perform checks.
-  llvm::outs() << "Processing " << getCurrentFile() << "\n";
-
   clang::Preprocessor &PP = getCompilerInstance().getPreprocessor();
   clang::SourceManager &SM = getCompilerInstance().getSourceManager();
-  PP.addPPCallbacks(
-      std::make_unique<AutocheckPPCallbacks>(Context, PP.getDiagnostics()));
+
+  // Create and run lexer/preprocessor checks. Three types of checks are
+  // performed:
+  // 1. A raw lexer pass which check all rules without the preprocessor. These
+  //    checks are run immediately on the entire file.
+  // 2. A token handler with the preprocessor active. Thsese checks are
+  //    performed in a callback function for each lexed token.
+  // 3. Preprocessor checks. These are perfomed on certain preprocessor events.
+  AutocheckLex LexerChecks(Context, getCompilerInstance());
+  LexerChecks.Run();
 
   clang::Token Tok;
   PP.EnterMainSourceFile();

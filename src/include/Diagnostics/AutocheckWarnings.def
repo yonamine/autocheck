@@ -6,8 +6,8 @@
 //===----------------------------------------------------------------------===//
 //
 // This file contains all data regarding autocheck diagnostics wrapped as macros
-// to be used in other files. 
-// 
+// to be used in other files.
+//
 // Signature of the macro is:
 // DIAG(ENUM, FLAG, MESSAGE, RULE)
 //
@@ -58,5 +58,52 @@ DIAG(reservedIdentifiers, "reserved-identifiers",
      "Reserved identifiers, macros and functions in the C++ standard library "
      "shall not be defined, redefined or undefined",
      "A17-0-1")
+DIAG(embeddedDirective, "embedded-directive",
+     "Arguments to a function-like macro shall not contain tokens that look "
+     "like pre-processing directives",
+     "M16-0-5")
+DIAG(digraphsUsed, "digraphs-used", "Digraphs shall not be used", "A2-5-2")
+DIAG(trigraphsUsed, "trigraphs-used", "Trigraphs shall not be used", "A2-5-1")
+DIAG(hexConstUpperCase, "hex-const-upper-case",
+     "Hexadecimal constants should be upper case", "A2-13-5")
+DIAG(includeDirectiveRestrictedChar, "include-directive-restricted-char",
+     "The ', \", /*, //, \\ characters shall not occur in a header file name "
+     "or in #include directive",
+     "A16-2-1")
+DIAG(lineCommentLastChar, "line-comment-last-char",
+     "The character \\ shall not occur as a last character of a C++ comment",
+     "A2-7-1")
+DIAG(preprocessorTokenError, "preprocessor-token-error",
+     "If the # token appears as the first token on a line, then it shall be "
+     "immediately followed by a pre-processing token",
+     "M16-0-8")
+DIAG(directiveErrorUsed, "directive-error-used",
+     "#error directive shall not be used", "A16-6-1")
+DIAG(commentStartInComment, "comment",
+     "The character sequence /* shall not be used within a C-style comment",
+     "M2-7-1")
+DIAG(octalConstantUsed, "octal-constant-used",
+     "Octal constants (other than zero) and octal escape sequences (other than "
+     "\"\\0\") shall not be used",
+     "M2-13-2")
+DIAG(nonIsoEscapeSequence, "non-iso-escape-sequence",
+     "Only those escape sequences that are defined in ISO/IEC 14882:2014 shall "
+     "be used",
+     "A2-13-1")
+DIAG(nonCppStandardCharUsed, "non-cplusplus-standard-char-used",
+     "Only those characters specified in the C++ Language Standard basic "
+     "source character set shall be used in the source code",
+     "A2-3-1")
+DIAG(literalSuffixLowerCase, "literal-suffix-lower-case",
+     "Literal suffixes shall be upper case", "M2-13-4")
+DIAG(digitSequenceSeparator, "digit-sequence-separator",
+     "Digit sequences separators ' shall only be used as follows: (1) for "
+     "decimal, every 3 digits, (2) for hexadecimal, every 2 digits, (3) for "
+     "binary, every 4 digits",
+     "A13-6-1")
+DIAG(nonUniversalNames, "non-universal-names",
+     "Universal character names shall be used only inside character or string "
+     "literals",
+     "A2-13-6")
 
 #undef DIAG

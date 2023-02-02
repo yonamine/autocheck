@@ -15,7 +15,9 @@
 #ifndef DIAGNOSTICS_AUTOCHECK_DIAGNOSTIC_CONSUMER_H
 #define DIAGNOSTICS_AUTOCHECK_DIAGNOSTIC_CONSUMER_H
 
+#include "Diagnostics/AutocheckWarnings.h"
 #include "clang/Basic/Diagnostic.h"
+#include "clang/Basic/SourceLocation.h"
 #include <memory>
 
 namespace autocheck {
@@ -31,6 +33,9 @@ public:
 
   void HandleDiagnostic(clang::DiagnosticsEngine::Level DiagLevel,
                         const clang::Diagnostic &Info) override;
+
+private:
+  void EmitDiag(AutocheckWarnings Warning, const clang::SourceLocation &Loc);
 
 private:
   clang::DiagnosticsEngine &Diags;
