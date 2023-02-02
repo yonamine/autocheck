@@ -16,6 +16,7 @@ add_clang_executable(autocheck
     "lib/AutocheckContext.cpp"
     "lib/Diagnostics/AutocheckDiagnostic.cpp"
     "lib/Diagnostics/AutocheckDiagnosticConsumer.cpp"
+    "lib/Lex/AutocheckPPCallbacks.cpp"
 )
 clang_target_link_libraries(autocheck
     PRIVATE

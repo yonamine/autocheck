@@ -12,6 +12,7 @@
 #include "AutocheckAction.h"
 
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
+#include "Lex/AutocheckPPCallbacks.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Preprocessor.h"
 #include "llvm/Support/raw_ostream.h"
@@ -34,6 +35,8 @@ void AutocheckAction::ExecuteAction() {
 
   clang::Preprocessor &PP = getCompilerInstance().getPreprocessor();
   clang::SourceManager &SM = getCompilerInstance().getSourceManager();
+  PP.addPPCallbacks(
+      std::make_unique<AutocheckPPCallbacks>(Context, PP.getDiagnostics()));
 
   clang::Token Tok;
   PP.EnterMainSourceFile();
