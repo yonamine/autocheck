@@ -16,12 +16,16 @@ add_clang_executable(autocheck
     "lib/AutocheckContext.cpp"
     "lib/Diagnostics/AutocheckDiagnostic.cpp"
     "lib/Diagnostics/AutocheckDiagnosticConsumer.cpp"
+    "lib/Lex/AutocheckLex.cpp"
     "lib/Lex/AutocheckPPCallbacks.cpp"
+    "lib/Lex/CharHelper.cpp"
+    "lib/Lex/LiteralHelper.cpp"
 )
 clang_target_link_libraries(autocheck
     PRIVATE
     clangBasic
     clangFrontend
+    clangLex
     clangStaticAnalyzerFrontend
     clangTooling
 )

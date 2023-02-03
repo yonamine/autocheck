@@ -51,6 +51,10 @@ getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
     // Disable all clang warnings and reenable only those that autocheck relies
     // on.
     CommandLineArguments WarningsToEnable{"-Wno-everything"};
+    if (Context.isEnabled(autocheck::AutocheckWarnings::embeddedDirective))
+      WarningsToEnable.push_back("-Wembedded-directive");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::trigraphsUsed))
+      WarningsToEnable.push_back("-Wtrigraphs");
     if (Context.isEnabled(autocheck::AutocheckWarnings::reservedIdentifiers)) {
       WarningsToEnable.push_back("-Wbuiltin-macro-redifined");
       WarningsToEnable.push_back("-Wreserved-macro-identifier");

@@ -34,6 +34,12 @@ void AutocheckDiagnosticConsumer::EndSourceFile() {
   NumWarnings = Client->getNumWarnings();
 }
 
+void AutocheckDiagnosticConsumer::EmitDiag(AutocheckWarnings Warning,
+                                           const clang::SourceLocation &Loc) {
+  Diags.Clear();
+  AutocheckDiagnostic::Diag(Diags, Loc, Warning);
+}
+
 void AutocheckDiagnosticConsumer::HandleDiagnostic(
     clang::DiagnosticsEngine::Level DiagLevel, const clang::Diagnostic &Info) {
   // Errors and fatal diagnostics are handled by parent consumer.
@@ -44,12 +50,21 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
 
   // Convert built-in warnings to autocheck warnings.
   switch (Info.getID()) {
+  case clang::diag::ext_embedded_directive:
+    EmitDiag(AutocheckWarnings::embeddedDirective, Info.getLocation());
+    return;
+  case clang::diag::trigraph_ignored:
+  case clang::diag::trigraph_converted:
+    Diags.Clear();
+    EmitDiag(AutocheckWarnings::trigraphsUsed, Info.getLocation());
+    return;
+  case clang::diag::warn_nested_block_comment:
+    EmitDiag(AutocheckWarnings::commentStartInComment, Info.getLocation());
+    return;
   case clang::diag::warn_pp_macro_is_reserved_id:
   case clang::diag::ext_pp_redef_builtin_macro:
   case clang::diag::ext_pp_undef_builtin_macro:
-    Diags.Clear();
-    AutocheckDiagnostic::Diag(Diags, Info.getLocation(),
-                              AutocheckWarnings::reservedIdentifiers);
+    EmitDiag(AutocheckWarnings::reservedIdentifiers, Info.getLocation());
     return;
   }
 
