@@ -20,22 +20,30 @@
 
 namespace autocheck {
 
-struct LimitPair {
-  bool LimitExceeded;
-  bool LimitReached;
-};
-
+// Warning counter for each Autosar rule. Used to check if the last emitted
+// warning reached or exceeded the maximum number of warnings per rule.
 class WarningCounter {
 public:
   WarningCounter(const unsigned MaxWarning) : MaxWarning(MaxWarning) {}
+
+  bool limitReached() const;
+  bool limitExceeded() const;
+
+  friend class AutocheckDiagnosticBuilder;
+
+private:
+  // Helper class that stores information whether a diagnostic reached and
+  // exceeded the maximum number of warnings per rule.
+  struct LimitPair {
+    bool LimitExceeded;
+    bool LimitReached;
+  };
 
   /// For a given AutocheckWarning, this method:
   /// - sets the corresponding LimitPair by consulting the number of reported
   ///   warnings from the warning counter map
   /// - increments number of reported warnings within the warning counter map
   void setLimitPairAndIncrement(AutocheckWarnings Warning);
-  bool limitReached() const;
-  bool limitExceeded() const;
   void resetLimitPair();
 
 private:
@@ -48,6 +56,11 @@ private:
   /// (which may not have been shown to the user because the limit was reached).
   LimitPair Limits;
 };
+
+/// Check if given location is in main file or allowed header based on currently
+/// set flags.
+bool appropriateHeaderLocation(clang::DiagnosticsEngine &DE,
+                               const clang::SourceLocation &Loc);
 
 WarningCounter &getWarningCounter();
 

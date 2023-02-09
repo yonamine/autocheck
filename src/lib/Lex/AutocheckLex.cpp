@@ -52,8 +52,10 @@ static void HandleToken(const AutocheckContext &Context,
   clang::DiagnosticsEngine &DE = CI.getDiagnostics();
   const clang::SourceManager &SM = CI.getSourceManager();
 
-  // Don't show warnings for code inside system headers.
-  if (SM.isInSystemHeader(Tok.getLocation()))
+  // Check should this location be checked for AUTOSAR rules based on the
+  // currently set flags.
+  const clang::SourceLocation Loc = Tok.getLocation();
+  if (!appropriateHeaderLocation(DE, Loc))
     return;
 
   // [A2-7-1] The character \ shall not occur as a last character of a C++

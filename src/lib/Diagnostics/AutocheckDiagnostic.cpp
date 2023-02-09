@@ -13,6 +13,7 @@
 #include "Diagnostics/AutocheckDiagnostic.h"
 
 #include "AutocheckContext.h"
+#include "clang/Basic/SourceManager.h"
 #include <sstream>
 #include <utility>
 
@@ -54,6 +55,37 @@ void WarningCounter::resetLimitPair() {
 bool WarningCounter::limitReached() const { return Limits.LimitReached; }
 bool WarningCounter::limitExceeded() const { return Limits.LimitExceeded; }
 
+bool appropriateHeaderLocation(clang::DiagnosticsEngine &DE,
+                               const clang::SourceLocation &Loc) {
+  return !Loc.isInvalid() && !((!AutocheckContext::Get().CheckSystemHeaders &&
+                                DE.getSourceManager().isInSystemHeader(Loc)) ||
+                               (AutocheckContext::Get().DontCheckHeaders &&
+                                !DE.getSourceManager().isInMainFile(Loc)));
+}
+
+bool appropriateLineLocation(clang::DiagnosticsEngine &DE,
+                             const clang::SourceLocation &Loc) {
+  if (AutocheckContext::Get().CheckBetweenLines.empty()) {
+    return true;
+  }
+
+  static const uint32_t FromLine = static_cast<uint32_t>(
+      std::stoi(AutocheckContext::Get().CheckBetweenLines[0]));
+
+  static const uint32_t ToLine = static_cast<uint32_t>(
+      std::stoi(AutocheckContext::Get().CheckBetweenLines[1]));
+
+  return DE.getSourceManager().getSpellingLineNumber(Loc) >= FromLine &&
+         DE.getSourceManager().getSpellingLineNumber(Loc) <= ToLine &&
+         DE.getSourceManager().isInMainFile(Loc);
+}
+
+bool appropriateLocation(clang::DiagnosticsEngine &DE,
+                         const clang::SourceLocation &Loc) {
+  return !Loc.isInvalid() && (appropriateHeaderLocation(DE, Loc) &&
+                              appropriateLineLocation(DE, Loc));
+}
+
 WarningCounter &getWarningCounter() {
   static WarningCounter WarningCount(AutocheckContext::Get().WarningLimit);
   return WarningCount;
@@ -66,6 +98,10 @@ AutocheckDiagnosticBuilder::AutocheckDiagnosticBuilder(
       ReportWarning(true) {
   WarningCounter &WarningCount = getWarningCounter();
   WarningCount.resetLimitPair();
+  if (!appropriateLocation(DE, SL)) {
+    ReportWarning = false;
+    return;
+  }
   WarningCount.setLimitPairAndIncrement(Warning);
   if (WarningCount.limitExceeded()) {
     ReportWarning = false;

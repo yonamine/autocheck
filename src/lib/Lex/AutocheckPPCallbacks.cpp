@@ -90,7 +90,7 @@ void AutocheckPPCallbacks::InclusionDirective(
   llvm::StringRef FullFileName = File->getName();
 
   // Check if this is top level #include.
-  if (SM.isInMainFile(HashLoc)) {
+  if (appropriateHeaderLocation(DE, HashLoc)) {
     // [A3-1-2] Header files, that are defined locally in the project, shall
     // have a file name extension of one of: ".h", ".hpp" or ".hxx".
     if (!checkHeaderExtension(Context, FileType, FullFileName)) {
@@ -99,7 +99,7 @@ void AutocheckPPCallbacks::InclusionDirective(
     }
   }
 
-  if (!SM.isInSystemHeader(HashLoc) && IsAngled) {
+  if (appropriateHeaderLocation(DE, HashLoc) && IsAngled) {
     // [A18-0-1] The C library facilities shall only be accessed through C++
     // library headers.
     if (checkCLibHeaderUsed(Context, FileName))
@@ -130,8 +130,7 @@ void AutocheckPPCallbacks::InclusionDirective(
 void AutocheckPPCallbacks::PragmaDirective(
     clang::SourceLocation Loc, clang::PragmaIntroducerKind Introducer) {
   // [A16-7-1] The #pragma directive shall not be used.
-  if (SM.isInMainFile(Loc) &&
-      Context.isEnabled(AutocheckWarnings::pragmaDirectiveUsed)) {
+  if (Context.isEnabled(AutocheckWarnings::pragmaDirectiveUsed)) {
     AutocheckDiagnostic::reportWarning(DE, Loc,
                                        AutocheckWarnings::pragmaDirectiveUsed);
   }
@@ -167,7 +166,7 @@ void AutocheckPPCallbacks::MacroExpands(const clang::Token &MacroNameTok,
                                         const clang::MacroArgs *Args) {
   const clang::SourceLocation MacroLoc = Range.getBegin();
 
-  if (SM.isInMainFile(MacroLoc)) {
+  if (appropriateHeaderLocation(DE, MacroLoc)) {
     const clang::SourceLocation DefLoc = MD.getMacroInfo()->getDefinitionLoc();
     const llvm::StringRef FullHeaderName = SM.getFilename(DefLoc);
 
@@ -208,9 +207,6 @@ static bool checkReservedIdentifiers(const AutocheckContext &Context,
 
 void AutocheckPPCallbacks::MacroDefined(const clang::Token &MacroNameTok,
                                         const clang::MacroDirective *MD) {
-  if (!SM.isInMainFile(MacroNameTok.getLocation()))
-    return;
-
   // [M16-3-2] The # and ## operators should not be used.
   if (Context.isEnabled(AutocheckWarnings::hashhashOpUsed)) {
     const clang::MacroInfo *MI = MD->getMacroInfo();
@@ -265,8 +261,6 @@ void AutocheckPPCallbacks::MacroDefined(const clang::Token &MacroNameTok,
 void AutocheckPPCallbacks::MacroUndefined(const clang::Token &MacroNameTok,
                                           const clang::MacroDefinition &MD,
                                           const clang::MacroDirective *Undef) {
-  if (!SM.isInMainFile(MacroNameTok.getLocation()))
-    return;
   // [A17-0-1] Reserved identifiers, macros and functions in the C++ standard
   // library shall not be defined, redefined or undefined.
   if (checkReservedIdentifiers(Context, MacroNameTok)) {

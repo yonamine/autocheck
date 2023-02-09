@@ -48,6 +48,20 @@ static cl::opt<unsigned> WarningLimit(
     cl::desc("Set the limit of warnings per autosar rule (0 = no limit)"),
     cl::value_desc("value"), cl::init(0), cl::cat(AutocheckCategory));
 
+static cl::opt<bool>
+    CheckSystemHeaders("check-system-headers",
+                       cl::desc("Check Autosar rules in system headers."),
+                       cl::init(false), cl::cat(AutocheckCategory));
+
+static cl::opt<bool>
+    DontCheckHeaders("dont-check-headers",
+                     cl::desc("Dont check Autosar rules in headers."),
+                     cl::init(false), cl::cat(AutocheckCategory));
+
+static cl::list<std::string> CheckBetweenLines(
+    "check-between-lines", cl::desc("Run Autocheck only between given lines"),
+    cl::value_desc("from, to"), cl::CommaSeparated, cl::cat(AutocheckCategory));
+
 ArgumentsAdjuster
 getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
   return [&Context](const CommandLineArguments &Args, StringRef /*unused*/) {
@@ -109,6 +123,15 @@ int main(int argc, const char **argv) {
     Context.enableWarning("all");
   }
   Context.WarningLimit = WarningLimit;
+  Context.CheckSystemHeaders = CheckSystemHeaders;
+  Context.DontCheckHeaders = DontCheckHeaders;
+  if (!CheckBetweenLines.empty()) {
+    if (CheckBetweenLines.size() == 2)
+      Context.CheckBetweenLines = CheckBetweenLines;
+    else
+      llvm::errs() << "Invalid range for \"-check-between-lines\" flag. "
+                      "Ignoring option\n";
+  }
 
   // Set up built-in warning flags.
   Tool.appendArgumentsAdjuster(getBuiltinWarningAdjuster(Context));

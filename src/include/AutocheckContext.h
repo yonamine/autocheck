@@ -18,6 +18,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 namespace autocheck {
 
@@ -39,6 +40,15 @@ public:
   // Maximum number of warnings per rule to display. If set to zero, all
   // warnings will be shown.
   unsigned WarningLimit = 0;
+  // Information about the presence of option -check-system-headers. Has value
+  // true if Autosar rules should be checked in system headers, false otherwise.
+  bool CheckSystemHeaders = false;
+  // Information about the presence of option -dont-check-headers. Has value
+  // true if Autosar rules should not be checked in headers, false otherwise.
+  bool DontCheckHeaders = false;
+  // Vector of arguments to option -check-between-lines. If empty, this option
+  // isn't present.
+  std::vector<std::string> CheckBetweenLines;
 
 private:
   AutocheckContext() = default;
