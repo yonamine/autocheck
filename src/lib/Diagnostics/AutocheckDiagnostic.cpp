@@ -5,12 +5,14 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements the AutocheckDiagnostic class.
+// This file implements classes used for formatting and controlling the emission
+// of diagnostics.
 //
 //===----------------------------------------------------------------------===//
 
 #include "Diagnostics/AutocheckDiagnostic.h"
 
+#include "AutocheckContext.h"
 #include <sstream>
 #include <utility>
 
@@ -23,7 +25,63 @@ const std::pair<const char *, const char *> DiagnosticMessages[]{
 #include "Diagnostics/AutocheckWarnings.def"
 };
 
-clang::DiagnosticBuilder
+void WarningCounter::setLimitPairAndIncrement(AutocheckWarnings Warning) {
+  // Check if MaxWarning is set to unlimited
+  if (MaxWarning == 0) {
+    Limits.LimitExceeded = false;
+    Limits.LimitReached = false;
+    return;
+  }
+  auto It = Counter.find(Warning);
+  if (It == Counter.end()) {
+    Counter[Warning] = 1;
+    Limits.LimitExceeded = (1 > MaxWarning);
+    Limits.LimitReached = (1 == MaxWarning);
+    return;
+  }
+
+  ++(It->second);
+  Limits.LimitExceeded = (It->second > MaxWarning);
+  Limits.LimitReached = (It->second == MaxWarning);
+  return;
+}
+
+void WarningCounter::resetLimitPair() {
+  Limits.LimitExceeded = false;
+  Limits.LimitReached = false;
+}
+
+bool WarningCounter::limitReached() const { return Limits.LimitReached; }
+bool WarningCounter::limitExceeded() const { return Limits.LimitExceeded; }
+
+WarningCounter &getWarningCounter() {
+  static WarningCounter WarningCount(AutocheckContext::Get().WarningLimit);
+  return WarningCount;
+}
+
+AutocheckDiagnosticBuilder::AutocheckDiagnosticBuilder(
+    clang::DiagnosticBuilder &DB, clang::DiagnosticsEngine &DE,
+    const clang::SourceLocation &SL, AutocheckWarnings Warning)
+    : DiagnosticBuilder(DB), Loc(Loc), DE(DE), Warning(Warning),
+      ReportWarning(true) {
+  WarningCounter &WarningCount = getWarningCounter();
+  WarningCount.resetLimitPair();
+  WarningCount.setLimitPairAndIncrement(Warning);
+  if (WarningCount.limitExceeded()) {
+    ReportWarning = false;
+    return;
+  }
+}
+
+AutocheckDiagnosticBuilder::~AutocheckDiagnosticBuilder() {
+  if (!ReportWarning) {
+    DE.setLastDiagnosticIgnored(true);
+    DiagnosticBuilder::Clear();
+    DE.Clear();
+  }
+}
+
+AutocheckDiagnosticBuilder
 AutocheckDiagnostic::Diag(clang::DiagnosticsEngine &DE,
                           const clang::SourceLocation &Loc,
                           AutocheckWarnings Warning) {
@@ -34,9 +92,11 @@ AutocheckDiagnostic::Diag(clang::DiagnosticsEngine &DE,
   unsigned ID = DE.getDiagnosticIDs()->getCustomDiagID(
       clang::DiagnosticIDs::Level::Warning, WarningMessage.str());
 
-  return DE.Report(Loc, ID);
+  clang::DiagnosticBuilder DB = DE.Report(Loc, ID);
+  return AutocheckDiagnosticBuilder(DB, DE, Loc, Warning);
 }
 
-void AutocheckDiagnostic::addArgsToDiagBuilder(clang::DiagnosticBuilder &DB) {}
+void AutocheckDiagnostic::addArgsToDiagBuilder(AutocheckDiagnosticBuilder &DB) {
+}
 
 } // namespace autocheck

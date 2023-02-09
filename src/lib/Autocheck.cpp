@@ -43,6 +43,11 @@ static cl::opt<std::string> Verify(
     cl::value_desc("prefixes"), cl::ValueOptional, cl::init("expected"),
     cl::cat(AutocheckCategory));
 
+static cl::opt<unsigned> WarningLimit(
+    "warning-limit",
+    cl::desc("Set the limit of warnings per autosar rule (0 = no limit)"),
+    cl::value_desc("value"), cl::init(0), cl::cat(AutocheckCategory));
+
 ArgumentsAdjuster
 getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
   return [&Context](const CommandLineArguments &Args, StringRef /*unused*/) {
@@ -103,6 +108,7 @@ int main(int argc, const char **argv) {
   } else {
     Context.enableWarning("all");
   }
+  Context.WarningLimit = WarningLimit;
 
   // Set up built-in warning flags.
   Tool.appendArgumentsAdjuster(getBuiltinWarningAdjuster(Context));

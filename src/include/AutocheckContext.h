@@ -36,6 +36,10 @@ public:
   bool enableWarning(const std::string &Warning);
   bool isEnabled(AutocheckWarnings Warning) const;
 
+  // Maximum number of warnings per rule to display. If set to zero, all
+  // warnings will be shown.
+  unsigned WarningLimit = 0;
+
 private:
   AutocheckContext() = default;
 
