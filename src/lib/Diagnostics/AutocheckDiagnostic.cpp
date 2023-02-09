@@ -26,6 +26,38 @@ const std::pair<const char *, const char *> DiagnosticMessages[]{
 #include "Diagnostics/AutocheckWarnings.def"
 };
 
+WarningRepeatChecker &WarningRepeatChecker::getWarningRepeatChecker() {
+  static WarningRepeatChecker warningRepeatChecker;
+  return warningRepeatChecker;
+}
+
+WarningRepeatChecker::WarningRepeatChecker() {
+  PreviousLineNumbers = std::unordered_map<AutocheckWarnings, unsigned>({
+      {AutocheckWarnings::nonCppStandardCharUsed, -1},
+      {AutocheckWarnings::hashhashOpUsed, -1},
+      {AutocheckWarnings::hexConstUpperCase, -1},
+  });
+}
+
+bool WarningRepeatChecker::shouldControl(AutocheckWarnings Warning) {
+  return PreviousLineNumbers.count(Warning);
+}
+
+WarningRepeatChecker::LineNumbers
+WarningRepeatChecker::updateLineNumber(clang::DiagnosticsEngine &DE,
+                                       const clang::SourceLocation &Loc,
+                                       AutocheckWarnings Warning) {
+  clang::SourceManager &SM = DE.getSourceManager();
+  LineNumbers DiagLineNumbers;
+  DiagLineNumbers.Previous = PreviousLineNumbers[Warning];
+  DiagLineNumbers.Current = SM.getExpansionLoc(Loc).getRawEncoding() -
+                        SM.getExpansionColumnNumber(SM.getExpansionLoc(Loc));
+
+  PreviousLineNumbers[Warning] = DiagLineNumbers.Current;
+
+  return DiagLineNumbers;
+}
+
 void WarningCounter::setLimitPairAndIncrement(AutocheckWarnings Warning) {
   // Check if MaxWarning is set to unlimited
   if (MaxWarning == 0) {
@@ -116,6 +148,15 @@ AutocheckDiagnosticBuilder::AutocheckDiagnosticBuilder(
   if (WarningCount.limitExceeded()) {
     ReportWarning = false;
     return;
+  }
+  WarningRepeatChecker &warningRepeatChecker =
+      WarningRepeatChecker::getWarningRepeatChecker();
+  if (warningRepeatChecker.shouldControl(Warning)) {
+    if (warningRepeatChecker.updateLineNumber(DE, SL, Warning)
+            .isAlreadyEmitted()) {
+      ReportWarning = false;
+      return;
+    }
   }
 }
 

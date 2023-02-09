@@ -20,6 +20,40 @@
 
 namespace autocheck {
 
+// Utility class that keeps track of consecutive warnings of the same type for a
+// select group of Autosar rules which emit a lot of warnings in a row. This
+// helps declutter warnings reported to the user.
+class WarningRepeatChecker {
+public:
+  // Helper class for storing line numbers of the last two reported diagnostics.
+  struct LineNumbers {
+    unsigned Current;
+    unsigned Previous;
+
+    bool isAlreadyEmitted() { return Current == Previous; };
+  };
+
+  static WarningRepeatChecker &getWarningRepeatChecker();
+  /// Checks whether the given warning is in the set of rules whose warnings
+  /// shouldn't repeat in the same line of a file.
+  bool shouldControl(AutocheckWarnings Warning);
+  /// Updates the previous line number and returns an object on which
+  /// isAlreadyEmitted() can be called.
+  /// Assumes that each subsequent call for the same type of warning gets a
+  /// SourceLocation whose global line number comes after (or is the same) as
+  /// the line number from the previous call.
+  LineNumbers updateLineNumber(clang::DiagnosticsEngine &DE,
+                               const clang::SourceLocation &Loc,
+                               AutocheckWarnings Warning);
+
+private:
+  WarningRepeatChecker();
+
+  // Map of previous warning line numbers for a group Autosar rules that
+  // WarningRepeatChecker tracks.
+  std::unordered_map<AutocheckWarnings, unsigned> PreviousLineNumbers;
+};
+
 // Warning counter for each Autosar rule. Used to check if the last emitted
 // warning reached or exceeded the maximum number of warnings per rule.
 class WarningCounter {
