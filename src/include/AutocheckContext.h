@@ -49,6 +49,10 @@ public:
   // Vector of arguments to option -check-between-lines. If empty, this option
   // isn't present.
   std::vector<std::string> CheckBetweenLines;
+  // Information about the presence of option -dont-check-macro-expansions. Has
+  // value true if Autosar rules should be checked in macro expansions, false
+  // otherwise.
+  bool DontCheckMacroExpansions = false;
 
 private:
   AutocheckContext() = default;

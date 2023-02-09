@@ -86,6 +86,12 @@ bool appropriateLocation(clang::DiagnosticsEngine &DE,
                               appropriateLineLocation(DE, Loc));
 }
 
+bool shouldIgnoreMacroExpansions(clang::DiagnosticsEngine &DE,
+                                 const clang::SourceLocation &SL) {
+  return AutocheckContext::Get().DontCheckMacroExpansions &&
+         DE.getSourceManager().isMacroBodyExpansion(SL);
+}
+
 WarningCounter &getWarningCounter() {
   static WarningCounter WarningCount(AutocheckContext::Get().WarningLimit);
   return WarningCount;
@@ -99,6 +105,10 @@ AutocheckDiagnosticBuilder::AutocheckDiagnosticBuilder(
   WarningCounter &WarningCount = getWarningCounter();
   WarningCount.resetLimitPair();
   if (!appropriateLocation(DE, SL)) {
+    ReportWarning = false;
+    return;
+  }
+  if (shouldIgnoreMacroExpansions(DE, SL)) {
     ReportWarning = false;
     return;
   }

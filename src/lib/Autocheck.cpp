@@ -62,6 +62,11 @@ static cl::list<std::string> CheckBetweenLines(
     "check-between-lines", cl::desc("Run Autocheck only between given lines"),
     cl::value_desc("from, to"), cl::CommaSeparated, cl::cat(AutocheckCategory));
 
+static cl::opt<bool> DontCheckMacroExpansions(
+    "dont-check-macro-expansions",
+    cl::desc("Dont check Autosar rules in macro expansions."), cl::init(false),
+    cl::cat(AutocheckCategory));
+
 ArgumentsAdjuster
 getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
   return [&Context](const CommandLineArguments &Args, StringRef /*unused*/) {
@@ -132,6 +137,7 @@ int main(int argc, const char **argv) {
       llvm::errs() << "Invalid range for \"-check-between-lines\" flag. "
                       "Ignoring option\n";
   }
+  Context.DontCheckMacroExpansions = DontCheckMacroExpansions;
 
   // Set up built-in warning flags.
   Tool.appendArgumentsAdjuster(getBuiltinWarningAdjuster(Context));
