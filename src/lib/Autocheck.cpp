@@ -45,7 +45,7 @@ static cl::opt<std::string> Verify(
 
 ArgumentsAdjuster
 getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
-  return [Context](const CommandLineArguments &Args, StringRef /*unused*/) {
+  return [&Context](const CommandLineArguments &Args, StringRef /*unused*/) {
     CommandLineArguments AdjustedArgs(Args);
 
     // Disable all clang warnings and reenable only those that autocheck relies
@@ -92,7 +92,7 @@ int main(int argc, const char **argv) {
                  OptionsParser.getSourcePathList());
 
   // Initialize context.
-  autocheck::AutocheckContext Context;
+  autocheck::AutocheckContext &Context = autocheck::AutocheckContext::Get();
   if (Warnings.getNumOccurrences() > 0) {
     for (const std::string &Warning : Warnings) {
       if (!Context.enableWarning(Warning)) {
@@ -115,17 +115,5 @@ int main(int argc, const char **argv) {
   }
 
   // Create and run autocheck checks.
-  class ActionFactory : public FrontendActionFactory {
-  public:
-    ActionFactory(autocheck::AutocheckContext &Context) : Context(Context) {}
-
-    std::unique_ptr<clang::FrontendAction> create() override {
-      return std::make_unique<autocheck::AutocheckAction>(Context);
-    }
-
-  private:
-    autocheck::AutocheckContext &Context;
-  };
-  ActionFactory Factory(Context);
-  return Tool.run(&Factory);
+  return Tool.run(newFrontendActionFactory<autocheck::AutocheckAction>().get());
 }

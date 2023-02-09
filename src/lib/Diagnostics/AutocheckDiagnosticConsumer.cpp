@@ -37,7 +37,7 @@ void AutocheckDiagnosticConsumer::EndSourceFile() {
 void AutocheckDiagnosticConsumer::EmitDiag(AutocheckWarnings Warning,
                                            const clang::SourceLocation &Loc) {
   Diags.Clear();
-  AutocheckDiagnostic::Diag(Diags, Loc, Warning);
+  AutocheckDiagnostic::reportWarning(Diags, Loc, Warning);
 }
 
 void AutocheckDiagnosticConsumer::HandleDiagnostic(

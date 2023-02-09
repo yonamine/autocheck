@@ -6,8 +6,8 @@
 //===----------------------------------------------------------------------===//
 //
 // Context for storing and retrieving data that is required throughout the
-// program. An instance of this class is created in Autocheck.cpp and passed to
-// every class that operates with warnings.
+// program. It is implemented as a singleton and should be accessed using
+// AutocheckContext::Get().
 //
 //===----------------------------------------------------------------------===//
 
@@ -21,13 +21,23 @@
 
 namespace autocheck {
 
-/// This class provides a way to enable, disable and query warnings. An instance
-/// of this class is created in Autocheck.cpp and passed to all classes that
-/// operate with warnings.
+/// This class provides a way to enable, disable and query warnings. It is
+/// implemented as a singleton and should be accessed using
+/// AutocheckContext::Get().
 class AutocheckContext {
 public:
+  static AutocheckContext &Get() {
+    static AutocheckContext instance;
+    return instance;
+  }
+
+  AutocheckContext(const AutocheckContext &Context) = delete;
+
   bool enableWarning(const std::string &Warning);
   bool isEnabled(AutocheckWarnings Warning) const;
+
+private:
+  AutocheckContext() = default;
 
 private:
   /// Mapping between command line flags and warning types.

@@ -23,16 +23,20 @@ const std::pair<const char *, const char *> DiagnosticMessages[]{
 #include "Diagnostics/AutocheckWarnings.def"
 };
 
-void AutocheckDiagnostic::Diag(clang::DiagnosticsEngine &DE,
-                               const clang::SourceLocation &Loc,
-                               AutocheckWarnings Warning) {
+clang::DiagnosticBuilder
+AutocheckDiagnostic::Diag(clang::DiagnosticsEngine &DE,
+                          const clang::SourceLocation &Loc,
+                          AutocheckWarnings Warning) {
   int WarningID = static_cast<int>(Warning);
   std::stringstream WarningMessage;
   WarningMessage << DiagnosticMessages[WarningID].first << " ["
                  << DiagnosticMessages[WarningID].second << "]";
   unsigned ID = DE.getDiagnosticIDs()->getCustomDiagID(
       clang::DiagnosticIDs::Level::Warning, WarningMessage.str());
-  DE.Report(Loc, ID);
+
+  return DE.Report(Loc, ID);
 }
+
+void AutocheckDiagnostic::addArgsToDiagBuilder(clang::DiagnosticBuilder &DB) {}
 
 } // namespace autocheck

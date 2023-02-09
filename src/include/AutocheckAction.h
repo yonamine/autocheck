@@ -21,7 +21,7 @@ namespace autocheck {
 
 class AutocheckAction : public clang::PreprocessorFrontendAction {
 public:
-  AutocheckAction(AutocheckContext &Context);
+  AutocheckAction();
 
 protected:
   bool BeginInvocation(clang::CompilerInstance &CI) override;

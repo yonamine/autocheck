@@ -49,7 +49,7 @@ namespace autocheck {
 /// This class performs all lexer and preprocessor related checks.
 class AutocheckLex {
 public:
-  AutocheckLex(AutocheckContext &Context, clang::CompilerInstance &CI);
+  AutocheckLex(clang::CompilerInstance &CI);
 
   void Run();
 
