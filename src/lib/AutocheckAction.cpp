@@ -11,15 +11,19 @@
 
 #include "AutocheckAction.h"
 
+#include "AST/LexicalRulesVisitor.h"
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
 #include "Lex/AutocheckLex.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Preprocessor.h"
+#include "clang/Parse/ParseAST.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace autocheck {
 
 AutocheckAction::AutocheckAction() : Context(AutocheckContext::Get()){};
+
+bool AutocheckAction::usesPreprocessorOnly() const { return false; }
 
 bool AutocheckAction::BeginInvocation(clang::CompilerInstance &CI) {
   AutocheckDiagnosticConsumer *DiagConsumer =
@@ -29,6 +33,10 @@ bool AutocheckAction::BeginInvocation(clang::CompilerInstance &CI) {
 }
 
 void AutocheckAction::ExecuteAction() {
+  clang::CompilerInstance &CI = getCompilerInstance();
+  if (!CI.hasPreprocessor())
+    return;
+
   clang::Preprocessor &PP = getCompilerInstance().getPreprocessor();
   clang::SourceManager &SM = getCompilerInstance().getSourceManager();
 
@@ -42,12 +50,24 @@ void AutocheckAction::ExecuteAction() {
   AutocheckLex LexerChecks(getCompilerInstance());
   LexerChecks.Run();
 
-  clang::Token Tok;
-  PP.EnterMainSourceFile();
+  if (!CI.hasSema())
+    CI.createSema(getTranslationUnitKind(), /*CodeCompleteConsumer*/ nullptr);
 
-  do {
-    PP.Lex(Tok);
-  } while (Tok.isNot(clang::tok::eof));
+  clang::ParseAST(CI.getSema(), CI.getFrontendOpts().ShowStats,
+                  CI.getFrontendOpts().SkipFunctionBodies);
+}
+
+std::unique_ptr<clang::ASTConsumer>
+AutocheckAction::CreateASTConsumer(clang::CompilerInstance &CI,
+                                   llvm::StringRef InFile) {
+  return std::make_unique<AutocheckASTConsumer>();
+}
+
+void AutocheckASTConsumer::HandleTranslationUnit(clang::ASTContext &ASTCtx) {
+  clang::DiagnosticsEngine &DE = ASTCtx.getDiagnostics();
+  clang::TranslationUnitDecl *TUD = ASTCtx.getTranslationUnitDecl();
+
+  LexicalRulesVisitor(DE, ASTCtx).run(TUD);
 }
 
 } // namespace autocheck

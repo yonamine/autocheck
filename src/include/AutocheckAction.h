@@ -19,17 +19,29 @@
 
 namespace autocheck {
 
-class AutocheckAction : public clang::PreprocessorFrontendAction {
+class AutocheckAction : public clang::FrontendAction {
 public:
   AutocheckAction();
+
+  bool usesPreprocessorOnly() const override;
 
 protected:
   bool BeginInvocation(clang::CompilerInstance &CI) override;
 
   void ExecuteAction() override;
 
+  std::unique_ptr<clang::ASTConsumer>
+  CreateASTConsumer(clang::CompilerInstance &CI,
+                    llvm::StringRef InFile) override;
+
 private:
   AutocheckContext &Context;
+};
+
+// This class performs all Autosar rule checks on the generated AST.
+class AutocheckASTConsumer : public clang::ASTConsumer {
+public:
+  void HandleTranslationUnit(clang::ASTContext &Context) override;
 };
 
 } // namespace autocheck

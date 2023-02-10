@@ -21,9 +21,11 @@ void palmtree_\U0001f334\U0001f615_smily() {} // expected-warning {{Universal ch
 class rose_\U0001f339_ {}; // expected-warning {{Universal character names shall be used only inside character or string literals}}
 } // namespace
 
+// expected-error@10 {{expected unqualified-id}}
 // expected-error@11 {{character <U+1F333> not allowed in an identifier}}
 // expected-error@12 {{character <U+1F333> not allowed in an identifier}}
 // expected-error@15 {{character <U+1F615> not allowed in an identifier}}
+// expected-error@17 {{expected unqualified-id}}
 // expected-error@19 {{character <U+1F334> not allowed in an identifier}}
 // expected-error@19 {{character <U+1F615> not allowed in an identifier}}
 // expected-error@21 {{character <U+1F339> not allowed in an identifier}}
