@@ -23,6 +23,7 @@ add_clang_executable(autocheck
 )
 clang_target_link_libraries(autocheck
     PRIVATE
+    clangAST
     clangBasic
     clangFrontend
     clangLex

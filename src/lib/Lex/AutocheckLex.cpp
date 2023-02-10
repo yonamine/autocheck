@@ -58,54 +58,6 @@ static void HandleToken(const AutocheckContext &Context,
   if (!appropriateHeaderLocation(DE, Loc))
     return;
 
-  // [A2-7-1] The character \ shall not occur as a last character of a C++
-  // comment.
-  if (Context.isEnabled(AutocheckWarnings::lineCommentLastChar) &&
-      Tok.is(clang::tok::comment)) {
-    const char *CurrentChar = SM.getCharacterData(Tok.getLocation());
-    // Check is this a line comment.
-    if (CurrentChar[0] == '/' && CurrentChar[1] == '/') {
-      const char *CommentEnd = CurrentChar + Tok.getLength();
-      unsigned Offset = 0;
-      while (CurrentChar != CommentEnd) {
-        if (*CurrentChar == '\n' || *CurrentChar == '\r') {
-          // We found a newline character, go back to the previous character
-          // while skipping any whitespace.
-          const char *EscapeChar = CurrentChar - 1;
-          unsigned escapeOffset = 1;
-          while (clang::isHorizontalWhitespace(*EscapeChar)) {
-            EscapeChar--;
-            escapeOffset++;
-          }
-          if (*EscapeChar == '\\')
-            AutocheckDiagnostic::reportWarning(
-                DE, Tok.getLocation().getLocWithOffset(Offset - escapeOffset),
-                AutocheckWarnings::lineCommentLastChar);
-        }
-        CurrentChar++;
-        Offset++;
-      }
-    }
-  }
-
-  // [M2-7-1] The character sequence /* shall not be used within a C-style
-  // comment.
-  if (Context.isEnabled(AutocheckWarnings::commentStartInComment) &&
-      Tok.is(clang::tok::comment)) {
-    llvm::StringRef CommentString(SM.getCharacterData(Tok.getLocation()),
-                                  Tok.getLength());
-    if (CommentString.startswith("/*")) {
-      size_t idx = 0;
-      while ((idx = CommentString.find("/*", idx + 2)) !=
-             llvm::StringRef::npos) {
-        if (idx + 2 < CommentString.size() && CommentString[idx + 2] != '/')
-          AutocheckDiagnostic::reportWarning(
-              DE, Tok.getLocation().getLocWithOffset(idx),
-              AutocheckWarnings::commentStartInComment);
-      }
-    }
-  }
-
   // [A2-13-5] Hexadecimal constants should be upper case.
   if (Context.isEnabled(AutocheckWarnings::hexConstUpperCase) &&
       Tok.is(clang::tok::numeric_constant)) {
@@ -248,7 +200,6 @@ static void HandleToken(const AutocheckContext &Context,
 AutocheckLex::AutocheckLex(clang::CompilerInstance &CI)
     : Context(AutocheckContext::Get()), CI(CI) {
   clang::Preprocessor &PP = CI.getPreprocessor();
-  PP.SetCommentRetentionState(true, true);
   PP.addPPCallbacks(
       std::make_unique<AutocheckPPCallbacks>(PP.getDiagnostics()));
   PP.setTokenWatcher([&CI](const clang::Token &Tok) {
@@ -430,6 +381,54 @@ void AutocheckLex::Run() {
                   AutocheckWarnings::nonCppStandardCharUsed);
           }
           WasASCIIChar = isASCII(C);
+        }
+      }
+    }
+
+    // [A2-7-1] The character \ shall not occur as a last character of a C++
+    // comment.
+    if (Context.isEnabled(AutocheckWarnings::lineCommentLastChar) &&
+        Tok.is(clang::tok::comment)) {
+      const char *CurrentChar = SM.getCharacterData(Tok.getLocation());
+      // Check is this a line comment.
+      if (CurrentChar[0] == '/' && CurrentChar[1] == '/') {
+        const char *CommentEnd = CurrentChar + Tok.getLength();
+        unsigned Offset = 0;
+        while (CurrentChar != CommentEnd) {
+          if (*CurrentChar == '\n' || *CurrentChar == '\r') {
+            // We found a newline character, go back to the previous character
+            // while skipping any whitespace.
+            const char *EscapeChar = CurrentChar - 1;
+            unsigned escapeOffset = 1;
+            while (clang::isHorizontalWhitespace(*EscapeChar)) {
+              EscapeChar--;
+              escapeOffset++;
+            }
+            if (*EscapeChar == '\\')
+              AutocheckDiagnostic::reportWarning(
+                  DE, Tok.getLocation().getLocWithOffset(Offset - escapeOffset),
+                  AutocheckWarnings::lineCommentLastChar);
+          }
+          CurrentChar++;
+          Offset++;
+        }
+      }
+    }
+
+    // [M2-7-1] The character sequence /* shall not be used within a C-style
+    // comment.
+    if (Context.isEnabled(AutocheckWarnings::commentStartInComment) &&
+        Tok.is(clang::tok::comment)) {
+      llvm::StringRef CommentString(SM.getCharacterData(Tok.getLocation()),
+                                    Tok.getLength());
+      if (CommentString.startswith("/*")) {
+        size_t idx = 0;
+        while ((idx = CommentString.find("/*", idx + 2)) !=
+               llvm::StringRef::npos) {
+          if (idx + 2 < CommentString.size() && CommentString[idx + 2] != '/')
+            AutocheckDiagnostic::reportWarning(
+                DE, Tok.getLocation().getLocWithOffset(idx),
+                AutocheckWarnings::commentStartInComment);
         }
       }
     }

@@ -34,4 +34,7 @@ void Fn() noexcept {
 // expected-warning@23 1 {{Only those characters specified in the C++ Language Standard basic source character set shall be used in the source code}}
 
 // expected-error@15 1 {{unexpected character}}
+// expected-error@18 1 {{expected ';' at end of declaration}}
 // expected-error@27 1 {{unexpected character}}
+// expected-error@28 1 {{expected ';' after expression}}
+// expected-error@28 1 {{expected expression}}
