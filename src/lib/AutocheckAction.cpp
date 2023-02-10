@@ -11,6 +11,7 @@
 
 #include "AutocheckAction.h"
 
+#include "AST/LexicalRulesVisitor.h"
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
 #include "Lex/AutocheckLex.h"
 #include "clang/Basic/SourceManager.h"
@@ -66,7 +67,7 @@ void AutocheckASTConsumer::HandleTranslationUnit(clang::ASTContext &ASTCtx) {
   clang::DiagnosticsEngine &DE = ASTCtx.getDiagnostics();
   clang::TranslationUnitDecl *TUD = ASTCtx.getTranslationUnitDecl();
 
-  // TODO: Run visitors and matchers.
+  LexicalRulesVisitor(DE, ASTCtx).run(TUD);
 }
 
 } // namespace autocheck

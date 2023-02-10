@@ -36,6 +36,8 @@ WarningRepeatChecker::WarningRepeatChecker() {
       {AutocheckWarnings::nonCppStandardCharUsed, -1},
       {AutocheckWarnings::hashhashOpUsed, -1},
       {AutocheckWarnings::hexConstUpperCase, -1},
+      {AutocheckWarnings::similarIdentifiers, -1},
+      {AutocheckWarnings::fixedWidthIntegerTypes, -1},
   });
 }
 

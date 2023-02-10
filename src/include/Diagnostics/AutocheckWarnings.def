@@ -105,5 +105,32 @@ DIAG(nonUniversalNames, "non-universal-names",
      "Universal character names shall be used only inside character or string "
      "literals",
      "A2-13-6")
+DIAG(unsignedLiteralSuffix, "unsigned-literal-suffix",
+     "A \"U\" suffix shall be applied to all octal or hexadecimal integer "
+     "literals of unsigned type",
+     "M2-13-3")
+DIAG(similarIdentifiers, "similar-identifiers",
+     "Different identifiers shall be typographically unambiguous", "M2-10-1")
+DIAG(shadowClassOrEnum, "shadow-class-or-enum",
+     "A class or enumeration name shall not be hidden by a variable, function "
+     "or enumerator declaration in the same scope",
+     "A2-10-6")
+DIAG(fixedWidthIntegerTypes, "fixed-width-integer-types",
+     "Fixed width integer types from <cstdint>, indicating the size and "
+     "signedness, shall be used in place of the basic numerical types",
+     "A3-9-1")
+DIAG(nullStatementNotAlone, "null-stmt-not-alone",
+     "Before preprocessing, a null statement shall only occur on a line by "
+     "itself; it may be followed by a comment, provided that the first "
+     "character following the null statement is a white-space character",
+     "M6-2-3")
+DIAG(usingInsideHeader, "using-inside-header",
+     "Using-directives and using-declarations (excluding class scope or "
+     "function scope using-declarations) shall not be used in header files",
+     "M7-3-6")
+DIAG(separateLineExpressionStatement, "separate-line-expression-statement",
+     "Each expression statement and identifier declaration shall be placed on "
+     "a separate line",
+     "A7-1-7")
 
 #undef DIAG
