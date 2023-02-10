@@ -19,8 +19,7 @@
 
 namespace autocheck {
 
-AutocheckAction::AutocheckAction(AutocheckContext &Context)
-    : Context(Context){};
+AutocheckAction::AutocheckAction() : Context(AutocheckContext::Get()){};
 
 bool AutocheckAction::BeginInvocation(clang::CompilerInstance &CI) {
   AutocheckDiagnosticConsumer *DiagConsumer =
@@ -40,7 +39,7 @@ void AutocheckAction::ExecuteAction() {
   // 2. A token handler with the preprocessor active. Thsese checks are
   //    performed in a callback function for each lexed token.
   // 3. Preprocessor checks. These are perfomed on certain preprocessor events.
-  AutocheckLex LexerChecks(Context, getCompilerInstance());
+  AutocheckLex LexerChecks(getCompilerInstance());
   LexerChecks.Run();
 
   clang::Token Tok;

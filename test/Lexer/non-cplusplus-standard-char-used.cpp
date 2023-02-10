@@ -4,7 +4,7 @@
 
 namespace {
 void Fn() noexcept {
-  const char *c1{"Â_£_@"}; // expected-warning 3 {{Only those characters specified in the C++ Language Standard basic source character set shall be used in the source code}}
+  const char *c1{"Â_£_@"}; // expected-warning {{Only those characters specified in the C++ Language Standard basic source character set shall be used in the source code}}
 
   std::int32_t sum = 0;
 
@@ -29,10 +29,9 @@ void Fn() noexcept {
 }
 } //namespace
 
-// expected-warning@21 2 {{Only those characters specified in the C++ Language Standard basic source character set shall be used in the source code}}
+// expected-warning@21 1 {{Only those characters specified in the C++ Language Standard basic source character set shall be used in the source code}}
 // expected-warning@22 1 {{Only those characters specified in the C++ Language Standard basic source character set shall be used in the source code}}
 // expected-warning@23 1 {{Only those characters specified in the C++ Language Standard basic source character set shall be used in the source code}}
 
 // expected-error@15 1 {{unexpected character}}
 // expected-error@27 1 {{unexpected character}}
-

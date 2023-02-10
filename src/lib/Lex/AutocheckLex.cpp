@@ -52,8 +52,10 @@ static void HandleToken(const AutocheckContext &Context,
   clang::DiagnosticsEngine &DE = CI.getDiagnostics();
   const clang::SourceManager &SM = CI.getSourceManager();
 
-  // Don't show warnings for code inside system headers.
-  if (SM.isInSystemHeader(Tok.getLocation()))
+  // Check should this location be checked for AUTOSAR rules based on the
+  // currently set flags.
+  const clang::SourceLocation Loc = Tok.getLocation();
+  if (!appropriateHeaderLocation(DE, Loc))
     return;
 
   // [A2-7-1] The character \ shall not occur as a last character of a C++
@@ -76,7 +78,7 @@ static void HandleToken(const AutocheckContext &Context,
             escapeOffset++;
           }
           if (*EscapeChar == '\\')
-            AutocheckDiagnostic::Diag(
+            AutocheckDiagnostic::reportWarning(
                 DE, Tok.getLocation().getLocWithOffset(Offset - escapeOffset),
                 AutocheckWarnings::lineCommentLastChar);
         }
@@ -97,8 +99,9 @@ static void HandleToken(const AutocheckContext &Context,
       while ((idx = CommentString.find("/*", idx + 2)) !=
              llvm::StringRef::npos) {
         if (idx + 2 < CommentString.size() && CommentString[idx + 2] != '/')
-          AutocheckDiagnostic::Diag(DE, Tok.getLocation().getLocWithOffset(idx),
-                                    AutocheckWarnings::commentStartInComment);
+          AutocheckDiagnostic::reportWarning(
+              DE, Tok.getLocation().getLocWithOffset(idx),
+              AutocheckWarnings::commentStartInComment);
       }
     }
   }
@@ -110,9 +113,9 @@ static void HandleToken(const AutocheckContext &Context,
     if (Literal.startswith_insensitive("0x")) {
       for (int offset = 2; offset < Tok.getLength(); offset++) {
         if (Literal[offset] >= 'a' && Literal[offset] <= 'f') {
-          AutocheckDiagnostic::Diag(DE,
-                                    Tok.getLocation().getLocWithOffset(offset),
-                                    AutocheckWarnings::hexConstUpperCase);
+          AutocheckDiagnostic::reportWarning(
+              DE, Tok.getLocation().getLocWithOffset(offset),
+              AutocheckWarnings::hexConstUpperCase);
           break;
         } else if (Literal[offset] == 'p' || Literal[offset] == 'P') {
           // Reached the exponent, don't check any more digits.
@@ -141,27 +144,27 @@ static void HandleToken(const AutocheckContext &Context,
                                      Literal.size() - offset - 1);
         if (tolower(CurrentChar) == 'x') { // Hex escape
           if (!checkHexEscape(EscapeString))
-            AutocheckDiagnostic::Diag(
+            AutocheckDiagnostic::reportWarning(
                 DE, Tok.getLocation().getLocWithOffset(offset),
                 AutocheckWarnings::nonIsoEscapeSequence);
         } else if (CurrentChar == 'u') {
           // Universal character name \uXXXX
           if (!checkUCNEscape(EscapeString, 4))
-            AutocheckDiagnostic::Diag(
+            AutocheckDiagnostic::reportWarning(
                 DE, Tok.getLocation().getLocWithOffset(offset),
                 AutocheckWarnings::nonIsoEscapeSequence);
 
         } else if (CurrentChar == 'U') {
           // Universal character name \UXXXXXXXX
           if (!checkUCNEscape(EscapeString, 8))
-            AutocheckDiagnostic::Diag(
+            AutocheckDiagnostic::reportWarning(
                 DE, Tok.getLocation().getLocWithOffset(offset),
                 AutocheckWarnings::nonIsoEscapeSequence);
         }
       } else {
-        AutocheckDiagnostic::Diag(DE,
-                                  Tok.getLocation().getLocWithOffset(offset),
-                                  AutocheckWarnings::nonIsoEscapeSequence);
+        AutocheckDiagnostic::reportWarning(
+            DE, Tok.getLocation().getLocWithOffset(offset),
+            AutocheckWarnings::nonIsoEscapeSequence);
       }
     }
   }
@@ -177,8 +180,8 @@ static void HandleToken(const AutocheckContext &Context,
           !Literal.contains('.')) {
         if (std::any_of(Literal.begin(), Literal.end(),
                         [](char C) { return isdigit(C) && C != '0'; })) {
-          AutocheckDiagnostic::Diag(DE, Tok.getLocation(),
-                                    AutocheckWarnings::octalConstantUsed);
+          AutocheckDiagnostic::reportWarning(
+              DE, Tok.getLocation(), AutocheckWarnings::octalConstantUsed);
         }
       }
     }
@@ -200,8 +203,8 @@ static void HandleToken(const AutocheckContext &Context,
           EscapeCodeLength++;
         }
         if (!isZero) {
-          AutocheckDiagnostic::Diag(DE, Tok.getLocation(),
-                                    AutocheckWarnings::octalConstantUsed);
+          AutocheckDiagnostic::reportWarning(
+              DE, Tok.getLocation(), AutocheckWarnings::octalConstantUsed);
         }
         Start += EscapeCodeLength; // Move after the escape code.
       }
@@ -218,8 +221,8 @@ static void HandleToken(const AutocheckContext &Context,
     for (unsigned i = Literal.size() - 1; i >= 0; i--) {
       char C = Literal[i];
       if (C == 'l' || C == 'u' || C == 'z' || C == 'f') {
-        AutocheckDiagnostic::Diag(DE, Tok.getLocation(),
-                                  AutocheckWarnings::literalSuffixLowerCase);
+        AutocheckDiagnostic::reportWarning(
+            DE, Tok.getLocation(), AutocheckWarnings::literalSuffixLowerCase);
         break;
       } else if (C != 'L' && C != 'U' && C != 'Z' && C != 'F') {
         // No longer in the range of the suffix.
@@ -237,20 +240,19 @@ static void HandleToken(const AutocheckContext &Context,
 
     ParsedNumber ParsedLiteral = parseNumberLiteral(Literal);
     if (!checkDigitSeparators(ParsedLiteral))
-      AutocheckDiagnostic::Diag(DE, Tok.getLocation(),
-                                AutocheckWarnings::digitSequenceSeparator);
+      AutocheckDiagnostic::reportWarning(
+          DE, Tok.getLocation(), AutocheckWarnings::digitSequenceSeparator);
   }
 }
 
-AutocheckLex::AutocheckLex(AutocheckContext &Context,
-                           clang::CompilerInstance &CI)
-    : Context(Context), CI(CI) {
+AutocheckLex::AutocheckLex(clang::CompilerInstance &CI)
+    : Context(AutocheckContext::Get()), CI(CI) {
   clang::Preprocessor &PP = CI.getPreprocessor();
   PP.SetCommentRetentionState(true, true);
   PP.addPPCallbacks(
-      std::make_unique<AutocheckPPCallbacks>(Context, PP.getDiagnostics()));
-  PP.setTokenWatcher([&Context, &CI](const clang::Token &Tok) {
-    HandleToken(Context, CI, Tok);
+      std::make_unique<AutocheckPPCallbacks>(PP.getDiagnostics()));
+  PP.setTokenWatcher([&CI](const clang::Token &Tok) {
+    HandleToken(AutocheckContext::Get(), CI, Tok);
   });
 };
 
@@ -423,7 +425,7 @@ void AutocheckLex::Run() {
           char C = TokenString[offset];
           if (!(isComment && C == '@') && !isCPlusPlusStandardChar(C)) {
             if (WasASCIIChar || clang::isASCII(C))
-              AutocheckDiagnostic::Diag(
+              AutocheckDiagnostic::reportWarning(
                   DE, Tok.getLocation().getLocWithOffset(offset),
                   AutocheckWarnings::nonCppStandardCharUsed);
           }
@@ -445,8 +447,8 @@ void AutocheckLex::Run() {
     // inside a macro to display the warning once inside the macro instead of
     // for every expansion of that macro.
     if (checkDigraphsUsed(Context, Tok))
-      AutocheckDiagnostic::Diag(DE, Tok.getLocation(),
-                                AutocheckWarnings::digraphsUsed);
+      AutocheckDiagnostic::reportWarning(DE, Tok.getLocation(),
+                                         AutocheckWarnings::digraphsUsed);
 
     // [M16-0-8] If the # token appears as the first token on a line, then it
     // shall be immediately followed by a pre-processing token.
@@ -465,18 +467,18 @@ void AutocheckLex::Run() {
       switch (II->getPPKeywordID()) {
       case clang::tok::pp_not_keyword:
         if (Context.isEnabled(AutocheckWarnings::preprocessorTokenError))
-          AutocheckDiagnostic::Diag(DE, Tok.getLocation(),
-                                    AutocheckWarnings::preprocessorTokenError);
+          AutocheckDiagnostic::reportWarning(
+              DE, Tok.getLocation(), AutocheckWarnings::preprocessorTokenError);
         break;
       case clang::tok::pp_error:
         if (Context.isEnabled(AutocheckWarnings::directiveErrorUsed))
-          AutocheckDiagnostic::Diag(DE, Tok.getLocation(),
-                                    AutocheckWarnings::directiveErrorUsed);
+          AutocheckDiagnostic::reportWarning(
+              DE, Tok.getLocation(), AutocheckWarnings::directiveErrorUsed);
         break;
       case clang::tok::pp_include: {
         if (checkIncludeDirectiveRestrictedChar(Context,
                                                 RemainingTokens.slice(2), SM))
-          AutocheckDiagnostic::Diag(
+          AutocheckDiagnostic::reportWarning(
               DE, Tok.getLocation(),
               AutocheckWarnings::includeDirectiveRestrictedChar);
         break;
@@ -495,8 +497,8 @@ void AutocheckLex::Run() {
     // multiple UCNs are consecutive or separated by whitespace or comments.
     unsigned TokensToSkip = 0;
     if (checkNonUniversalNames(Context, RemainingTokens, SM, TokensToSkip)) {
-      AutocheckDiagnostic::Diag(DE, Tok.getLocation(),
-                                AutocheckWarnings::nonUniversalNames);
+      AutocheckDiagnostic::reportWarning(DE, Tok.getLocation(),
+                                         AutocheckWarnings::nonUniversalNames);
       i += TokensToSkip;
     }
   }

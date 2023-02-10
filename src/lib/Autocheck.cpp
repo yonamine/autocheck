@@ -43,9 +43,33 @@ static cl::opt<std::string> Verify(
     cl::value_desc("prefixes"), cl::ValueOptional, cl::init("expected"),
     cl::cat(AutocheckCategory));
 
+static cl::opt<unsigned> WarningLimit(
+    "warning-limit",
+    cl::desc("Set the limit of warnings per autosar rule (0 = no limit)"),
+    cl::value_desc("value"), cl::init(0), cl::cat(AutocheckCategory));
+
+static cl::opt<bool>
+    CheckSystemHeaders("check-system-headers",
+                       cl::desc("Check Autosar rules in system headers."),
+                       cl::init(false), cl::cat(AutocheckCategory));
+
+static cl::opt<bool>
+    DontCheckHeaders("dont-check-headers",
+                     cl::desc("Dont check Autosar rules in headers."),
+                     cl::init(false), cl::cat(AutocheckCategory));
+
+static cl::list<std::string> CheckBetweenLines(
+    "check-between-lines", cl::desc("Run Autocheck only between given lines"),
+    cl::value_desc("from, to"), cl::CommaSeparated, cl::cat(AutocheckCategory));
+
+static cl::opt<bool> DontCheckMacroExpansions(
+    "dont-check-macro-expansions",
+    cl::desc("Dont check Autosar rules in macro expansions."), cl::init(false),
+    cl::cat(AutocheckCategory));
+
 ArgumentsAdjuster
 getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
-  return [Context](const CommandLineArguments &Args, StringRef /*unused*/) {
+  return [&Context](const CommandLineArguments &Args, StringRef /*unused*/) {
     CommandLineArguments AdjustedArgs(Args);
 
     // Disable all clang warnings and reenable only those that autocheck relies
@@ -92,7 +116,7 @@ int main(int argc, const char **argv) {
                  OptionsParser.getSourcePathList());
 
   // Initialize context.
-  autocheck::AutocheckContext Context;
+  autocheck::AutocheckContext &Context = autocheck::AutocheckContext::Get();
   if (Warnings.getNumOccurrences() > 0) {
     for (const std::string &Warning : Warnings) {
       if (!Context.enableWarning(Warning)) {
@@ -103,6 +127,17 @@ int main(int argc, const char **argv) {
   } else {
     Context.enableWarning("all");
   }
+  Context.WarningLimit = WarningLimit;
+  Context.CheckSystemHeaders = CheckSystemHeaders;
+  Context.DontCheckHeaders = DontCheckHeaders;
+  if (!CheckBetweenLines.empty()) {
+    if (CheckBetweenLines.size() == 2)
+      Context.CheckBetweenLines = CheckBetweenLines;
+    else
+      llvm::errs() << "Invalid range for \"-check-between-lines\" flag. "
+                      "Ignoring option\n";
+  }
+  Context.DontCheckMacroExpansions = DontCheckMacroExpansions;
 
   // Set up built-in warning flags.
   Tool.appendArgumentsAdjuster(getBuiltinWarningAdjuster(Context));
@@ -115,17 +150,5 @@ int main(int argc, const char **argv) {
   }
 
   // Create and run autocheck checks.
-  class ActionFactory : public FrontendActionFactory {
-  public:
-    ActionFactory(autocheck::AutocheckContext &Context) : Context(Context) {}
-
-    std::unique_ptr<clang::FrontendAction> create() override {
-      return std::make_unique<autocheck::AutocheckAction>(Context);
-    }
-
-  private:
-    autocheck::AutocheckContext &Context;
-  };
-  ActionFactory Factory(Context);
-  return Tool.run(&Factory);
+  return Tool.run(newFrontendActionFactory<autocheck::AutocheckAction>().get());
 }

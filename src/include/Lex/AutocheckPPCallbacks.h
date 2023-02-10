@@ -49,7 +49,7 @@ class AutocheckPPCallbacks : public clang::PPCallbacks {
   const clang::SourceManager &SM;
 
 public:
-  AutocheckPPCallbacks(AutocheckContext &Context, clang::DiagnosticsEngine &DE);
+  AutocheckPPCallbacks(clang::DiagnosticsEngine &DE);
 
   void InclusionDirective(clang::SourceLocation HashLoc,
                           const clang::Token &IncludeTok,

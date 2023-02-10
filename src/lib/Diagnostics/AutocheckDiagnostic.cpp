@@ -5,12 +5,15 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements the AutocheckDiagnostic class.
+// This file implements classes used for formatting and controlling the emission
+// of diagnostics.
 //
 //===----------------------------------------------------------------------===//
 
 #include "Diagnostics/AutocheckDiagnostic.h"
 
+#include "AutocheckContext.h"
+#include "clang/Basic/SourceManager.h"
 #include <sstream>
 #include <utility>
 
@@ -23,16 +26,164 @@ const std::pair<const char *, const char *> DiagnosticMessages[]{
 #include "Diagnostics/AutocheckWarnings.def"
 };
 
-void AutocheckDiagnostic::Diag(clang::DiagnosticsEngine &DE,
-                               const clang::SourceLocation &Loc,
-                               AutocheckWarnings Warning) {
+WarningRepeatChecker &WarningRepeatChecker::getWarningRepeatChecker() {
+  static WarningRepeatChecker warningRepeatChecker;
+  return warningRepeatChecker;
+}
+
+WarningRepeatChecker::WarningRepeatChecker() {
+  PreviousLineNumbers = std::unordered_map<AutocheckWarnings, unsigned>({
+      {AutocheckWarnings::nonCppStandardCharUsed, -1},
+      {AutocheckWarnings::hashhashOpUsed, -1},
+      {AutocheckWarnings::hexConstUpperCase, -1},
+  });
+}
+
+bool WarningRepeatChecker::shouldControl(AutocheckWarnings Warning) {
+  return PreviousLineNumbers.count(Warning);
+}
+
+WarningRepeatChecker::LineNumbers
+WarningRepeatChecker::updateLineNumber(clang::DiagnosticsEngine &DE,
+                                       const clang::SourceLocation &Loc,
+                                       AutocheckWarnings Warning) {
+  clang::SourceManager &SM = DE.getSourceManager();
+  LineNumbers DiagLineNumbers;
+  DiagLineNumbers.Previous = PreviousLineNumbers[Warning];
+  DiagLineNumbers.Current = SM.getExpansionLoc(Loc).getRawEncoding() -
+                        SM.getExpansionColumnNumber(SM.getExpansionLoc(Loc));
+
+  PreviousLineNumbers[Warning] = DiagLineNumbers.Current;
+
+  return DiagLineNumbers;
+}
+
+void WarningCounter::setLimitPairAndIncrement(AutocheckWarnings Warning) {
+  // Check if MaxWarning is set to unlimited
+  if (MaxWarning == 0) {
+    Limits.LimitExceeded = false;
+    Limits.LimitReached = false;
+    return;
+  }
+  auto It = Counter.find(Warning);
+  if (It == Counter.end()) {
+    Counter[Warning] = 1;
+    Limits.LimitExceeded = (1 > MaxWarning);
+    Limits.LimitReached = (1 == MaxWarning);
+    return;
+  }
+
+  ++(It->second);
+  Limits.LimitExceeded = (It->second > MaxWarning);
+  Limits.LimitReached = (It->second == MaxWarning);
+  return;
+}
+
+void WarningCounter::resetLimitPair() {
+  Limits.LimitExceeded = false;
+  Limits.LimitReached = false;
+}
+
+bool WarningCounter::limitReached() const { return Limits.LimitReached; }
+bool WarningCounter::limitExceeded() const { return Limits.LimitExceeded; }
+
+bool appropriateHeaderLocation(clang::DiagnosticsEngine &DE,
+                               const clang::SourceLocation &Loc) {
+  return !Loc.isInvalid() && !((!AutocheckContext::Get().CheckSystemHeaders &&
+                                DE.getSourceManager().isInSystemHeader(Loc)) ||
+                               (AutocheckContext::Get().DontCheckHeaders &&
+                                !DE.getSourceManager().isInMainFile(Loc)));
+}
+
+bool appropriateLineLocation(clang::DiagnosticsEngine &DE,
+                             const clang::SourceLocation &Loc) {
+  if (AutocheckContext::Get().CheckBetweenLines.empty()) {
+    return true;
+  }
+
+  static const uint32_t FromLine = static_cast<uint32_t>(
+      std::stoi(AutocheckContext::Get().CheckBetweenLines[0]));
+
+  static const uint32_t ToLine = static_cast<uint32_t>(
+      std::stoi(AutocheckContext::Get().CheckBetweenLines[1]));
+
+  return DE.getSourceManager().getSpellingLineNumber(Loc) >= FromLine &&
+         DE.getSourceManager().getSpellingLineNumber(Loc) <= ToLine &&
+         DE.getSourceManager().isInMainFile(Loc);
+}
+
+bool appropriateLocation(clang::DiagnosticsEngine &DE,
+                         const clang::SourceLocation &Loc) {
+  return !Loc.isInvalid() && (appropriateHeaderLocation(DE, Loc) &&
+                              appropriateLineLocation(DE, Loc));
+}
+
+bool shouldIgnoreMacroExpansions(clang::DiagnosticsEngine &DE,
+                                 const clang::SourceLocation &SL) {
+  return AutocheckContext::Get().DontCheckMacroExpansions &&
+         DE.getSourceManager().isMacroBodyExpansion(SL);
+}
+
+WarningCounter &getWarningCounter() {
+  static WarningCounter WarningCount(AutocheckContext::Get().WarningLimit);
+  return WarningCount;
+}
+
+AutocheckDiagnosticBuilder::AutocheckDiagnosticBuilder(
+    clang::DiagnosticBuilder &DB, clang::DiagnosticsEngine &DE,
+    const clang::SourceLocation &SL, AutocheckWarnings Warning)
+    : DiagnosticBuilder(DB), Loc(Loc), DE(DE), Warning(Warning),
+      ReportWarning(true) {
+  WarningCounter &WarningCount = getWarningCounter();
+  WarningCount.resetLimitPair();
+  if (!appropriateLocation(DE, SL)) {
+    ReportWarning = false;
+    return;
+  }
+  if (shouldIgnoreMacroExpansions(DE, SL)) {
+    ReportWarning = false;
+    return;
+  }
+  WarningCount.setLimitPairAndIncrement(Warning);
+  if (WarningCount.limitExceeded()) {
+    ReportWarning = false;
+    return;
+  }
+  WarningRepeatChecker &warningRepeatChecker =
+      WarningRepeatChecker::getWarningRepeatChecker();
+  if (warningRepeatChecker.shouldControl(Warning)) {
+    if (warningRepeatChecker.updateLineNumber(DE, SL, Warning)
+            .isAlreadyEmitted()) {
+      ReportWarning = false;
+      return;
+    }
+  }
+}
+
+AutocheckDiagnosticBuilder::~AutocheckDiagnosticBuilder() {
+  if (!ReportWarning) {
+    DE.setLastDiagnosticIgnored(true);
+    DiagnosticBuilder::Clear();
+    DE.Clear();
+  }
+}
+
+AutocheckDiagnosticBuilder
+AutocheckDiagnostic::Diag(clang::DiagnosticsEngine &DE,
+                          const clang::SourceLocation &Loc,
+                          AutocheckWarnings Warning) {
   int WarningID = static_cast<int>(Warning);
   std::stringstream WarningMessage;
   WarningMessage << DiagnosticMessages[WarningID].first << " ["
                  << DiagnosticMessages[WarningID].second << "]";
   unsigned ID = DE.getDiagnosticIDs()->getCustomDiagID(
       clang::DiagnosticIDs::Level::Warning, WarningMessage.str());
-  DE.Report(Loc, ID);
+
+  clang::DiagnosticBuilder DB = DE.Report(Loc, ID);
+  return AutocheckDiagnosticBuilder(DB, DE, Loc, Warning);
+}
+
+void AutocheckDiagnostic::addArgsToDiagBuilder(AutocheckDiagnosticBuilder &DB) {
 }
 
 } // namespace autocheck
