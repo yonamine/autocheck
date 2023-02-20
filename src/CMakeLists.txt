@@ -21,6 +21,7 @@ add_clang_executable(autocheck
     "lib/Lex/CharHelper.cpp"
     "lib/Lex/LiteralHelper.cpp"
     "lib/AST/LexicalRulesVisitor.cpp"
+    "lib/AST/StatementsVisitor.cpp"
 )
 clang_target_link_libraries(autocheck
     PRIVATE

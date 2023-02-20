@@ -6,7 +6,7 @@
 //===----------------------------------------------------------------------===//
 //
 // This file overrides the PPCallback class to perform custom callbacks.
-// 
+//
 // The following rules are implemented here:
 // - [A3-1-2]  Header files, that are defined locally in the project, shall have
 //             a file name extension of one of: ".h", ".hpp" or ".hxx".
@@ -39,6 +39,7 @@
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Lex/MacroInfo.h"
 #include "clang/Lex/PPCallbacks.h"
+#include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/StringRef.h"
 
 namespace autocheck {
@@ -47,6 +48,9 @@ class AutocheckPPCallbacks : public clang::PPCallbacks {
   AutocheckContext &Context;
   clang::DiagnosticsEngine &DE;
   const clang::SourceManager &SM;
+
+  // Locations of macros that expand into do {...} while (0)
+  llvm::SmallSet<clang::SourceLocation, 0> DoWhileMacros;
 
 public:
   AutocheckPPCallbacks(clang::DiagnosticsEngine &DE);
@@ -78,6 +82,11 @@ public:
   void Defined(const clang::Token &MacroNameTok,
                const clang::MacroDefinition &MD,
                clang::SourceRange Range) override;
+
+  /// Returns macros that expand into do {...} while (0)
+  const llvm::SmallSet<clang::SourceLocation, 0> &getDoWhileMacros() const {
+    return DoWhileMacros;
+  }
 };
 
 } // namespace autocheck

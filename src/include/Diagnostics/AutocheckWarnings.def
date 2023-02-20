@@ -132,5 +132,16 @@ DIAG(separateLineExpressionStatement, "separate-line-expression-statement",
      "Each expression statement and identifier declaration shall be placed on "
      "a separate line",
      "A7-1-7")
+DIAG(ifElseIfTerminated, "if-else-if-terminated",
+     "All if ... else if constructs shall be terminated with an else clause",
+     "M6-4-2")
+DIAG(gotoLabelBlock, "goto-label-block",
+     "Any label referenced by a goto statement shall be declared in the same "
+     "block, or in a block enclosing the goto statement",
+     "M6-6-1")
+DIAG(switchStmtDefaultClause, "switch-stmt-default-clause",
+     "The final clause of a switch statement shall be the default-clause",
+     "M6-4-6")
+DIAG(doWhileUsed, "do-while-used", "Do statements should not be used", "A6-5-3")
 
 #undef DIAG
