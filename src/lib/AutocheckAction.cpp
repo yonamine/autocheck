@@ -12,6 +12,7 @@
 #include "AutocheckAction.h"
 
 #include "AST/LexicalRulesVisitor.h"
+#include "AST/StatementsVisitor.h"
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
 #include "Lex/AutocheckLex.h"
 #include "clang/Basic/SourceManager.h"
@@ -32,6 +33,15 @@ bool AutocheckAction::BeginInvocation(clang::CompilerInstance &CI) {
   return true;
 }
 
+bool AutocheckAction::BeginSourceFileAction(clang::CompilerInstance &CI) {
+  // Set up preprocessor callbacks. This is done before ExecuteAction so
+  // AutocheckASTConsumer can have access to it.
+  auto Callbacks = std::make_unique<AutocheckPPCallbacks>(CI.getDiagnostics());
+  PPCallbacks = Callbacks.get();
+  CI.getPreprocessor().addPPCallbacks(std::move(Callbacks));
+  return true;
+}
+
 void AutocheckAction::ExecuteAction() {
   clang::CompilerInstance &CI = getCompilerInstance();
   if (!CI.hasPreprocessor())
@@ -40,13 +50,12 @@ void AutocheckAction::ExecuteAction() {
   clang::Preprocessor &PP = getCompilerInstance().getPreprocessor();
   clang::SourceManager &SM = getCompilerInstance().getSourceManager();
 
-  // Create and run lexer/preprocessor checks. Three types of checks are
+  // Create and run lexer/preprocessor checks. Two types of checks are
   // performed:
   // 1. A raw lexer pass which check all rules without the preprocessor. These
   //    checks are run immediately on the entire file.
   // 2. A token handler with the preprocessor active. Thsese checks are
   //    performed in a callback function for each lexed token.
-  // 3. Preprocessor checks. These are perfomed on certain preprocessor events.
   AutocheckLex LexerChecks(getCompilerInstance());
   LexerChecks.Run();
 
@@ -60,14 +69,19 @@ void AutocheckAction::ExecuteAction() {
 std::unique_ptr<clang::ASTConsumer>
 AutocheckAction::CreateASTConsumer(clang::CompilerInstance &CI,
                                    llvm::StringRef InFile) {
-  return std::make_unique<AutocheckASTConsumer>();
+  return std::make_unique<AutocheckASTConsumer>(*PPCallbacks);
 }
+
+AutocheckASTConsumer::AutocheckASTConsumer(
+    const AutocheckPPCallbacks &PPCallbacks)
+    : PPCallbacks(PPCallbacks) {}
 
 void AutocheckASTConsumer::HandleTranslationUnit(clang::ASTContext &ASTCtx) {
   clang::DiagnosticsEngine &DE = ASTCtx.getDiagnostics();
   clang::TranslationUnitDecl *TUD = ASTCtx.getTranslationUnitDecl();
 
   LexicalRulesVisitor(DE, ASTCtx).run(TUD);
+  StatementsVisitor(DE, ASTCtx, PPCallbacks).run(TUD);
 }
 
 } // namespace autocheck

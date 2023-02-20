@@ -14,6 +14,8 @@
 #include "Diagnostics/AutocheckDiagnostic.h"
 #include "clang/Basic/IdentifierTable.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/Lex/Token.h"
+#include "llvm/ADT/ArrayRef.h"
 #include <string>
 #include <unordered_set>
 
@@ -191,6 +193,30 @@ void AutocheckPPCallbacks::MacroExpands(const clang::Token &MacroNameTok,
     if (checkSetjmpUsed(Context, HeaderName, MacroName)) {
       AutocheckDiagnostic::reportWarning(DE, MacroLoc,
                                          AutocheckWarnings::setjmpLongjmpUsed);
+    }
+  }
+
+  // [A6-5-3] Do statements should not be used.
+  // Collect macros that expand into do {...} while (0). They are exempt from
+  // this rule. This is used by StatementsVisitor to skip reporting these do
+  // statements.
+  if (Context.isEnabled(AutocheckWarnings::doWhileUsed)) {
+    const clang::MacroInfo *MI = MD.getMacroInfo();
+    if (MI->isFunctionLike()) {
+      llvm::ArrayRef<clang::Token> Tokens = MI->tokens();
+      unsigned NumOfTokens = Tokens.size();
+      if (NumOfTokens >= 7 && Tokens[0].is(clang::tok::kw_do) &&      // do
+          Tokens[1].is(clang::tok::l_brace) &&                        // {
+          Tokens[NumOfTokens - 5].is(clang::tok::r_brace) &&          // }
+          Tokens[NumOfTokens - 4].is(clang::tok::kw_while) &&         // while
+          Tokens[NumOfTokens - 3].is(clang::tok::l_paren) &&          // (
+          Tokens[NumOfTokens - 2].is(clang::tok::numeric_constant) && // 0
+          Tokens[NumOfTokens - 1].is(clang::tok::r_paren)) {          // )
+        const clang::Token &ZeroToken = Tokens[NumOfTokens - 2];
+        const char *LiteralData = ZeroToken.getLiteralData();
+        if (LiteralData && ZeroToken.getLength() == 1 && LiteralData[0] == '0')
+          DoWhileMacros.insert(MI->getDefinitionEndLoc());
+      }
     }
   }
 }

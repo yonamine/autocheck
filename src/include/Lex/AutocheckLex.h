@@ -5,8 +5,7 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file performs checks for rules related to the lexer and sets up
-// preprocessor callbacks.
+// This file performs checks for rules related to the lexer.
 //
 // This implements the following checks:
 // - [A2-3-1]  Only those characters specified in the C++ Language Standard
@@ -46,7 +45,7 @@
 
 namespace autocheck {
 
-/// This class performs all lexer and preprocessor related checks.
+/// This class performs all lexer related checks.
 class AutocheckLex {
 public:
   AutocheckLex(clang::CompilerInstance &CI);

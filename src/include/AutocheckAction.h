@@ -14,6 +14,7 @@
 #define AUTOCHECK_ACTION_H
 
 #include "AutocheckContext.h"
+#include "Lex/AutocheckPPCallbacks.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendAction.h"
 
@@ -28,6 +29,8 @@ public:
 protected:
   bool BeginInvocation(clang::CompilerInstance &CI) override;
 
+  bool BeginSourceFileAction(clang::CompilerInstance &CI) override;
+
   void ExecuteAction() override;
 
   std::unique_ptr<clang::ASTConsumer>
@@ -36,12 +39,18 @@ protected:
 
 private:
   AutocheckContext &Context;
+  const AutocheckPPCallbacks *PPCallbacks;
 };
 
 // This class performs all Autosar rule checks on the generated AST.
 class AutocheckASTConsumer : public clang::ASTConsumer {
 public:
+  AutocheckASTConsumer(const AutocheckPPCallbacks &PPCallbacks);
+
   void HandleTranslationUnit(clang::ASTContext &Context) override;
+
+private:
+  const AutocheckPPCallbacks &PPCallbacks;
 };
 
 } // namespace autocheck

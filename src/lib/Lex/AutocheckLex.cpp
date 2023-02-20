@@ -12,7 +12,6 @@
 #include "Lex/AutocheckLex.h"
 
 #include "Diagnostics/AutocheckDiagnostic.h"
-#include "Lex/AutocheckPPCallbacks.h"
 #include "Lex/CharHelper.h"
 #include "Lex/LiteralHelper.h"
 #include "clang/Basic/IdentifierTable.h"
@@ -200,8 +199,6 @@ static void HandleToken(const AutocheckContext &Context,
 AutocheckLex::AutocheckLex(clang::CompilerInstance &CI)
     : Context(AutocheckContext::Get()), CI(CI) {
   clang::Preprocessor &PP = CI.getPreprocessor();
-  PP.addPPCallbacks(
-      std::make_unique<AutocheckPPCallbacks>(PP.getDiagnostics()));
   PP.setTokenWatcher([&CI](const clang::Token &Tok) {
     HandleToken(AutocheckContext::Get(), CI, Tok);
   });
@@ -283,7 +280,7 @@ bool checkIncludeDirectiveRestrictedChar(
     return false;
   // The current character is either '"' or '<'. Now check all characters until
   // the next '"' or '>' respectively.
-  assert((CurrentChar == '"' || CurrentChar == '<') &&
+  assert((*CurrentChar == '"' || *CurrentChar == '<') &&
          "Invalid include directive");
   char ClosingChar = *CurrentChar;
   if (ClosingChar == '<')
