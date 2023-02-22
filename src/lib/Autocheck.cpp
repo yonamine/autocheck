@@ -83,6 +83,8 @@ getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
       WarningsToEnable.push_back("-Wbuiltin-macro-redifined");
       WarningsToEnable.push_back("-Wreserved-macro-identifier");
     }
+    if (Context.isEnabled(autocheck::AutocheckWarnings::unusedFunctionOrMethod))
+      WarningsToEnable.push_back("-Wunused-function");
 
     if (!WarningsToEnable.empty())
       AdjustedArgs.insert(llvm::find(AdjustedArgs, "--"),

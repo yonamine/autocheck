@@ -11,6 +11,7 @@
 
 #include "AutocheckAction.h"
 
+#include "AST/ClassesVisitor.h"
 #include "AST/LexicalRulesVisitor.h"
 #include "AST/StatementsVisitor.h"
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
@@ -82,6 +83,7 @@ void AutocheckASTConsumer::HandleTranslationUnit(clang::ASTContext &ASTCtx) {
 
   LexicalRulesVisitor(DE, ASTCtx).run(TUD);
   StatementsVisitor(DE, ASTCtx, PPCallbacks).run(TUD);
+  ClassesVisitor(DE, ASTCtx).run(TUD);
 }
 
 } // namespace autocheck

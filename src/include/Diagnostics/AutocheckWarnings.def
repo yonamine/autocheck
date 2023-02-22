@@ -143,5 +143,62 @@ DIAG(switchStmtDefaultClause, "switch-stmt-default-clause",
      "The final clause of a switch statement shall be the default-clause",
      "M6-4-6")
 DIAG(doWhileUsed, "do-while-used", "Do statements should not be used", "A6-5-3")
+DIAG(derivedFromVirtual, "derived-from-virtual",
+     "Classes should not be derived from virtual bases", "M10-1-1")
+DIAG(virtualFuncSpecifier, "virtual-func-specifier",
+     "Virtual function declaration shall contain exactly one of the three "
+     "specifiers: (1) virtual, (2) override, (3) final",
+     "A10-3-1")
+DIAG(overrideFuncSpecifier, "override-func-specifier",
+     "Each overriding virtual function shall be declared with the override or "
+     "final specifier",
+     "A10-3-2")
+DIAG(virtualMethodFinalClass, "virtual-method-final-class",
+     "Virtual functions shall not be introduced in a final class", "A10-3-3")
+DIAG(pureFuncOverride, "pure-func-override",
+     "A virtual function shall only be overridden by a pure virtual function "
+     "if it is itself declared as pure virtual",
+     "M10-3-3")
+DIAG(memberDataPrivate, "member-data-private",
+     "Member data in non-POD class types shall be private", "M11-0-1")
+DIAG(nonPodAsClass, "non-pod-as-class",
+     "A non-POD type should be defined as class", "A11-0-1")
+DIAG(explicitCtors, "explicit-ctors",
+     "All constructors that are callable with a single argument of fundamental "
+     "type shall be declared explicit",
+     "A12-1-4")
+DIAG(finalClassDestructor, "final-class-destructor",
+     "If a public destructor of a class is non-virtual, then the class should "
+     "be declared final",
+     "A12-4-2")
+DIAG(relOpBoolValue, "rel-op-bool-value",
+     "A relational operator shall return a boolean value", "A13-2-3")
+DIAG(implicitConversionOp, "implicit-conversion-op",
+     "All user-defined conversion operators shall be defined explicit",
+     "A13-5-2")
+DIAG(conversionOpUsed, "conversion-op-used",
+     "User-defined conversion operators should not be used", "A13-5-3")
+DIAG(subscriptOpOverload, "subscript-op-overload",
+     "If \"operator[]\" is to be overloaded with a non-const version, const "
+     "version shall also be implemented",
+     "A13-5-1")
+DIAG(unusedFunctionOrMethod, "unused-function-or-method",
+     "Every function defined in an anonymous namespace, or static function "
+     "with internal linkage, or private member function shall be used",
+     "A0-1-3")
+DIAG(nonConstReturnedFromConst, "non-const-returned-from-const",
+     "Const member functions shall not return non-const pointers or references "
+     "to class-data",
+     "M9-3-1")
+DIAG(swapNotInCopyAndMoveAssignment, "swap-not-in-copy-and-move-assignment",
+     "User-defined copy and move assignment operators should use user-defined "
+     "no-throw swap function",
+     "A12-8-2")
+DIAG(unionsUsed, "unions-used", "Unions shall not be used", "A9-5-1")
+DIAG(changedDefaultArguments, "changed-default-arguments",
+     "Parameters in an overriding virtual function shall either use the same "
+     "default arguments as the function they override, or else shall not "
+     "specify any default arguments",
+     "M8-3-1")
 
 #undef DIAG

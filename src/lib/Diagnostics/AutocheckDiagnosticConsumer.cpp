@@ -13,6 +13,7 @@
 
 #include "Diagnostics/AutocheckDiagnostic.h"
 #include "clang/Basic/DiagnosticLex.h"
+#include "clang/Basic/DiagnosticSema.h"
 
 namespace autocheck {
 
@@ -65,6 +66,9 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
   case clang::diag::ext_pp_redef_builtin_macro:
   case clang::diag::ext_pp_undef_builtin_macro:
     EmitDiag(AutocheckWarnings::reservedIdentifiers, Info.getLocation());
+    return;
+  case clang::diag::warn_unused_function:
+    EmitDiag(AutocheckWarnings::unusedFunctionOrMethod, Info.getLocation());
     return;
   }
 

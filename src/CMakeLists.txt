@@ -20,8 +20,10 @@ add_clang_executable(autocheck
     "lib/Lex/AutocheckPPCallbacks.cpp"
     "lib/Lex/CharHelper.cpp"
     "lib/Lex/LiteralHelper.cpp"
+    "lib/AST/ASTHelper.cpp"
     "lib/AST/LexicalRulesVisitor.cpp"
     "lib/AST/StatementsVisitor.cpp"
+    "lib/AST/ClassesVisitor.cpp"
 )
 clang_target_link_libraries(autocheck
     PRIVATE

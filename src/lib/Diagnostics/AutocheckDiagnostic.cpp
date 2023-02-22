@@ -38,6 +38,7 @@ WarningRepeatChecker::WarningRepeatChecker() {
       {AutocheckWarnings::hexConstUpperCase, -1},
       {AutocheckWarnings::similarIdentifiers, -1},
       {AutocheckWarnings::fixedWidthIntegerTypes, -1},
+      {AutocheckWarnings::memberDataPrivate, -1},
   });
 }
 
