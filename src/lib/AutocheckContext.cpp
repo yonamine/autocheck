@@ -18,6 +18,7 @@ namespace autocheck {
 const std::unordered_map<std::string, AutocheckWarnings>
     AutocheckContext::WarningMap{
 #define DIAG(ENUM, FLAG, MESSAGE, RULE) {FLAG, AutocheckWarnings::ENUM},
+#define NOTE(ENUM, MESSAGE)
 #include "Diagnostics/AutocheckWarnings.def"
     };
 

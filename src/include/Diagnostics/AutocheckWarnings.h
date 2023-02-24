@@ -17,6 +17,7 @@ namespace autocheck {
 
 enum class AutocheckWarnings {
 #define DIAG(ENUM, FLAG, MESSAGE, RULE) ENUM,
+#define NOTE(ENUM, MESSAGE) ENUM,
 #include "Diagnostics/AutocheckWarnings.def"
 };
 

@@ -8,13 +8,19 @@
 // This file contains all data regarding autocheck diagnostics wrapped as macros
 // to be used in other files.
 //
-// Signature of the macro is:
-// DIAG(ENUM, FLAG, MESSAGE, RULE)
+// There are two types of diagnostics: Warnings and Notes. Signatures of the
+// macros are:
+//   DIAG(ENUM, FLAG, MESSAGE, RULE)
+//   NOTE(ENUM, MESSAGE)
 //
 //===----------------------------------------------------------------------===//
 
 #ifndef DIAG
 #error "DIAG macro not defined"
+#endif
+
+#ifndef NOTE
+#define NOTE
 #endif
 
 DIAG(hashhashOpUsed, "hash-hash-op-used",
@@ -202,3 +208,4 @@ DIAG(changedDefaultArguments, "changed-default-arguments",
      "M8-3-1")
 
 #undef DIAG
+#undef NOTE
