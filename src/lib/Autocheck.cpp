@@ -85,6 +85,8 @@ getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
     }
     if (Context.isEnabled(autocheck::AutocheckWarnings::unusedFunctionOrMethod))
       WarningsToEnable.push_back("-Wunused-function");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::unusedTypedef))
+      WarningsToEnable.push_back("-Wunused-local-typedef");
 
     if (!WarningsToEnable.empty())
       AdjustedArgs.insert(llvm::find(AdjustedArgs, "--"),

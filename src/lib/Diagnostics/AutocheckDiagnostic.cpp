@@ -48,6 +48,12 @@ WarningRepeatChecker::WarningRepeatChecker() {
       {AutocheckWarnings::similarIdentifiers, -1},
       {AutocheckWarnings::fixedWidthIntegerTypes, -1},
       {AutocheckWarnings::memberDataPrivate, -1},
+      {AutocheckWarnings::nonBracedInit, -1},
+      {AutocheckWarnings::functionRedeclParams, -1},
+      {AutocheckWarnings::broadScopeIdentifier, -1},
+      {AutocheckWarnings::constUnusedForImmutableData, -1},
+      {AutocheckWarnings::cvQualifiersPlacedLeft, -1},
+      {AutocheckWarnings::inParamPassedByValue, -1},
   });
 }
 
