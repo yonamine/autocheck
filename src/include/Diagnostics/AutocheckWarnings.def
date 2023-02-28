@@ -290,6 +290,49 @@ DIAG(cStyleStringUsed, "c-style-string-used",
      "C-style strings shall not be used", "A17-0-4")
 DIAG(lambdaDecltypeTypeid, "lambda-decltype-typeid",
      "A lambda shall not be an operand to decltype or typeid", "A5-7-1")
+DIAG(implicitlyCapturedVar, "implicitly-captured-var",
+     "Variables shall not be implicitly captured in a lambda expression",
+     "A5-1-2")
+DIAG(incDecOpMixed, "inc-dec-operator-mixed",
+     "The increment (++) and decrement (--) operators shall not be mixed with "
+     "other operators in an expression",
+     "M5-2-10")
+DIAG(ternaryOpSubExpr, "ternary-op-sub-expr",
+     "The ternary conditional operator shall not be used as a sub-expression",
+     "A5-16-1")
+DIAG(assignmentOpSubExpr, "assignment-op-sub-expr",
+     "Assignment operators shall not be used in sub-expressions", "M6-2-1")
+DIAG(
+    nestedLambda, "nested-lambda",
+    "Lambda expressions should not be defined inside another lambda expression",
+    "A5-1-8")
+DIAG(lambdaReturnTypeUnspecified, "lambda-return-type-unspecified",
+     "Return type of a non-void return type lambda expression should be "
+     "explicitly specified",
+     "A5-1-6")
+DIAG(stdMoveUsedConst, "std-move-used-const",
+     "The std::move shall not be used on objects declared const or const&",
+     "A18-9-3")
+DIAG(characterHandlingFunctions, "character-handling-functions",
+     "Arguments to character-handling functions shall be representable as an "
+     "unsigned char",
+     "A21-8-1")
+DIAG(cstdlibMemfuncUsed, "cstdlib-memfunc-used",
+     "Functions malloc, calloc, realloc and free shall not be used", "A18-5-1")
+DIAG(cstdlibFuncUsed, "cstdlib-func-used",
+     "The library functions abort, exit, getenv and system from library "
+     "<cstdlib> shall not be used",
+     "M18-0-3")
+DIAG(cstringFuncUsed, "cstring-func-used",
+     "The unbounded functions of library <cstring> shall not be used",
+     "M18-0-5")
+DIAG(stdBindUsed, "std-bind-used", "The std::bind shall not be used", "A18-9-1")
+DIAG(stdRandUsed, "std-rand-used",
+     "Pseudorandom numbers shall not be generated using std::rand()", "A26-5-1")
+DIAG(implicitBitwiseBinopConversion, "implicit-bitwise-binop-conversion",
+     "Non-constant operands to a binary bitwise operator shall have the same "
+     "underlying type",
+     "M5-0-20")
 
 #undef DIAG
 #undef NOTE

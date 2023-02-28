@@ -54,6 +54,9 @@ WarningRepeatChecker::WarningRepeatChecker() {
       {AutocheckWarnings::constUnusedForImmutableData, -1},
       {AutocheckWarnings::cvQualifiersPlacedLeft, -1},
       {AutocheckWarnings::inParamPassedByValue, -1},
+      {AutocheckWarnings::ternaryOpSubExpr, -1},
+      {AutocheckWarnings::implicitBitwiseBinopConversion, -1},
+      {AutocheckWarnings::incDecOpMixed, -1},
   });
 }
 
