@@ -17,6 +17,7 @@
 #include "AST/ExpressionsVisitor.h"
 #include "AST/LexicalRulesVisitor.h"
 #include "AST/StatementsVisitor.h"
+#include "AST/TypesVisitor.h"
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
 #include "Lex/AutocheckLex.h"
 #include "clang/Basic/SourceManager.h"
@@ -49,6 +50,7 @@ static void runVisitors(clang::ASTContext &ASTCtx,
   DeclarationsVisitor(DE, ASTCtx, SemaRef).run(TUD);
   ExpressionsVisitor(DE, ASTCtx).run(TUD);
   ConversionsVisitor(DE, ASTCtx).run(TUD);
+  TypesVisitor(DE, ASTCtx).run(TUD);
 }
 
 void AutocheckAction::ExecuteAction() {
