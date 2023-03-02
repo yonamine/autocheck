@@ -423,6 +423,15 @@ DIAG(loopCounterIllModified, "loop-counter-ill-modified",
      "The loop-counter shall be modified by one of: --, ++, -= n, or += n; "
      "where n remains constant for the duration of the loop",
      "M6-5-4")
+DIAG(headersUnused, "headers-unused",
+     "There shall be no unused include directives: %0", "A16-2-2")
+DIAG(headersUnusedSystemOff, "headers-unused-system-off",
+     "There shall be no unused include directives: %0", "A16-2-2")
+DIAG(headersUnusedSystemSmart, "headers-unused-system-smart",
+     "There shall be no unused include directives: %0", "A16-2-2")
+NOTE(noteHeadersUnusedIncluded, "Already included by header: %0")
+NOTE(noteHeadersUnusedUsed,
+     "But one or more of it's own #include directives is used")
 
 #undef DIAG
 #undef NOTE

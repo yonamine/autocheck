@@ -11,6 +11,7 @@
 
 #include "Lex/AutocheckPPCallbacks.h"
 
+#include "AST/HeadersVisitor.h"
 #include "Diagnostics/AutocheckDiagnostic.h"
 #include "clang/Basic/IdentifierTable.h"
 #include "clang/Basic/SourceManager.h"
@@ -127,6 +128,29 @@ void AutocheckPPCallbacks::InclusionDirective(
       AutocheckDiagnostic::reportWarning(DE, HashLoc,
                                          AutocheckWarnings::localeHeaderUsed);
   }
+
+  // [A16-2-2] There shall be no unused include directives.
+  // Collect information about included headers. This is used by HeadersVisitor
+  // to check rule compliance.
+  if (HeadersUnusedVisitor::isFlagPresent(Context)) {
+    // Check if this is top level #include.
+    if (SM.isInMainFile(HashLoc)) {
+      IF.TookSystemHeader = IsAngled;
+      if (IF.TookSystemHeader) {
+        // Skip system header if option for ignoring them is used.
+        if (Context.isEnabled(AutocheckWarnings::headersUnusedSystemOff))
+          return;
+        IF.SystemHeaderName = FullFileName;
+        IF.SystemHeaderLoc = HashLoc;
+      }
+      IncludeData.Includes.insert(std::make_pair(FullFileName, HashLoc));
+    } else if (!Context.isEnabled(AutocheckWarnings::headersUnusedSystemOff) &&
+               IF.TookSystemHeader && IsAngled) {
+      IncludeData.SubSystemHeaderIncludes.insert(
+          std::make_pair(FullFileName, std::make_pair(IF.SystemHeaderName,
+                                                      IF.SystemHeaderLoc)));
+    }
+  }
 }
 
 void AutocheckPPCallbacks::PragmaDirective(
@@ -194,6 +218,20 @@ void AutocheckPPCallbacks::MacroExpands(const clang::Token &MacroNameTok,
       AutocheckDiagnostic::reportWarning(DE, MacroLoc,
                                          AutocheckWarnings::setjmpLongjmpUsed);
     }
+  }
+
+  // [A16-2-2] There shall be no unused include directives.
+  // Collect information about included headers. This is used by HeadersVisitor
+  // to check rule compliance.
+  if (SM.isInMainFile(MacroLoc) &&
+      HeadersUnusedVisitor::isFlagPresent(Context)) {
+    const clang::SourceLocation DefLoc = MD.getMacroInfo()->getDefinitionLoc();
+    const llvm::StringRef FullHeaderName = SM.getFilename(DefLoc);
+
+    // Find used macros and add their definition location to the list of used
+    // includes.
+    if (IncludeData.Includes.find(FullHeaderName) != IncludeData.Includes.end())
+      IncludeData.IncludesUsedByMacros.insert(FullHeaderName);
   }
 
   // [A6-5-3] Do statements should not be used.

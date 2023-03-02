@@ -15,6 +15,7 @@
 #include "AST/ConversionsVisitor.h"
 #include "AST/DeclarationsVisitor.h"
 #include "AST/ExpressionsVisitor.h"
+#include "AST/HeadersVisitor.h"
 #include "AST/LexicalRulesVisitor.h"
 #include "AST/LoopsVisitor.h"
 #include "AST/StatementsVisitor.h"
@@ -40,8 +41,7 @@ bool AutocheckAction::BeginInvocation(clang::CompilerInstance &CI) {
 }
 
 static void runVisitors(clang::ASTContext &ASTCtx,
-                        const AutocheckPPCallbacks &Callbacks,
-                        clang::Sema &SemaRef) {
+                        AutocheckPPCallbacks &Callbacks, clang::Sema &SemaRef) {
   clang::DiagnosticsEngine &DE = ASTCtx.getDiagnostics();
   clang::TranslationUnitDecl *TUD = ASTCtx.getTranslationUnitDecl();
 
@@ -53,6 +53,7 @@ static void runVisitors(clang::ASTContext &ASTCtx,
   ConversionsVisitor(DE, ASTCtx).run(TUD);
   TypesVisitor(DE, ASTCtx).run(TUD);
   ForLoopVisitor(DE, ASTCtx).run(TUD);
+  HeadersVisitor(DE, Callbacks).run(TUD);
 }
 
 void AutocheckAction::ExecuteAction() {
