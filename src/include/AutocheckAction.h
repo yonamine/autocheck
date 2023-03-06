@@ -29,8 +29,6 @@ public:
 protected:
   bool BeginInvocation(clang::CompilerInstance &CI) override;
 
-  bool BeginSourceFileAction(clang::CompilerInstance &CI) override;
-
   void ExecuteAction() override;
 
   std::unique_ptr<clang::ASTConsumer>
@@ -45,12 +43,7 @@ private:
 // This class performs all Autosar rule checks on the generated AST.
 class AutocheckASTConsumer : public clang::ASTConsumer {
 public:
-  AutocheckASTConsumer(const AutocheckPPCallbacks &PPCallbacks);
-
   void HandleTranslationUnit(clang::ASTContext &Context) override;
-
-private:
-  const AutocheckPPCallbacks &PPCallbacks;
 };
 
 } // namespace autocheck

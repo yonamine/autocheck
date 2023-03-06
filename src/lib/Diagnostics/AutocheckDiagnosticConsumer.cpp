@@ -70,6 +70,9 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
   case clang::diag::warn_unused_function:
     EmitDiag(AutocheckWarnings::unusedFunctionOrMethod, Info.getLocation());
     return;
+  case clang::diag::warn_unused_local_typedef:
+    EmitDiag(AutocheckWarnings::unusedTypedef, Info.getLocation());
+    return;
   }
 
   Client->HandleDiagnostic(DiagLevel, Info);

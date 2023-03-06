@@ -109,14 +109,6 @@ public:
 
   ~AutocheckDiagnosticBuilder();
 
-  template <typename T>
-  friend const AutocheckDiagnosticBuilder &
-  operator<<(const AutocheckDiagnosticBuilder &Diag, const T &Value) {
-    const DiagnosticBuilder &BaseDiag = Diag;
-    BaseDiag << Value;
-    return Diag;
-  }
-
 private:
   const clang::SourceLocation &Loc;
   clang::DiagnosticsEngine &DE;

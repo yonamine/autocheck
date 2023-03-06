@@ -19,10 +19,19 @@
 
 namespace autocheck {
 
+// Storage class for diagnostics information.
+struct DiagnosticInfo {
+  const char *Message;
+  const char *Rule;
+  clang::DiagnosticIDs::Level Level;
+};
+
 // List of warning messages and rule ids indexed by AutocheckWarnings enum
 // value.
-const std::pair<const char *, const char *> DiagnosticMessages[]{
-#define DIAG(ENUM, FLAG, MESSAGE, RULE) {MESSAGE, RULE},
+const DiagnosticInfo DiagnosticMessages[]{
+#define DIAG(ENUM, FLAG, MESSAGE, RULE)                                 \
+  {MESSAGE, RULE, clang::DiagnosticIDs::Level::Warning},
+#define NOTE(ENUM, MESSAGE) {MESSAGE, "", clang::DiagnosticIDs::Level::Note},
 #include "Diagnostics/AutocheckWarnings.def"
 };
 
@@ -39,6 +48,12 @@ WarningRepeatChecker::WarningRepeatChecker() {
       {AutocheckWarnings::similarIdentifiers, -1},
       {AutocheckWarnings::fixedWidthIntegerTypes, -1},
       {AutocheckWarnings::memberDataPrivate, -1},
+      {AutocheckWarnings::nonBracedInit, -1},
+      {AutocheckWarnings::functionRedeclParams, -1},
+      {AutocheckWarnings::broadScopeIdentifier, -1},
+      {AutocheckWarnings::constUnusedForImmutableData, -1},
+      {AutocheckWarnings::cvQualifiersPlacedLeft, -1},
+      {AutocheckWarnings::inParamPassedByValue, -1},
   });
 }
 
@@ -53,8 +68,9 @@ WarningRepeatChecker::updateLineNumber(clang::DiagnosticsEngine &DE,
   clang::SourceManager &SM = DE.getSourceManager();
   LineNumbers DiagLineNumbers;
   DiagLineNumbers.Previous = PreviousLineNumbers[Warning];
-  DiagLineNumbers.Current = SM.getExpansionLoc(Loc).getRawEncoding() -
-                        SM.getExpansionColumnNumber(SM.getExpansionLoc(Loc));
+  DiagLineNumbers.Current =
+      SM.getExpansionLoc(Loc).getRawEncoding() -
+      SM.getExpansionColumnNumber(SM.getExpansionLoc(Loc));
 
   PreviousLineNumbers[Warning] = DiagLineNumbers.Current;
 
@@ -175,12 +191,14 @@ AutocheckDiagnosticBuilder
 AutocheckDiagnostic::Diag(clang::DiagnosticsEngine &DE,
                           const clang::SourceLocation &Loc,
                           AutocheckWarnings Warning) {
-  int WarningID = static_cast<int>(Warning);
-  std::stringstream WarningMessage;
-  WarningMessage << DiagnosticMessages[WarningID].first << " ["
-                 << DiagnosticMessages[WarningID].second << "]";
-  unsigned ID = DE.getDiagnosticIDs()->getCustomDiagID(
-      clang::DiagnosticIDs::Level::Warning, WarningMessage.str());
+  int DiagID = static_cast<int>(Warning);
+  const DiagnosticInfo &DiagInfo = DiagnosticMessages[DiagID];
+  std::stringstream DiagMessage;
+  DiagMessage << DiagInfo.Message;
+  if (DiagInfo.Level == clang::DiagnosticIDs::Level::Warning)
+    DiagMessage << " [" << DiagInfo.Rule << "]";
+  unsigned ID =
+      DE.getDiagnosticIDs()->getCustomDiagID(DiagInfo.Level, DiagMessage.str());
 
   clang::DiagnosticBuilder DB = DE.Report(Loc, ID);
   return AutocheckDiagnosticBuilder(DB, DE, Loc, Warning);

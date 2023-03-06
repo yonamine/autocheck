@@ -12,6 +12,7 @@
 #include "AutocheckAction.h"
 
 #include "AST/ClassesVisitor.h"
+#include "AST/DeclarationsVisitor.h"
 #include "AST/LexicalRulesVisitor.h"
 #include "AST/StatementsVisitor.h"
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
@@ -34,13 +35,16 @@ bool AutocheckAction::BeginInvocation(clang::CompilerInstance &CI) {
   return true;
 }
 
-bool AutocheckAction::BeginSourceFileAction(clang::CompilerInstance &CI) {
-  // Set up preprocessor callbacks. This is done before ExecuteAction so
-  // AutocheckASTConsumer can have access to it.
-  auto Callbacks = std::make_unique<AutocheckPPCallbacks>(CI.getDiagnostics());
-  PPCallbacks = Callbacks.get();
-  CI.getPreprocessor().addPPCallbacks(std::move(Callbacks));
-  return true;
+static void runVisitors(clang::ASTContext &ASTCtx,
+                        const AutocheckPPCallbacks &Callbacks,
+                        clang::Sema &SemaRef) {
+  clang::DiagnosticsEngine &DE = ASTCtx.getDiagnostics();
+  clang::TranslationUnitDecl *TUD = ASTCtx.getTranslationUnitDecl();
+
+  LexicalRulesVisitor(DE, ASTCtx).run(TUD);
+  StatementsVisitor(DE, ASTCtx, Callbacks).run(TUD);
+  ClassesVisitor(DE, ASTCtx).run(TUD);
+  DeclarationsVisitor(DE, ASTCtx, SemaRef).run(TUD);
 }
 
 void AutocheckAction::ExecuteAction() {
@@ -60,30 +64,31 @@ void AutocheckAction::ExecuteAction() {
   AutocheckLex LexerChecks(getCompilerInstance());
   LexerChecks.Run();
 
+  // Set up preprocessor callbacks.
+  auto Callbacks = std::make_unique<AutocheckPPCallbacks>(CI.getDiagnostics());
+  PPCallbacks = Callbacks.get();
+  CI.getPreprocessor().addPPCallbacks(std::move(Callbacks));
+
   if (!CI.hasSema())
     CI.createSema(getTranslationUnitKind(), /*CodeCompleteConsumer*/ nullptr);
 
   clang::ParseAST(CI.getSema(), CI.getFrontendOpts().ShowStats,
                   CI.getFrontendOpts().SkipFunctionBodies);
+
+  runVisitors(CI.getASTContext(), *PPCallbacks, CI.getSema());
 }
 
 std::unique_ptr<clang::ASTConsumer>
 AutocheckAction::CreateASTConsumer(clang::CompilerInstance &CI,
                                    llvm::StringRef InFile) {
-  return std::make_unique<AutocheckASTConsumer>(*PPCallbacks);
+  return std::make_unique<AutocheckASTConsumer>();
 }
 
-AutocheckASTConsumer::AutocheckASTConsumer(
-    const AutocheckPPCallbacks &PPCallbacks)
-    : PPCallbacks(PPCallbacks) {}
-
 void AutocheckASTConsumer::HandleTranslationUnit(clang::ASTContext &ASTCtx) {
-  clang::DiagnosticsEngine &DE = ASTCtx.getDiagnostics();
-  clang::TranslationUnitDecl *TUD = ASTCtx.getTranslationUnitDecl();
-
-  LexicalRulesVisitor(DE, ASTCtx).run(TUD);
-  StatementsVisitor(DE, ASTCtx, PPCallbacks).run(TUD);
-  ClassesVisitor(DE, ASTCtx).run(TUD);
+  // NO-OP
+  // All checks are performed in AutocheckAction::ExecuteAction after ParseAST
+  // because the visitors require references to AutocheckPPCallbacks and Sema
+  // which are not available at the time of creating this consumer.
 }
 
 } // namespace autocheck

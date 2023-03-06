@@ -1,3 +1,15 @@
+//===--- StatementsVisitor.cpp - Visitor for statement related checks -----===//
+//
+// Part of the Autocheck Project, under the Apache License v2.0 with Syrmia
+// Exceptions. See LICENSE for details.
+//
+//===----------------------------------------------------------------------===//
+//
+// This file implements the StatementsVisitor class and all classes derived from
+// StatementsVisitorInterface.
+//
+//===----------------------------------------------------------------------===//
+
 #include "AST/StatementsVisitor.h"
 
 #include "AutocheckContext.h"

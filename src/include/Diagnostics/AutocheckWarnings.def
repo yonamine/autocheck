@@ -8,13 +8,19 @@
 // This file contains all data regarding autocheck diagnostics wrapped as macros
 // to be used in other files.
 //
-// Signature of the macro is:
-// DIAG(ENUM, FLAG, MESSAGE, RULE)
+// There are two types of diagnostics: Warnings and Notes. Signatures of the
+// macros are:
+//   DIAG(ENUM, FLAG, MESSAGE, RULE)
+//   NOTE(ENUM, MESSAGE)
 //
 //===----------------------------------------------------------------------===//
 
 #ifndef DIAG
 #error "DIAG macro not defined"
+#endif
+
+#ifndef NOTE
+#define NOTE
 #endif
 
 DIAG(hashhashOpUsed, "hash-hash-op-used",
@@ -200,5 +206,90 @@ DIAG(changedDefaultArguments, "changed-default-arguments",
      "default arguments as the function they override, or else shall not "
      "specify any default arguments",
      "M8-3-1")
+DIAG(asmDeclarationUsed, "asm-declaration-used",
+     "The asm declaration shall not be used", "A7-4-1")
+DIAG(variadicFunctionUsed, "variadic-function-used",
+     "Functions shall not be defined using the ellipsis notation", "A8-4-1")
+DIAG(functionRedeclParams, "function-redecl-params",
+     "The identifiers used for the parameters in a re-declaration of a "
+     "function shall be identical to those in the declaration",
+     "M8-4-2")
+DIAG(inParamPassedByValue, "in-param-passed-by-value",
+     "\"in\" parameters for \"cheap to copy\" types shall be passed by value",
+     "A8-4-7")
+NOTE(noteInParamPassedByValue, "Template is instantiated with type %0 here")
+DIAG(autoVarBracedInit, "auto-var-braced-init",
+     "A variable of type auto shall not be initialized using {} or ={} "
+     "braced-initialization",
+     "A8-5-3")
+DIAG(nonBracedInit, "non-braced-init-used",
+     "Braced-initialization {}, without equals sign, shall be used for "
+     "variable initialization",
+     "A8-5-2")
+DIAG(unusedTypedef, "unused-typedef",
+     "There should be no unused type declarations", "A0-1-6")
+DIAG(cvQualifiersPlacedLeft, "cv-qualifiers-placed-left",
+     "CV-qualifiers shall be placed on the right hand side of the type that is "
+     "a typedef or a using name",
+     "A7-1-3")
+DIAG(assignmentOperatorReturnType, "assignment-operator-return-type",
+     "An assignment operator shall return a reference to \"this\"", "A13-2-1")
+DIAG(constUnusedForImmutableData, "const-unused-for-immutable-data",
+     "Constexpr or const specifiers shall be used for immutable data "
+     "declaration",
+     "A7-1-1")
+DIAG(nsdmiAndCtorInitUsed, "nsdmi-and-ctor-init-used",
+     "Both NSDMI and a non-static member initializer in a constructor shall "
+     "not be used in the same type",
+     "A12-1-2")
+NOTE(notePreviousMemberInitialization,
+     "Member already initialized by NSDMI here")
+DIAG(broadScopeIdentifier, "broad-scope-identifier",
+     "An identifier declared to be an object or type shall be defined in a "
+     "block that minimizes its visibility",
+     "M3-4-1")
+DIAG(missingBracesOrElements, "missing-braces-or-elements",
+     "Braces shall be used to indicate and match the structure in the non-zero "
+     "initialization of arrays and structures",
+     "M8-5-2")
+DIAG(constantInitializer, "constant-initializer",
+     "Static and thread-local objects shall be constant-initialized", "A3-3-2")
+DIAG(randomEngineDefaultInitialized, "random-engine-default-initialized",
+     "Random number engines shall not be default-initialized", "A26-5-2")
+NOTE(noteUnsafeSeed,
+     "Random engines should exclusively be initialized using values produced "
+     "directly via random_device from <random> header")
+DIAG(pointerIndirectionLevels, "pointer-indirection-levels",
+     "The declaration of objects shall contain no more than two levels of "
+     "pointer indirection",
+     "A5-0-3")
+DIAG(throwInNoexceptFunc, "throw-in-noexcept-func",
+     "If a function is declared to be noexcept, noexcept(true) or "
+     "noexcept(<true condition>), then it shall not exit with an exception",
+     "A15-4-2")
+NOTE(noteThrowInNoexceptFunc,
+     "%select{%1 has a non-throwing exception specification but can still "
+     "throw | Cannot call not noexcept function from the noexcept function "
+     "call not noexcept function from the noexcept function}0")
+DIAG(ctorsDtorsDeallocMoveSwapNoexcept,
+     "ctors-dtors-deallocation-move-swap-noexcept",
+     "All user-provided class destructors, deallocation functions, move "
+     "constructors, move assignment operators and swap functions shall not "
+     "exit with an exception. A noexcept exception specification shall be "
+     "added to these functions as appropriate",
+     "A15-5-1")
+DIAG(mismatchedNewDelete, "mismatched-new-delete",
+     "The form of delete operator shall match the form of new operator used to "
+     "allocate the memory",
+     "A18-5-3")
+NOTE(noteMismatchedNewDelete,
+     "'%select{delete|new}0%select{|[]}1' applied to a pointer that was "
+     "allocated with 'new%select{[]|}1'; %select{did you mean "
+     "'delete%select{[]|}1'?|possible problem with delete operator}0")
+DIAG(cStyleStringUsed, "c-style-string-used",
+     "C-style strings shall not be used", "A17-0-4")
+DIAG(lambdaDecltypeTypeid, "lambda-decltype-typeid",
+     "A lambda shall not be an operand to decltype or typeid", "A5-7-1")
 
 #undef DIAG
+#undef NOTE
