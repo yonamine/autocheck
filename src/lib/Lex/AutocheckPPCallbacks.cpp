@@ -188,8 +188,8 @@ void AutocheckPPCallbacks::MacroExpands(const clang::Token &MacroNameTok,
                                          AutocheckWarnings::offsetofUsed);
     }
     // [M17-0-5] The setjmp macro and the longjmp function shall not be used.
-    // This checks only for the setjmp macro.
-    // TODO: Reference where the longjmp check is implemented.
+    // This checks only for the setjmp macro. The longjump function check is
+    // implemented in ExpressionsVisitor.cpp in StdFunctionUsed class.
     if (checkSetjmpUsed(Context, HeaderName, MacroName)) {
       AutocheckDiagnostic::reportWarning(DE, MacroLoc,
                                          AutocheckWarnings::setjmpLongjmpUsed);
