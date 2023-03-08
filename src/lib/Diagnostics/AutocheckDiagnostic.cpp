@@ -57,6 +57,13 @@ WarningRepeatChecker::WarningRepeatChecker() {
       {AutocheckWarnings::ternaryOpSubExpr, -1},
       {AutocheckWarnings::implicitBitwiseBinopConversion, -1},
       {AutocheckWarnings::incDecOpMixed, -1},
+      {AutocheckWarnings::invalidCharExpression, -1},
+      {AutocheckWarnings::invalidEnumExpression, -1},
+      {AutocheckWarnings::implicitFloatIntegralConversion, -1},
+      {AutocheckWarnings::zeroToNullPointer, -1},
+      {AutocheckWarnings::arrayDecaysToPointer, -1},
+      {AutocheckWarnings::nullptrOnlyNullPtrConst, -1},
+      {AutocheckWarnings::implicitSizeReductionConversion, -1},
   });
 }
 

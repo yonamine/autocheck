@@ -333,6 +333,49 @@ DIAG(implicitBitwiseBinopConversion, "implicit-bitwise-binop-conversion",
      "Non-constant operands to a binary bitwise operator shall have the same "
      "underlying type",
      "M5-0-20")
+DIAG(invalidBoolExpression, "invalid-bool-expression",
+     "Expressions with type bool shall not be used as operands to built-in "
+     "operators other than the assignment operator = , the logical operators "
+     "&& , || , ! , the equality operators == and != , the unary & operator, "
+     "and the conditional operator",
+     "M4-5-1")
+DIAG(invalidEnumExpression, "invalid-enum-expression",
+     "Expressions with type enum or enum class shall not be used as operands "
+     "to built-in and overloaded operators other than the subscript operator [ "
+     "], the assignment operator =, the equality operators == and !=, the "
+     "unary & operator, and the relational operators <, <=, >, >=",
+     "A4-5-1")
+DIAG(
+    invalidCharExpression, "invalid-char-expression",
+    "Expressions with type (plain) char and wchar_t shall not be used as "
+    "operands to built-in operators other than the assignment operator = , the "
+    "equality operators == and != , and the unary & operator",
+    "M4-5-3")
+DIAG(implicitFloatIntegralConversion, "implicit-float-integral-conversion",
+     "There shall be no implicit floating-integral conversions", "M5-0-5")
+DIAG(implicitSizeReductionConversion, "implicit-size-reduction-conversion",
+     "An implicit integral or floating-point conversion shall not reduce the "
+     "size of the underlying type",
+     "M5-0-6")
+DIAG(implicitBitwiseResultConversion, "implicit-bitwise-result-conversion",
+     "If the bitwise operators ~ and << are applied to an operand with an "
+     "underlying type of unsigned char or unsigned short, the result shall be "
+     "immediately cast to the underlying type of the operand",
+     "M5-0-10")
+DIAG(arrayDecaysToPointer, "array-decays-to-pointer",
+     "%select{An identifier with array type passed as a function argument "
+     "shall not decay to a pointer: '%1' -> '%2'|A function argument with "
+     "pointer type shall not be used as an array|An array of derived class "
+     "objects shall not decay to a base class pointer: '%1' -> '%2'}0",
+     "M5-2-12")
+DIAG(nullToIntegerValue, "null-to-integer-value",
+     "NULL shall not be used as an integer value", "M4-10-1")
+DIAG(zeroToNullPointer, "zero-to-null-pointer",
+     "Literal zero (0) shall not be used as the null-pointer-constant",
+     "M4-10-2")
+DIAG(nullptrOnlyNullPtrConst, "nullptr-only-null-ptr-const",
+     "Only nullptr literal shall be used as the null-pointer-constant",
+     "A4-10-1")
 
 #undef DIAG
 #undef NOTE
