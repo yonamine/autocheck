@@ -64,6 +64,8 @@ WarningRepeatChecker::WarningRepeatChecker() {
       {AutocheckWarnings::arrayDecaysToPointer, -1},
       {AutocheckWarnings::nullptrOnlyNullPtrConst, -1},
       {AutocheckWarnings::implicitSizeReductionConversion, -1},
+      {AutocheckWarnings::charStorage, -1},
+      {AutocheckWarnings::contiditionNotBool, -1},
   });
 }
 

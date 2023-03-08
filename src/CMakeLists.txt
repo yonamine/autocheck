@@ -27,6 +27,7 @@ add_clang_executable(autocheck
     "lib/AST/DeclarationsVisitor.cpp"
     "lib/AST/ExpressionsVisitor.cpp"
     "lib/AST/ConversionsVisitor.cpp"
+    "lib/AST/TypesVisitor.cpp"
 )
 clang_target_link_libraries(autocheck
     PRIVATE
