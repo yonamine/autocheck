@@ -388,6 +388,41 @@ DIAG(contiditionNotBool, "condition-not-bool",
      "The condition of an if-statement and the condition of an iteration "
      "statement shall have type bool",
      "A5-0-2")
+DIAG(singleLoopCounterFloatType, "single-loop-counter-float-type",
+     "A for loop shall contain a single loop-counter which shall not have "
+     "floating-point type",
+     "A6-5-2")
+DIAG(nonLoopCounterBool, "non-loop-counter-bool",
+     "A loop-control-variable other than the loop-counter which is modified in "
+     "statement shall have type bool",
+     "M6-5-6")
+DIAG(continueStmtWellFormedLoop, "continue-stmt-well-formed-loop",
+     "The continue statement shall only be used within a well-formed for loop",
+     "M6-6-3")
+DIAG(nonLoopCounterModified, "non-loop-counter-modified",
+     "A loop-control-variable other than the loop-counter shall not be "
+     "modified within condition or expression",
+     "M6-5-5")
+DIAG(loopCounterModified, "loop-counter-modified",
+     "The loop-counter shall not be modified within condition or statement",
+     "M6-5-3")
+DIAG(condExprIncDecLoop, "cond-expr-inc-dec-loop",
+     "If loop-counter is not modified by -- or ++, then, within condition, the "
+     "loop-counter shall only be used as an operand to <=, <, > or >=",
+     "M6-5-2")
+DIAG(initIncPartsLoopCounter, "init-inc-parts-loop-counter",
+     "For-init-statement and expression should not perform actions other than "
+     "loop-counter initialization and modification",
+     "A6-5-4")
+DIAG(
+    containerLoopIllFormed, "container-loop-ill-formed",
+    "A for-loop that does not use its loop-counter (in a way that prevents the "
+    "substitution of the loop with a range-based for-loop) shall not be used",
+    "A6-5-1")
+DIAG(loopCounterIllModified, "loop-counter-ill-modified",
+     "The loop-counter shall be modified by one of: --, ++, -= n, or += n; "
+     "where n remains constant for the duration of the loop",
+     "M6-5-4")
 
 #undef DIAG
 #undef NOTE
