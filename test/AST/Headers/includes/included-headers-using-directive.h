@@ -1,0 +1,1 @@
+namespace sub_namespace {}

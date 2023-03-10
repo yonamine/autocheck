@@ -41,13 +41,40 @@
 #include "clang/Lex/PPCallbacks.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/StringRef.h"
+#include <map>
 
 namespace autocheck {
+
+/// Information gathered about include directives.
+struct IncludeInfo {
+  // Map of absolute paths of found includes as well as SourceLocation of their
+  // #include directive in main file of compilation unit.
+  std::map<const llvm::StringRef, const clang::SourceLocation> Includes;
+  // Map of absolute paths of found includes that are used indirectly by other
+  // system headers. Each entry points to absolute path and location of top
+  // level include that uses it.
+  std::map<const llvm::StringRef,
+           std::pair<const llvm::StringRef, const clang::SourceLocation>>
+      SubSystemHeaderIncludes;
+  // Set of absoulte path filenames from include directive that have macros used
+  // by main file of compilation unit.
+  llvm::SmallSet<llvm::StringRef, 4> IncludesUsedByMacros;
+};
 
 class AutocheckPPCallbacks : public clang::PPCallbacks {
   AutocheckContext &Context;
   clang::DiagnosticsEngine &DE;
   const clang::SourceManager &SM;
+
+  IncludeInfo IncludeData; // All data gathered about #include directives
+
+  struct IncludeFlagsInfo {
+    bool TookSystemHeader = false; // Previous #include was system header.
+    llvm::StringRef
+        SystemHeaderName; // Absolute path of previous system header.
+    clang::SourceLocation
+        SystemHeaderLoc; // Location of previous system header.
+  } IF;
 
   // Locations of macros that expand into do {...} while (0)
   llvm::SmallSet<clang::SourceLocation, 0> DoWhileMacros;
@@ -82,6 +109,9 @@ public:
   void Defined(const clang::Token &MacroNameTok,
                const clang::MacroDefinition &MD,
                clang::SourceRange Range) override;
+
+  /// Returns all data about #include directives gathered by PPCallback.
+  IncludeInfo &getIncludeInfo() { return IncludeData; }
 
   /// Returns macros that expand into do {...} while (0)
   const llvm::SmallSet<clang::SourceLocation, 0> &getDoWhileMacros() const {

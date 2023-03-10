@@ -37,7 +37,7 @@ protected:
 
 private:
   AutocheckContext &Context;
-  const AutocheckPPCallbacks *PPCallbacks;
+  AutocheckPPCallbacks *PPCallbacks;
 };
 
 // This class performs all Autosar rule checks on the generated AST.
