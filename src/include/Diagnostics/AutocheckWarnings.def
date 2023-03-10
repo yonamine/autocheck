@@ -432,6 +432,14 @@ DIAG(headersUnusedSystemSmart, "headers-unused-system-smart",
 NOTE(noteHeadersUnusedIncluded, "Already included by header: %0")
 NOTE(noteHeadersUnusedUsed,
      "But one or more of it's own #include directives is used")
+DIAG(unusedReturnValue, "unused-return-value",
+     "The value returned by a function having a non-void return type that is "
+     "not an overloaded operator shall be used",
+     "A0-1-2")
+DIAG(selfAssignmentUnhandled, "self-assignment-unhandled",
+     "A copy assignment and a move assignment operators shall handle "
+     "self-assignment",
+     "A12-8-5")
 
 #undef DIAG
 #undef NOTE

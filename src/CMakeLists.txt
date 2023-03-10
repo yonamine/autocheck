@@ -30,6 +30,7 @@ add_clang_executable(autocheck
     "lib/AST/TypesVisitor.cpp"
     "lib/AST/LoopsVisitor.cpp"
     "lib/AST/HeadersVisitor.cpp"
+    "lib/AST/Matchers.cpp"
 )
 clang_target_link_libraries(autocheck
     PRIVATE

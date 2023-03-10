@@ -18,6 +18,7 @@
 #include "AST/HeadersVisitor.h"
 #include "AST/LexicalRulesVisitor.h"
 #include "AST/LoopsVisitor.h"
+#include "AST/Matchers.h"
 #include "AST/StatementsVisitor.h"
 #include "AST/TypesVisitor.h"
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
@@ -25,6 +26,7 @@
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Parse/ParseAST.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace autocheck {
@@ -56,6 +58,46 @@ static void runVisitors(clang::ASTContext &ASTCtx,
   HeadersVisitor(DE, Callbacks).run(TUD);
 }
 
+static void runMatchers(clang::ASTContext &ASTCtx) {
+  // Maximum capacity of AllCallbacks. Should be increased when a new matcher
+  // is added.
+  constexpr unsigned MatchNum = 2U;
+  // Track all callbacks since they are only created if necessary and so they
+  // can be properly destructed after the matchers are done.
+  llvm::SmallVector<clang::ast_matchers::MatchFinder::MatchCallback *, MatchNum>
+      AllCallbacks;
+
+  clang::ast_matchers::MatchFinder MF;
+  clang::DiagnosticsEngine &DE = ASTCtx.getDiagnostics();
+  AutocheckContext &Context = AutocheckContext::Get();
+
+  // Init all matchers.
+  if (UnusedReturnMatcher::isFlagPresent(Context)) {
+    UnusedReturnMatcher::Callback *Callback =
+        new UnusedReturnMatcher::Callback(DE);
+    MF.addMatcher(UnusedReturnMatcher::makeMatcher(), Callback);
+    AllCallbacks.push_back(Callback);
+  }
+
+  if (SelfAssignmentMatcher::isFlagPresent(Context)) {
+    SelfAssignmentMatcher::Callback *Callback =
+        new SelfAssignmentMatcher::Callback(DE);
+    MF.addMatcher(SelfAssignmentMatcher::makeMatcher(), Callback);
+    AllCallbacks.push_back(Callback);
+  }
+
+  assert(AllCallbacks.size() <= MatchNum &&
+         "Size should not exceed originaly set capacity of AllCallbacks\n");
+
+  // Run all matchers on AST.
+  if (!AllCallbacks.empty())
+    MF.matchAST(ASTCtx);
+
+  // Destroy all created callbacks.
+  for (clang::ast_matchers::MatchFinder::MatchCallback *Callback : AllCallbacks)
+    delete Callback;
+}
+
 void AutocheckAction::ExecuteAction() {
   clang::CompilerInstance &CI = getCompilerInstance();
   if (!CI.hasPreprocessor())
@@ -85,6 +127,7 @@ void AutocheckAction::ExecuteAction() {
                   CI.getFrontendOpts().SkipFunctionBodies);
 
   runVisitors(CI.getASTContext(), *PPCallbacks, CI.getSema());
+  runMatchers(CI.getASTContext());
 }
 
 std::unique_ptr<clang::ASTConsumer>
