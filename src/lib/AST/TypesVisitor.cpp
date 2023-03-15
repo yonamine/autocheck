@@ -28,6 +28,9 @@ bool TVI::VisitIfStmt(clang::IfStmt *) { return true; }
 bool TVI::VisitWhileStmt(clang::WhileStmt *) { return true; }
 bool TVI::VisitForStmt(clang::ForStmt *) { return true; }
 bool TVI::VisitDoStmt(clang::DoStmt *) { return true; }
+bool TVI::VisitTypeLoc(const clang::TypeLoc &) { return true; }
+bool TVI::VisitVarDecl(const clang::VarDecl *) { return true; }
+bool TVI::VisitCXXNewExpr(const clang::CXXNewExpr *) { return true; }
 
 /* Implementation of CharStorageVisitor */
 
@@ -148,6 +151,123 @@ void ConditionNotBoolVisitor::diagnoseCondition(clang::Expr *Condition) {
     ConditionSourceRange = Condition->getSourceRange();
 }
 
+/* Implementation of TypeWchartVisitor */
+
+TypeWchartVisitor::TypeWchartVisitor(clang::DiagnosticsEngine &DE,
+                                     clang::ASTContext &AC)
+    : DE(DE), AC(AC) {}
+
+bool TypeWchartVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::typeWchartUsed);
+}
+
+bool TypeWchartVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
+  if (TL.getType()->isWideCharType() &&
+      TL.getType().getDesugaredType(AC).getAsString() == "wchar_t") {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, TL.getBeginLoc(), AutocheckWarnings::typeWchartUsed)
+                .limitReached();
+  }
+  return true;
+}
+
+/* Implementation of CStyleArrayVisitor */
+
+CStyleArrayVisitor::CStyleArrayVisitor(clang::DiagnosticsEngine &DE,
+                                       clang::ASTContext &AC)
+    : DE(DE), AC(AC), IgnoredTypeLoc() {}
+
+bool CStyleArrayVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::cStyleArrayUsed);
+}
+
+bool CStyleArrayVisitor::VisitVarDecl(const clang::VarDecl *VD) {
+  if (VD->isConstexpr() && VD->isStaticDataMember()) {
+    IgnoredTypeLoc = VD->getTypeSourceInfo()->getTypeLoc().getUnqualifiedLoc();
+  }
+  return true;
+}
+
+bool CStyleArrayVisitor::VisitCXXNewExpr(const clang::CXXNewExpr *NE) {
+  if (NE->isArray()) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE,
+                NE->getAllocatedTypeSourceInfo()->getTypeLoc().getBeginLoc(),
+                AutocheckWarnings::cStyleArrayUsed)
+                .limitReached();
+  }
+  return true;
+}
+
+bool CStyleArrayVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
+  // Skip Elaborated, Typedef and Using types to avoid getting multiple warnings
+  // for same type.
+  if (llvm::dyn_cast_if_present<clang::ElaboratedType>(TL.getTypePtr()) ||
+      llvm::dyn_cast_if_present<clang::TypedefType>(TL.getTypePtr()) ||
+      llvm::dyn_cast_if_present<clang::UsingType>(TL.getTypePtr()))
+    return true;
+
+  // Skip auto-deduced types.
+  if (TL.getTypePtr()->getContainedAutoType())
+    return true;
+
+  if (IgnoredTypeLoc && IgnoredTypeLoc == TL) {
+    return true;
+  }
+
+  if (const clang::ArrayType *AT =
+          llvm::dyn_cast_if_present<clang::ArrayType>(TL.getType())) {
+    // Warn only once in case of a nested array.
+    if (llvm::dyn_cast_if_present<clang::ArrayType>(AT->getElementType()))
+      return true;
+
+    return !AutocheckDiagnostic::reportWarning(
+                DE, TL.getBeginLoc(), AutocheckWarnings::cStyleArrayUsed)
+                .limitReached();
+  }
+
+  return true;
+}
+
+/* Implementation of BoolVectorUsedVisitor */
+
+BoolVectorUsedVisitor::BoolVectorUsedVisitor(clang::DiagnosticsEngine &DE,
+                                             clang::ASTContext &AC)
+    : DE(DE), AC(AC) {}
+
+bool BoolVectorUsedVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::boolVectorSpecializationUsed);
+}
+
+bool BoolVectorUsedVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
+  // Skip Elaborated, Typedef and Using types to avoid getting multiple warnings
+  // for same type.
+  if (llvm::dyn_cast_if_present<clang::ElaboratedType>(TL.getTypePtr()) ||
+      llvm::dyn_cast_if_present<clang::TypedefType>(TL.getTypePtr()) ||
+      llvm::dyn_cast_if_present<clang::UsingType>(TL.getTypePtr()))
+    return true;
+
+  // Skip auto-deduced types.
+  if (TL.getTypePtr()->getContainedAutoType())
+    return true;
+
+  const clang::TemplateSpecializationType *Type =
+      llvm::dyn_cast_if_present<clang::TemplateSpecializationType>(
+          TL.getTypePtr());
+  if (Type &&
+      TL.getType().getDesugaredType(AC).getAsString() ==
+          "class std::vector<_Bool>" &&
+      DE.getSourceManager().isInSystemHeader(
+          TL.getType()->getAsRecordDecl()->getLocation())) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, TL.getBeginLoc(),
+                AutocheckWarnings::boolVectorSpecializationUsed)
+                .limitReached();
+  }
+
+  return true;
+}
+
 /* Implementation of TypesVisitor */
 
 TypesVisitor::TypesVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
@@ -159,6 +279,12 @@ TypesVisitor::TypesVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
     AllVisitors.push_front(std::make_unique<SignCharStorageVisitor>(DE, AC));
   if (ConditionNotBoolVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<ConditionNotBoolVisitor>(DE));
+  if (TypeWchartVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<TypeWchartVisitor>(DE, AC));
+  if (BoolVectorUsedVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<BoolVectorUsedVisitor>(DE, AC));
+  if (CStyleArrayVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<CStyleArrayVisitor>(DE, AC));
 }
 
 void TypesVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -209,6 +335,27 @@ bool TypesVisitor::VisitDoStmt(clang::DoStmt *DS) {
 bool TypesVisitor::VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE) {
   AllVisitors.remove_if([ICE](std::unique_ptr<TypesVisitorInterface> &V) {
     return !V->VisitImplicitCastExpr(ICE);
+  });
+  return true;
+}
+
+bool TypesVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
+  AllVisitors.remove_if([TL](std::unique_ptr<TypesVisitorInterface> &V) {
+    return !V->VisitTypeLoc(TL);
+  });
+  return true;
+}
+
+bool TypesVisitor::VisitVarDecl(const clang::VarDecl *VD) {
+  AllVisitors.remove_if([VD](std::unique_ptr<TypesVisitorInterface> &V) {
+    return !V->VisitVarDecl(VD);
+  });
+  return true;
+}
+
+bool TypesVisitor::VisitCXXNewExpr(const clang::CXXNewExpr *NE) {
+  AllVisitors.remove_if([NE](std::unique_ptr<TypesVisitorInterface> &V) {
+    return !V->VisitCXXNewExpr(NE);
   });
   return true;
 }

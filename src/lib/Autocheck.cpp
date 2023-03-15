@@ -87,6 +87,9 @@ getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
       WarningsToEnable.push_back("-Wunused-function");
     if (Context.isEnabled(autocheck::AutocheckWarnings::unusedTypedef))
       WarningsToEnable.push_back("-Wunused-local-typedef");
+    if (Context.isEnabled(
+            autocheck::AutocheckWarnings::deprecatedDynamicExceptionSpec))
+      WarningsToEnable.push_back("-Wdynamic-exception-spec");
 
     if (!WarningsToEnable.empty())
       AdjustedArgs.insert(llvm::find(AdjustedArgs, "--"),

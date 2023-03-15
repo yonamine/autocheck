@@ -440,6 +440,35 @@ DIAG(selfAssignmentUnhandled, "self-assignment-unhandled",
      "A copy assignment and a move assignment operators shall handle "
      "self-assignment",
      "A12-8-5")
+DIAG(volatileKeywordUsed, "volatile-keyword-used",
+     "Volatile keyword shall not be used", "A2-11-1")
+DIAG(typeWchartUsed, "type-wchart-used", "Type wchar_t shall not be used",
+     "A2-13-3")
+DIAG(externArrayImplicitSize, "extern-array-implicit-size",
+     "When an array with external linkage is declared, its size shall be "
+     "stated explicitly",
+     "A3-1-4")
+DIAG(dynamicCastUsed, "dynamic-cast-used", "dynamic_cast should not be used",
+     "A5-2-1")
+DIAG(reinterpretCastUsed, "reinterpret-cast-used",
+     "reinterpret_cast shall not be used", "A5-2-4")
+DIAG(gotoUsed, "goto-used", "The goto statement shall not be used", "A6-6-1")
+DIAG(typedefUsed, "typedef-used", "The typedef specifier shall not be used",
+     "A7-1-6")
+DIAG(enumTypeNotDefined, "enum-type-not-defined",
+     "Enumeration underlying base type shall be explicitly defined", "A7-2-2")
+DIAG(friendUsed, "friend-used", "Friend declarations shall not be used",
+     "A11-3-1")
+DIAG(cStyleArrayUsed, "c-style-array-used", "C-style arrays shall not be used",
+     "A18-1-1")
+DIAG(sizeofSideEffect, "sizeof-side-effect",
+     "Evaluation of the operand to the sizeof operator shall not contain side "
+     "effects",
+     "M5-3-4")
+DIAG(deprecatedDynamicExceptionSpec, "deprecated-dynamic-exception-spec",
+     "Dynamic exception-specification shall not be used", "A15-4-1")
+DIAG(boolVectorSpecializationUsed, "bool-vector-specialization-used",
+     "The std::vector<bool> specialization shall not be used", "A18-1-2")
 
 #undef DIAG
 #undef NOTE

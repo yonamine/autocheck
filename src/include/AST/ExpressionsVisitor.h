@@ -19,6 +19,8 @@
 //             expression.
 // - [M5-2-10] The increment (++) and decrement (--) operators shall not be
 //             mixed with other operators in an expression.
+// - [M5-3-4]  Evaluation of the operand to the sizeof operator shall not
+//             contain side effects.
 // - [A5-16-1] The ternary conditional operator shall not be used as a
 //             sub-expression.
 // - [M6-2-1]  Assignment operators shall not be used in sub-expressions.
@@ -67,6 +69,8 @@ public:
   virtual bool VisitBinaryOperator(const clang::BinaryOperator *BO);
   virtual bool VisitReturnStmt(const clang::ReturnStmt *RS);
   virtual bool VisitCallExpr(const clang::CallExpr *CE);
+  virtual bool
+  VisitUnaryExprOrTypeTraitExpr(const clang::UnaryExprOrTypeTraitExpr *UOTTE);
 };
 
 /// [A5-1-2] Variables shall not be implicitly captured in a lambda expression.
@@ -230,6 +234,21 @@ public:
   bool VisitBinaryOperator(const clang::BinaryOperator *BO);
 };
 
+/// [M5-3-4] Evaluation of the operand to the sizeof operator shall not contain
+/// side effects.
+class SizeofSideEffectVisitor : public ExpressionsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+  clang::ASTContext &AC;
+
+public:
+  explicit SizeofSideEffectVisitor(clang::DiagnosticsEngine &DE,
+                                   clang::ASTContext &AC);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool
+  VisitUnaryExprOrTypeTraitExpr(const clang::UnaryExprOrTypeTraitExpr *UOTTE);
+};
+
 /// Main visitor for expression related checks. Makes an instance of every class
 /// that implement a ExpressionsVisitorInterface if appropriate flag is found.
 /// Runs all Expression Visitors with one AST traversal.
@@ -253,6 +272,8 @@ public:
   bool VisitBinaryOperator(const clang::BinaryOperator *BO);
   bool VisitReturnStmt(const clang::ReturnStmt *RS);
   bool VisitCallExpr(const clang::CallExpr *CE);
+  bool
+  VisitUnaryExprOrTypeTraitExpr(const clang::UnaryExprOrTypeTraitExpr *UOTTE);
 };
 
 } // namespace autocheck

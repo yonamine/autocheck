@@ -13,6 +13,7 @@
 
 #include "Diagnostics/AutocheckDiagnostic.h"
 #include "clang/Basic/DiagnosticLex.h"
+#include "clang/Basic/DiagnosticParse.h"
 #include "clang/Basic/DiagnosticSema.h"
 
 namespace autocheck {
@@ -43,12 +44,6 @@ void AutocheckDiagnosticConsumer::EmitDiag(AutocheckWarnings Warning,
 
 void AutocheckDiagnosticConsumer::HandleDiagnostic(
     clang::DiagnosticsEngine::Level DiagLevel, const clang::Diagnostic &Info) {
-  // Errors and fatal diagnostics are handled by parent consumer.
-  if (DiagLevel > clang::DiagnosticsEngine::Level::Warning) {
-    Client->HandleDiagnostic(DiagLevel, Info);
-    return;
-  }
-
   // Convert built-in warnings to autocheck warnings.
   switch (Info.getID()) {
   case clang::diag::ext_embedded_directive:
@@ -72,6 +67,13 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
     return;
   case clang::diag::warn_unused_local_typedef:
     EmitDiag(AutocheckWarnings::unusedTypedef, Info.getLocation());
+    return;
+  case clang::diag::warn_exception_spec_deprecated:
+  case clang::diag::ext_dynamic_exception_spec:
+    EmitDiag(AutocheckWarnings::deprecatedDynamicExceptionSpec,
+             Info.getLocation());
+    return;
+  case clang::diag::note_exception_spec_deprecated:
     return;
   }
 

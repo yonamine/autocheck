@@ -66,6 +66,7 @@ WarningRepeatChecker::WarningRepeatChecker() {
       {AutocheckWarnings::implicitSizeReductionConversion, -1},
       {AutocheckWarnings::charStorage, -1},
       {AutocheckWarnings::contiditionNotBool, -1},
+      {AutocheckWarnings::cStyleArrayUsed, -1},
   });
 }
 
