@@ -52,6 +52,9 @@ bool DVI::VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE) {
 bool DVI::VisitCXXThrowExpr(const clang::CXXThrowExpr *CTE) { return true; }
 bool DVI::VisitCXXDeleteExpr(const clang::CXXDeleteExpr *CDE) { return true; }
 bool DVI::VisitTypeAliasDecl(const clang::TypeAliasDecl *TAD) { return true; }
+bool DVI::VisitTypedefDecl(const clang::TypedefDecl *TD) { return true; }
+bool DVI::VisitFriendDecl(const clang::FriendDecl *FD) { return true; }
+bool DVI::VisitEnumDecl(const clang::EnumDecl *ED) { return true; }
 
 /* ASMDeclarationUsedVisitor */
 
@@ -2203,6 +2206,98 @@ bool DecltypeTypeidVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::lambdaDecltypeTypeid);
 }
 
+/* Implementation of ExternArrayImplicitSizeVisitor */
+
+ExternArrayImplicitSizeVisitor::ExternArrayImplicitSizeVisitor(
+    clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
+    : DE(DE), AC(AC) {}
+
+bool ExternArrayImplicitSizeVisitor::isFlagPresent(
+    const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::externArrayImplicitSize);
+}
+
+bool ExternArrayImplicitSizeVisitor::VisitVarDecl(const clang::VarDecl *VD) {
+  // Early return if the variable isn't declared extern.
+  if (!VD->hasExternalStorage())
+    return true;
+
+  if (const clang::IncompleteArrayType *IAT =
+          llvm::dyn_cast_if_present<clang::IncompleteArrayType>(
+              VD->getType())) {
+    // Case 1: The array size is unknown.
+    // Example: int a[];
+    return !AutocheckDiagnostic::reportWarning(
+                DE, VD->getLocation(),
+                AutocheckWarnings::externArrayImplicitSize)
+                .limitReached();
+  } else if (const clang::ConstantArrayType *CAT =
+                 llvm::dyn_cast_if_present<clang::ConstantArrayType>(
+                     VD->getType())) {
+    // Case 2: The array size is known, but not explicitly written (e.g. deduced
+    // from initialization).
+    // Example: int b[] = {1, 2, 3};
+    if (!VD->getTypeSourceInfo()
+             ->getTypeLoc()
+             .getAs<clang::IncompleteArrayTypeLoc>()
+             .isNull()) {
+      return !AutocheckDiagnostic::reportWarning(
+                  DE, VD->getLocation(),
+                  AutocheckWarnings::externArrayImplicitSize)
+                  .limitReached();
+    }
+  }
+  return true;
+}
+
+/* Implementation of TypedefUsedVisitor */
+
+TypedefUsedVisitor::TypedefUsedVisitor(clang::DiagnosticsEngine &DE) : DE(DE) {}
+
+bool TypedefUsedVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::typedefUsed);
+}
+
+bool TypedefUsedVisitor::VisitTypedefDecl(const clang::TypedefDecl *TD) {
+  return !AutocheckDiagnostic::reportWarning(DE, TD->getBeginLoc(),
+                                             AutocheckWarnings::typedefUsed)
+              .limitReached();
+}
+
+/* Implementation of FriendDeclUsedVisitor */
+
+FriendDeclUsedVisitor::FriendDeclUsedVisitor(clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool FriendDeclUsedVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::friendUsed);
+}
+
+bool FriendDeclUsedVisitor::VisitFriendDecl(const clang::FriendDecl *FD) {
+  return !AutocheckDiagnostic::reportWarning(DE, FD->getLocation(),
+                                             AutocheckWarnings::friendUsed)
+              .limitReached();
+}
+
+/* Implementation of EnumTypeNotDefinedVisitor */
+
+EnumTypeNotDefinedVisitor::EnumTypeNotDefinedVisitor(
+    clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool EnumTypeNotDefinedVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::enumTypeNotDefined);
+}
+
+bool EnumTypeNotDefinedVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
+  if (!ED->getIntegerTypeSourceInfo()) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, ED->getLocation(), AutocheckWarnings::enumTypeNotDefined)
+                .limitReached();
+  }
+  return true;
+}
+
 /* DeclarationsVisitor */
 
 DeclarationsVisitor::DeclarationsVisitor(clang::DiagnosticsEngine &DE,
@@ -2261,6 +2356,15 @@ DeclarationsVisitor::DeclarationsVisitor(clang::DiagnosticsEngine &DE,
     AllVisitors.push_front(std::make_unique<CStyleStringUsed>(DE, AC));
   if (DecltypeTypeidVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<DecltypeTypeidVisitor>(DE, AC));
+  if (ExternArrayImplicitSizeVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(
+        std::make_unique<ExternArrayImplicitSizeVisitor>(DE, AC));
+  if (TypedefUsedVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<TypedefUsedVisitor>(DE));
+  if (FriendDeclUsedVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<FriendDeclUsedVisitor>(DE));
+  if (EnumTypeNotDefinedVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<EnumTypeNotDefinedVisitor>(DE));
 }
 
 void DeclarationsVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -2420,6 +2524,27 @@ bool DeclarationsVisitor::VisitTypeAliasDecl(const clang::TypeAliasDecl *TAD) {
       [TAD](std::unique_ptr<DeclarationsVisitorInterface> &V) {
         return !V->VisitTypeAliasDecl(TAD);
       });
+  return true;
+}
+
+bool DeclarationsVisitor::VisitTypedefDecl(const clang::TypedefDecl *TD) {
+  AllVisitors.remove_if([TD](std::unique_ptr<DeclarationsVisitorInterface> &V) {
+    return !V->VisitTypedefDecl(TD);
+  });
+  return true;
+}
+
+bool DeclarationsVisitor::VisitFriendDecl(const clang::FriendDecl *FD) {
+  AllVisitors.remove_if([FD](std::unique_ptr<DeclarationsVisitorInterface> &V) {
+    return !V->VisitFriendDecl(FD);
+  });
+  return true;
+}
+
+bool DeclarationsVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
+  AllVisitors.remove_if([ED](std::unique_ptr<DeclarationsVisitorInterface> &V) {
+    return !V->VisitEnumDecl(ED);
+  });
   return true;
 }
 

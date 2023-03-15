@@ -31,6 +31,10 @@ bool EVI::VisitConditionalOperator(const clang::ConditionalOperator *) {
 bool EVI::VisitBinaryOperator(const clang::BinaryOperator *) { return true; }
 bool EVI::VisitReturnStmt(const clang::ReturnStmt *) { return true; }
 bool EVI::VisitCallExpr(const clang::CallExpr *) { return true; }
+bool EVI::VisitUnaryExprOrTypeTraitExpr(
+    const clang::UnaryExprOrTypeTraitExpr *) {
+  return true;
+}
 
 /* Implementation of ImplicitlyCapturedVarVisitor */
 
@@ -558,6 +562,32 @@ bool ImplicitBitwiseBinOpConversionVisitor::VisitBinaryOperator(
   return true;
 }
 
+/* Implementation of SizeofSideEffectVisitor */
+
+SizeofSideEffectVisitor::SizeofSideEffectVisitor(clang::DiagnosticsEngine &DE,
+                                                 clang::ASTContext &AC)
+    : DE(DE), AC(AC) {}
+
+bool SizeofSideEffectVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::sizeofSideEffect);
+}
+
+bool SizeofSideEffectVisitor::VisitUnaryExprOrTypeTraitExpr(
+    const clang::UnaryExprOrTypeTraitExpr *UOTTE) {
+  // Check if the operator is sizeof.
+  if (UOTTE->getKind() == clang::UETT_SizeOf) {
+    // Check if the argument is an expression with side effects.
+    if (!UOTTE->isArgumentType() &&
+        UOTTE->getArgumentExpr()->IgnoreParenImpCasts()->HasSideEffects(AC)) {
+      return !AutocheckDiagnostic::reportWarning(
+                  DE, UOTTE->getOperatorLoc(),
+                  AutocheckWarnings::sizeofSideEffect)
+                  .limitReached();
+    }
+  }
+  return true;
+}
+
 /* Implementation of ExpressionsVisitor */
 
 ExpressionsVisitor::ExpressionsVisitor(clang::DiagnosticsEngine &DE,
@@ -587,6 +617,8 @@ ExpressionsVisitor::ExpressionsVisitor(clang::DiagnosticsEngine &DE,
   if (ImplicitBitwiseBinOpConversionVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
         std::make_unique<ImplicitBitwiseBinOpConversionVisitor>(DE, AC));
+  if (SizeofSideEffectVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<SizeofSideEffectVisitor>(DE, AC));
 }
 
 void ExpressionsVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -660,6 +692,15 @@ bool ExpressionsVisitor::VisitCallExpr(const clang::CallExpr *CE) {
   AllVisitors.remove_if([CE](std::unique_ptr<ExpressionsVisitorInterface> &V) {
     return !V->VisitCallExpr(CE);
   });
+  return true;
+}
+
+bool ExpressionsVisitor::VisitUnaryExprOrTypeTraitExpr(
+    const clang::UnaryExprOrTypeTraitExpr *UOTTE) {
+  AllVisitors.remove_if(
+      [UOTTE](std::unique_ptr<ExpressionsVisitorInterface> &V) {
+        return !V->VisitUnaryExprOrTypeTraitExpr(UOTTE);
+      });
   return true;
 }
 

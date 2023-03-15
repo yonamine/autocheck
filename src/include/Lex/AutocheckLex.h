@@ -16,6 +16,7 @@
 //             comment.
 // - [M2-7-1]  The character sequence /* shall not be used within a C-style
 //             comment.
+// - [A2-11-1] Volatile keyword shall not be used.
 // - [A2-13-1] Only those escape sequences that are defined in ISO/IEC
 //             14882:2014 shall be used.
 // - [M2-13-2] Octal constants (other than zero) and octal escape sequences
@@ -24,6 +25,9 @@
 // - [A2-13-5] Hexadecimal constants should be upper case.
 // - [A2-13-6] Universal character names shall be used only inside character or
 //             string literals.
+// - [A5-2-1]  dynamic_cast should not be used.
+// - [A5-2-4]  reinterpret_cast shall not be used.
+// - [A6-6-1]  The goto statement shall not be used.
 // - [A13-6-1] Digit sequences separators ' shall only be used as follows: (1)
 //             for decimal, every 3 digits, (2) for hexadecimal, every 2 digits,
 //             (3) for binary, every 4 digits.

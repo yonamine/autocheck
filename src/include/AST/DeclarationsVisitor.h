@@ -10,6 +10,8 @@
 //
 // This implements the following checks:
 // - [A0-1-6]  There should be no unused type declarations.
+// - [A3-1-4]  When an array with external linkage is declared, its size shall
+//             be stated explicitly.
 // - [A3-3-2]  Static and thread-local objects shall be constant-initialized.
 // - [M3-4-1]  An identifier declared to be an object or type shall be defined
 //             in a block that minimizes its visibility.
@@ -20,6 +22,8 @@
 //             declaration.
 // - [A7-1-3]  CV-qualifiers shall be placed on the right hand side of the type
 //             that is a typedef or a using name..
+// - [A7-1-6]  The typedef specifier shall not be used.
+// - [A7-2-2]  Enumeration underlying base type shall be explicitly defined.
 // - [A7-4-1]  The asm declaration shall not be used.
 // - [A8-4-1]  Functions shall not be defined using the ellipsis notation.
 // - [M8-4-2]  The identifiers used for the parameters in a re-declaration of a
@@ -32,6 +36,7 @@
 //             non-zero initialization of arrays and structures.
 // - [A8-5-3]  A variable of type auto shall not be initialized using {} or ={}
 //             braced-initialization.
+// - [A11-3-1] Friend declarations shall not be used.
 // - [A12-1-2] Both NSDMI and a non-static member initializer in a constructor
 //             shall not be used in the same type.
 // - [A13-2-1] An assignment operator shall return a reference to "this".
@@ -100,6 +105,9 @@ public:
   virtual bool VisitCXXThrowExpr(const clang::CXXThrowExpr *CTE);
   virtual bool VisitCXXDeleteExpr(const clang::CXXDeleteExpr *CDE);
   virtual bool VisitTypeAliasDecl(const clang::TypeAliasDecl *TAD);
+  virtual bool VisitTypedefDecl(const clang::TypedefDecl *TD);
+  virtual bool VisitFriendDecl(const clang::FriendDecl *TD);
+  virtual bool VisitEnumDecl(const clang::EnumDecl *ED);
 };
 
 /// [A7-4-1] The asm declaration shall not be used.
@@ -603,6 +611,53 @@ private:
   const clang::VarDecl *GetVarD(const clang::DeclRefExpr *DRE) const;
 };
 
+/// [A3-1-4] When an array with external linkage is declared, its size shall be
+/// stated explicitly.
+class ExternArrayImplicitSizeVisitor : public DeclarationsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+  clang::ASTContext &AC;
+
+public:
+  explicit ExternArrayImplicitSizeVisitor(clang::DiagnosticsEngine &DE,
+                                          clang::ASTContext &AC);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitVarDecl(const clang::VarDecl *VD) override;
+};
+
+/// [A7-1-6] The typedef specifier shall not be used.
+class TypedefUsedVisitor : public DeclarationsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit TypedefUsedVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitTypedefDecl(const clang::TypedefDecl *TD) override;
+};
+
+/// [A11-3-1] Friend declarations shall not be used.
+class FriendDeclUsedVisitor : public DeclarationsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit FriendDeclUsedVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitFriendDecl(const clang::FriendDecl *FD) override;
+};
+
+/// [A7-2-2] Enumeration underlying base type shall be explicitly defined.
+class EnumTypeNotDefinedVisitor : public DeclarationsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit EnumTypeNotDefinedVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitEnumDecl(const clang::EnumDecl *ED) override;
+};
+
 /// Main visitor for declaration related checks. Makes an instance of every
 /// class that implement a DeclarationsVisitorInterface if appropriate flag is
 /// found. Runs all Declaration Visitors with one AST traversal.
@@ -637,6 +692,9 @@ public:
   bool VisitCXXThrowExpr(const clang::CXXThrowExpr *CTE);
   bool VisitCXXDeleteExpr(const clang::CXXDeleteExpr *CDE);
   bool VisitTypeAliasDecl(const clang::TypeAliasDecl *TAD);
+  bool VisitTypedefDecl(const clang::TypedefDecl *TD);
+  bool VisitFriendDecl(const clang::FriendDecl *FD);
+  bool VisitEnumDecl(const clang::EnumDecl *ED);
 };
 
 } // namespace autocheck

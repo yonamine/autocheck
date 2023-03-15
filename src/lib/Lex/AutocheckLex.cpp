@@ -194,6 +194,34 @@ static void HandleToken(const AutocheckContext &Context,
       AutocheckDiagnostic::reportWarning(
           DE, Tok.getLocation(), AutocheckWarnings::digitSequenceSeparator);
   }
+
+  // [A6-6-1] The goto statement shall not be used.
+  if (Context.isEnabled(AutocheckWarnings::gotoUsed) &&
+      Tok.is(clang::tok::kw_goto)) {
+    AutocheckDiagnostic::reportWarning(DE, Tok.getLocation(),
+                                       AutocheckWarnings::gotoUsed);
+  }
+
+  // [A2-11-1] Volatile keyword shall not be used.
+  if (Context.isEnabled(AutocheckWarnings::volatileKeywordUsed) &&
+      Tok.is(clang::tok::kw_volatile)) {
+    AutocheckDiagnostic::reportWarning(DE, Tok.getLocation(),
+                                       AutocheckWarnings::volatileKeywordUsed);
+  }
+
+  // [A5-2-1] dynamic_cast should not be used.
+  if (Context.isEnabled(AutocheckWarnings::dynamicCastUsed) &&
+      Tok.is(clang::tok::kw_dynamic_cast)) {
+    AutocheckDiagnostic::reportWarning(DE, Tok.getLocation(),
+                                       AutocheckWarnings::dynamicCastUsed);
+  }
+
+  // [A5-2-4] reinterpret_cast shall not be used.
+  if (Context.isEnabled(AutocheckWarnings::reinterpretCastUsed) &&
+      Tok.is(clang::tok::kw_reinterpret_cast)) {
+    AutocheckDiagnostic::reportWarning(DE, Tok.getLocation(),
+                                       AutocheckWarnings::reinterpretCastUsed);
+  }
 }
 
 AutocheckLex::AutocheckLex(clang::CompilerInstance &CI)

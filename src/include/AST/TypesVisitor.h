@@ -9,12 +9,15 @@
 // AST.
 //
 // This implements the following checks:
+// - [A2-13-3] Type wchar_t shall not be used.
 // - [A5-0-2]  The condition of an if-statement and the condition of an
 //             iteration statement shall have type bool.
 // - [M5-0-11] The plain char type shall only be used for the storage and use of
 //             character values.
 // - [M5-0-12] Signed char and unsigned char type shall only be used for the
 //             storage and use of numeric values.
+// - [A18-1-1] C-style arrays shall not be used.
+// - [A18-1-2] The std::vector<bool> specialization shall not be used.
 //
 //===----------------------------------------------------------------------===//
 
@@ -40,6 +43,9 @@ public:
   virtual bool VisitWhileStmt(clang::WhileStmt *WS);
   virtual bool VisitForStmt(clang::ForStmt *FS);
   virtual bool VisitDoStmt(clang::DoStmt *DS);
+  virtual bool VisitTypeLoc(const clang::TypeLoc &TL);
+  virtual bool VisitVarDecl(const clang::VarDecl *VD);
+  virtual bool VisitCXXNewExpr(const clang::CXXNewExpr *NE);
 };
 
 /// [M5-0-11] The plain char type shall only be used for the storage and use of
@@ -99,6 +105,50 @@ private:
   void diagnoseCondition(clang::Expr *Condition);
 };
 
+/// [A2-13-3] Type wchar_t shall not be used.
+class TypeWchartVisitor : public TypesVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+  clang::ASTContext &AC;
+
+public:
+  explicit TypeWchartVisitor(clang::DiagnosticsEngine &DE,
+                             clang::ASTContext &AC);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitTypeLoc(const clang::TypeLoc &TL) override;
+};
+
+/// [A18-1-1] C-style arrays shall not be used.
+class CStyleArrayVisitor : public TypesVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+  clang::ASTContext &AC;
+  /// TypeLoc of the last constexpr declared variable which should be exempt
+  /// from the rule.
+  clang::TypeLoc IgnoredTypeLoc;
+
+public:
+  explicit CStyleArrayVisitor(clang::DiagnosticsEngine &DE,
+                              clang::ASTContext &AC);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitVarDecl(const clang::VarDecl *VD) override;
+  bool VisitCXXNewExpr(const clang::CXXNewExpr *NE) override;
+  bool VisitTypeLoc(const clang::TypeLoc &TL) override;
+};
+
+/// [A18-1-2] The std::vector<bool> specialization shall not be used.
+class BoolVectorUsedVisitor : public TypesVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+  clang::ASTContext &AC;
+
+public:
+  explicit BoolVectorUsedVisitor(clang::DiagnosticsEngine &DE,
+                                 clang::ASTContext &AC);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitTypeLoc(const clang::TypeLoc &TL) override;
+};
+
 /// Main visitor for type related checks. Makes an instance of every class that
 /// implement a TypesVisitorInterface if appropriate flag is found. Runs all
 /// Type Visitors with one AST traversal.
@@ -118,6 +168,9 @@ public:
   bool VisitWhileStmt(clang::WhileStmt *WS);
   bool VisitForStmt(clang::ForStmt *FS);
   bool VisitDoStmt(clang::DoStmt *DS);
+  bool VisitTypeLoc(const clang::TypeLoc &TL);
+  bool VisitVarDecl(const clang::VarDecl *VD);
+  bool VisitCXXNewExpr(const clang::CXXNewExpr *NE);
 };
 
 } // namespace autocheck
