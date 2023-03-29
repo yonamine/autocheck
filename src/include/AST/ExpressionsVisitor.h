@@ -9,8 +9,11 @@
 // clang AST.
 //
 // This implements the following checks:
+// - [M5-0-14] The first operand of a conditional-operator shall have type bool.
 // - [M5-0-20] Non-constant operands to a binary bitwise operator shall have the
 //             same underlying type.
+// - [M5-0-21] Bitwise operators shall only be applied to operands of unsigned
+//             underlying type.
 // - [A5-1-2]  Variables shall not be implicitly captured in a lambda
 //             expression.
 // - [A5-1-6]  Return type of a non-void return type lambda expression should be
@@ -19,11 +22,20 @@
 //             expression.
 // - [M5-2-10] The increment (++) and decrement (--) operators shall not be
 //             mixed with other operators in an expression.
+// - [M5-3-1]  Each operand of the ! operator, the logical && or the logical ||
+//             operators shall have type bool.
+// - [M5-3-2]  The unary minus operator shall not be applied to an expression
+//             whose underlying type is unsigned.
 // - [M5-3-4]  Evaluation of the operand to the sizeof operator shall not
+//             contain side effects.
+// - [M5-14-1] The right hand operand of a logical &&, || operators shall not
 //             contain side effects.
 // - [A5-16-1] The ternary conditional operator shall not be used as a
 //             sub-expression.
+// - [M5-18-1] The comma operator shall not be used.
 // - [M6-2-1]  Assignment operators shall not be used in sub-expressions.
+// - [A15-1-2] An exception object shall not be a pointer.
+// - [M15-1-2] NULL shall not be thrown explicitly.
 // - [M17-0-5] The setjmp macro and the longjmp function shall not be used.
 // - [M18-0-3] The library functions abort, exit, getenv and system from library
 //             <cstdlib> shall not be used.
@@ -71,6 +83,7 @@ public:
   virtual bool VisitCallExpr(const clang::CallExpr *CE);
   virtual bool
   VisitUnaryExprOrTypeTraitExpr(const clang::UnaryExprOrTypeTraitExpr *UOTTE);
+  virtual bool VisitCXXThrowExpr(const clang::CXXThrowExpr *TE);
 };
 
 /// [A5-1-2] Variables shall not be implicitly captured in a lambda expression.
@@ -249,6 +262,102 @@ public:
   VisitUnaryExprOrTypeTraitExpr(const clang::UnaryExprOrTypeTraitExpr *UOTTE);
 };
 
+/// [M5-0-14] The first operand of a conditional-operator shall have type bool.
+class ConditionalOpVisitor : public ExpressionsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit ConditionalOpVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitConditionalOperator(const clang::ConditionalOperator *CO) override;
+};
+
+/// [M5-3-1] Each operand of the ! operator, the logical && or the logical ||
+/// operators shall have type bool.
+class LogicalOpBoolOperandVisitor : public ExpressionsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit LogicalOpBoolOperandVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitUnaryOperator(const clang::UnaryOperator *UO) override;
+  bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
+};
+
+/// [M5-3-2] The unary minus operator shall not be applied to an expression
+/// whose underlying type is unsigned.
+class UnaryMinusOnUnsignedVisitor : public ExpressionsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit UnaryMinusOnUnsignedVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitUnaryOperator(const clang::UnaryOperator *UO) override;
+};
+
+/// [M5-14-1] The right hand operand of a logical &&, || operators shall not
+/// contain side effects.
+class RHSOperandSideEffectVisitor : public ExpressionsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+  clang::ASTContext &AC;
+
+public:
+  explicit RHSOperandSideEffectVisitor(clang::DiagnosticsEngine &DE,
+                                       clang::ASTContext &AC);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
+};
+
+/// [A15-1-2] An exception object shall not be a pointer.
+class ExceptionObjectPtrVisitor : public ExpressionsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit ExceptionObjectPtrVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitCXXThrowExpr(const clang::CXXThrowExpr *TE) override;
+};
+
+/// [M15-1-2] NULL shall not be thrown explicitly.
+class ExceptionObjectNullVisitor : public ExpressionsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit ExceptionObjectNullVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitCXXThrowExpr(const clang::CXXThrowExpr *TE) override;
+};
+
+/// [M5-0-21] Bitwise operators shall only be applied to operands of unsigned
+/// underlying type.
+class BitwiseUnsignedOperandsVisitor : public ExpressionsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit BitwiseUnsignedOperandsVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitUnaryOperator(const clang::UnaryOperator *UO) override;
+  bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
+};
+
+/// [M5-18-1] The comma operator shall not be used.
+class CommaOperatorVisitor : public ExpressionsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit CommaOperatorVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
+};
+
 /// Main visitor for expression related checks. Makes an instance of every class
 /// that implement a ExpressionsVisitorInterface if appropriate flag is found.
 /// Runs all Expression Visitors with one AST traversal.
@@ -274,6 +383,7 @@ public:
   bool VisitCallExpr(const clang::CallExpr *CE);
   bool
   VisitUnaryExprOrTypeTraitExpr(const clang::UnaryExprOrTypeTraitExpr *UOTTE);
+  bool VisitCXXThrowExpr(const clang::CXXThrowExpr *TE);
 };
 
 } // namespace autocheck

@@ -469,6 +469,143 @@ DIAG(deprecatedDynamicExceptionSpec, "deprecated-dynamic-exception-spec",
      "Dynamic exception-specification shall not be used", "A15-4-1")
 DIAG(boolVectorSpecializationUsed, "bool-vector-specialization-used",
      "The std::vector<bool> specialization shall not be used", "A18-1-2")
+DIAG(longDoubleUsed, "long-double-used", "Type long double shall not be used",
+     "A0-4-2")
+DIAG(functionAtBlockScope, "function-at-block-scope",
+     "Functions shall not be declared at block scope", "M3-1-2")
+DIAG(staticFunctionRedeclaration, "static-function-redeclaration",
+     "If a function has internal linkage then all re-declarations shall "
+     "include the static storage class specifier",
+     "M3-3-2")
+DIAG(conditionalOpOperandType, "conditional-op-operand-type",
+     "The first operand of a conditional-operator shall have type bool",
+     "M5-0-14")
+DIAG(lambdaDeclaratorMissing, "lambda-declarator-missing",
+     "Parameter list (possibly empty) shall be included in every lambda "
+     "expression",
+     "A5-1-3")
+DIAG(castPtrToIntegralType, "cast-ptr-to-integral-type",
+     "A cast shall not convert a pointer type to an integral type", "M5-2-9")
+DIAG(commaAndOrOpsOverloaded, "comma-and-or-ops-overloaded",
+     "The comma operator, && operator and the || operator shall not be "
+     "overloaded",
+     "M5-2-11")
+DIAG(notAndOrOpsBoolOperands, "not-and-or-ops-bool-operands",
+     "Each operand of the ! operator, the logical && or the logical || "
+     "operators shall have type bool",
+     "M5-3-1")
+DIAG(unaryMinusOnUnsignedType, "unary-minus-on-unsigned-type",
+     "The unary minus operator shall not be applied to an expression whose "
+     "underlying type is unsigned",
+     "M5-3-2")
+DIAG(unaryAmpOpOverloaded, "unary-amp-op-overloaded",
+     "The unary & operator shall not be overloaded", "M5-3-3")
+DIAG(rhsOperandAndOrSideEffect, "rhs-operand-and-or-side-effect",
+     "The right hand operand of a logical &&, || operators shall not contain "
+     "side effects",
+     "M5-14-1")
+DIAG(notCompoundStatement, "not-compound-statement",
+     "The statement forming the body of a switch, while, do ... while or for "
+     "statement shall be a compound statement",
+     "M6-3-1")
+DIAG(gotoBackJump, "goto-back-jump",
+     "The goto statement shall jump to a label declared later in the same "
+     "function body",
+     "M6-6-2")
+DIAG(enumNotScopedEnumClass, "enum-not-scoped-enum-class",
+     "Enumerations shall be declared as scoped enum classes", "A7-2-3")
+DIAG(enumeratorInitialization, "enumerator-initialization",
+     "In an enumeration, either (1) none, (2) the first or (3) all enumerators "
+     "shall be initialized",
+     "A7-2-4")
+DIAG(identifierMainReused, "identifier-main-reused",
+     "The identifier main shall not be used for a function other than the "
+     "global function main",
+     "M7-3-2")
+DIAG(unnamedNamespaceInHeader, "unnamed-namespace-in-header",
+     "There shall be no unnamed namespaces in header files", "M7-3-3")
+DIAG(usingDirectiveUsed, "using-directive-used",
+     "Using-directives shall not be used", "M7-3-4")
+DIAG(exceptionObjectIsPointer, "exception-object-is-pointer",
+     "An exception object shall not be a pointer", "A15-1-2")
+DIAG(nullThrownExplicitly, "null-thrown-explicitly",
+     "NULL shall not be thrown explicitly", "M15-1-2")
+DIAG(assignmentOpRefQual, "assignment-op-ref-qual",
+     "Assignment operators should be declared with the ref-qualifier &",
+     "A12-8-7")
+DIAG(assignmentOpVirtual, "assignment-op-virtual",
+     "A user-defined assignment operator shall not be virtual", "A10-3-5")
+DIAG(globalNamespaceNodes, "global-namespace-nodes",
+     "The global namespace shall only contain main, namespace declarations and "
+     "extern \"C\" declarations",
+     "M7-3-1")
+DIAG(bitFieldUnsignedIntegral, "bit-field-unsigned-integral",
+     "Bit-fields shall be either unsigned integral, or enumeration (with "
+     "underlying type of unsigned integral type)",
+     "A9-6-1")
+DIAG(bitwiseOperandNotUnsigned, "bitwise-operand-not-unsigned",
+     "Bitwise operators shall only be applied to operands of unsigned "
+     "underlying type",
+     "M5-0-21")
+DIAG(ifFollowedByCompoundStmt, "if-followed-by-compound-stmt",
+     "An if ( condition ) construct shall be followed by a compound statement. "
+     "The else keyword shall be followed by either a compound statement, or "
+     "another if statement",
+     "M6-4-1")
+DIAG(cStyleCastUsed, "c-style-cast-used",
+     "Traditional C-style casts shall not be used", "A5-2-2")
+DIAG(castRemovesQual, "cast-removes-qual",
+     "A cast shall not remove any const or volatile qualification from the "
+     "type of a pointer or reference",
+     "A5-2-3")
+NOTE(noteCastRemovesQual,
+     "%select{cast from %1 to %2 drops %select{const and volatile "
+     "qualifiers|const qualifier|volatile qualifier}3|cast from %1 to %2 "
+     "must have all intermediate pointers const qualified to be safe}0")
+DIAG(impcastChangesSignedness, "impcast-changes-signedness",
+     "An implicit integral conversion shall not change the signedness of the "
+     "underlying type",
+     "M5-0-4")
+NOTE(noteImpcastChangesSignedness, "Casts '%0' to '%1'")
+DIAG(unusedParameter, "unused-parameter",
+     "There shall be no unused named parameters in non-virtual functions",
+     "A0-1-4")
+NOTE(noteUnusedParameter, "unused parameter %0")
+DIAG(exceptionHandlerInversion, "exception-handler-inversion",
+     "Where multiple handlers are provided in a single try-catch statement or "
+     "function-try-block for a derived class and some or all of its bases, the "
+     "handlers shall be ordered most-derived to base class",
+     "M15-3-6")
+NOTE(noteExceptionHandlerInversion, "previous handler was here")
+DIAG(returnStackAddress, "return-stack-address",
+     "A function shall not return a reference or a pointer to an automatic "
+     "variable (including parameters), defined within the function",
+     "M7-5-1")
+DIAG(properStructure, "proper-structure",
+     "A type defined as struct shall: %select{(1) provide only public data "
+     "members|(2) not provide any special member functions or methods|(3) not "
+     "be a base of another struct or class|(4) not inherit from another struct "
+     "or class}0",
+     "A11-0-2")
+NOTE(noteProperStructure, "inherited struct is here")
+DIAG(baseDestructor, "base-destructor",
+     "Destructor of a base class shall be public virtual, public override or "
+     "protected non-virtual",
+     "A12-4-1")
+NOTE(noteBaseDestructor,
+     "%select{destructor is declared here|class has implicit destructor}0")
+DIAG(commaOperatorUsed, "comma-operator-used",
+     "The comma operator shall not be used", "M5-18-1")
+DIAG(returnNonVoidFunction, "return-nonvoid-function",
+     "All exit paths from a function with non-void return type shall have an "
+     "explicit return statement with an expression",
+     "A8-4-2")
+DIAG(breakSwitchCase, "break-switch-case",
+     "An unconditional throw or break statement shall terminate every "
+     "non-empty switch-clause",
+     "M6-4-5")
+DIAG(uninitializedMemory, "uninitialized-memory",
+     "All memory shall be initialized before it is read", "A8-5-0")
 
 #undef DIAG
 #undef NOTE

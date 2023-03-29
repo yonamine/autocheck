@@ -9,6 +9,8 @@
 // clang AST.
 //
 // This implements the following checks:
+// - [M6-3-1] The statement forming the body of a switch, while, do ... while or
+//            for statement shall be a compound statement.
 // - [M6-4-2] All if ... else if constructs shall be terminated with an else
 //            clause.
 // - [M6-4-6] The final clause of a switch statement shall be the
@@ -16,6 +18,8 @@
 // - [A6-5-3] Do statements should not be used.
 // - [M6-6-1] Any label referenced by a goto statement shall be declared in the
 //            same block, or in a block enclosing the goto statement.
+// - [M6-6-2] The goto statement shall jump to a label declared later in the
+//            same function body.
 //
 //===----------------------------------------------------------------------===//
 
@@ -47,8 +51,10 @@ public:
   virtual bool VisitGotoStmt(const clang::GotoStmt *GS);
   virtual bool VisitIfStmt(const clang::IfStmt *IS);
   virtual bool VisitForStmt(const clang::ForStmt *FS);
+  virtual bool VisitCXXForRangeStmt(const clang::CXXForRangeStmt *CFRS);
   virtual bool VisitDoStmt(const clang::DoStmt *DS);
   virtual bool VisitWhileStmt(const clang::WhileStmt *WS);
+  virtual bool VisitSwitchStmt(const clang::SwitchStmt *SS);
 };
 
 /// [M6-4-2] All if ... else if constructs shall be terminated with an else
@@ -136,6 +142,34 @@ public:
   bool VisitDoStmt(const clang::DoStmt *DS) override;
 };
 
+/// [M6-3-1] The statement forming the body of a switch, while, do ... while or
+/// for statement shall be a compound statement.
+class BodyCompoundStmtVisitor : public StatementsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit BodyCompoundStmtVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitDoStmt(const clang::DoStmt *DS) override;
+  bool VisitWhileStmt(const clang::WhileStmt *WS) override;
+  bool VisitSwitchStmt(const clang::SwitchStmt *SS) override;
+  bool VisitForStmt(const clang::ForStmt *FS) override;
+  bool VisitCXXForRangeStmt(const clang::CXXForRangeStmt *CFRS) override;
+};
+
+/// [M6-6-2] The goto statement shall jump to a label declared later in the same
+/// function body.
+class GotoBackJumpVisitor : public StatementsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit GotoBackJumpVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitGotoStmt(const clang::GotoStmt *GS) override;
+};
+
 /// Main visitor for AutosarStatements. Makes an instance of every class that
 /// implement a StatementsVisitorInterface if appropriate flag is found. Runs
 /// all Statement Visitors with one AST traversal.
@@ -158,8 +192,10 @@ public:
   bool VisitGotoStmt(const clang::GotoStmt *GS);
   bool VisitIfStmt(const clang::IfStmt *IS);
   bool VisitForStmt(const clang::ForStmt *FS);
+  bool VisitCXXForRangeStmt(const clang::CXXForRangeStmt *CFRS);
   bool VisitDoStmt(const clang::DoStmt *DS);
   bool VisitWhileStmt(const clang::WhileStmt *WS);
+  bool VisitSwitchStmt(const clang::SwitchStmt *SS);
 };
 
 } // namespace autocheck

@@ -67,6 +67,11 @@ WarningRepeatChecker::WarningRepeatChecker() {
       {AutocheckWarnings::charStorage, -1},
       {AutocheckWarnings::contiditionNotBool, -1},
       {AutocheckWarnings::cStyleArrayUsed, -1},
+      {AutocheckWarnings::longDoubleUsed, -1},
+      {AutocheckWarnings::notAndOrOpsBoolOperands, -1},
+      {AutocheckWarnings::bitwiseOperandNotUnsigned, -1},
+      {AutocheckWarnings::impcastChangesSignedness, -1},
+      {AutocheckWarnings::commaOperatorUsed, -1},
   });
 }
 

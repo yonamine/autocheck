@@ -23,9 +23,6 @@
 
 namespace autocheck {
 
-bool isIncompleteOrDependentType(const clang::Type *T) {
-  return (T->isIncompleteType() || T->isDependentType());
-}
 
 DeclarationsVisitorInterface::~DeclarationsVisitorInterface() {}
 
@@ -55,6 +52,13 @@ bool DVI::VisitTypeAliasDecl(const clang::TypeAliasDecl *TAD) { return true; }
 bool DVI::VisitTypedefDecl(const clang::TypedefDecl *TD) { return true; }
 bool DVI::VisitFriendDecl(const clang::FriendDecl *FD) { return true; }
 bool DVI::VisitEnumDecl(const clang::EnumDecl *ED) { return true; }
+bool DVI::VisitNamespaceDecl(const clang::NamespaceDecl *ND) { return true; }
+bool DVI::VisitUsingDirectiveDecl(const clang::UsingDirectiveDecl *UDD) {
+  return true;
+}
+bool DVI::VisitTranslationUnitDecl(const clang::TranslationUnitDecl *TUD) {
+  return true;
+}
 
 /* ASMDeclarationUsedVisitor */
 
@@ -157,124 +161,6 @@ bool FunctionRedeclParamsVisitor::VisitFunctionDecl(
             return false;
         }
       }
-    }
-  }
-
-  return true;
-}
-
-/* InParametersPassedByValue */
-
-InParametersPassedByValue::InParametersPassedByValue(
-    clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
-
-bool InParametersPassedByValue::isFlagPresent(const AutocheckContext &Context) {
-  return Context.isEnabled(AutocheckWarnings::inParamPassedByValue);
-}
-
-bool InParametersPassedByValue::VisitFunctionDecl(
-    const clang::FunctionDecl *FD) {
-  clang::SourceLocation InstantiationLoc;
-  // Always allow copy constructors.
-  if (const clang::CXXConstructorDecl *CD =
-          llvm::dyn_cast_if_present<clang::CXXConstructorDecl>(FD))
-    if (CD->isCopyConstructor())
-      return true;
-  const auto &Parameters = FD->parameters();
-  unsigned NumberOfParameters = FD->getNumParams();
-  for (unsigned i = 0; i < NumberOfParameters; ++i) {
-    if (FD->isTemplateInstantiation()) {
-      if (FD->getTemplateSpecializationInfo())
-        InstantiationLoc =
-            FD->getTemplateSpecializationInfo()->getPointOfInstantiation();
-    }
-    if (!checkParameter(Parameters[i], InstantiationLoc))
-      return false;
-  }
-
-  return true;
-}
-
-bool InParametersPassedByValue::classHasPointerField(const clang::Type *T) {
-  if (auto CXXRD = T->getAsCXXRecordDecl()) {
-    for (auto field : CXXRD->fields()) {
-      auto T = field->getType();
-      if (T->isPointerType())
-        return true;
-    }
-  }
-  return false;
-}
-
-bool InParametersPassedByValue::checkParameter(
-    const clang::ParmVarDecl *PVD,
-    const clang::SourceLocation &InstantiationLoc) {
-  const clang::SourceLocation &SL = PVD->getBeginLoc();
-  // Get and check QualType.
-  const clang::QualType &QT = PVD->getType();
-  if (QT.isNull()) {
-    return true;
-  }
-  // Get and check Type.
-  // The "getTypeSize" method cannot work with incomplete or dependent types.
-  const clang::Type *T = QT.getTypePtrOrNull();
-  if (!T || isIncompleteOrDependentType(T)) {
-    return true;
-  }
-
-  // If PVD belongs to template instantiation but its type doesn't depend on
-  // template, leave. This prevents multiple warnings for types that are not
-  // templated but are part of declaration of template function for example:
-  // template <typename T>
-  // void f(int32_t a, const T& b)
-  if (InstantiationLoc.isValid()) {
-    if (!QT.getNonReferenceType()->getAs<clang::SubstTemplateTypeParmType>())
-      return true;
-  }
-  // Get pointer size in bits.
-  const auto PtrWidth = sizeof(void *) * 8;
-
-  // Process reference type.
-  if (T->isLValueReferenceType()) {
-    // Get and check underlying QualType.
-    const clang::QualType &NRQT = QT.getNonReferenceType();
-    if (NRQT.isNull()) {
-      return true;
-    }
-    // Process const reference type.
-    if (NRQT.isConstQualified()) {
-      // Get and check underlying Type.
-      const clang::Type *NRT = NRQT.getTypePtrOrNull();
-
-      if (!NRT || isIncompleteOrDependentType(NRT) || classHasPointerField(NRT))
-        return true;
-
-      if (AC.getTypeSize(NRT) <= PtrWidth) {
-        bool stopVisitor = AutocheckDiagnostic::reportWarning(
-                               DE, SL, AutocheckWarnings::inParamPassedByValue,
-                               0, NRQT.getUnqualifiedType())
-                               .limitReached();
-        if (InstantiationLoc.isValid()) {
-          AutocheckDiagnostic::reportWarning(
-              DE, InstantiationLoc, AutocheckWarnings::noteInParamPassedByValue,
-              NRQT.getUnqualifiedType());
-        }
-        return !stopVisitor;
-      }
-    }
-    // Process non-reference type.
-  } else {
-    if (AC.getTypeSize(T) > PtrWidth || classHasPointerField(T)) {
-      bool stopVisitor = AutocheckDiagnostic::reportWarning(
-                             DE, SL, AutocheckWarnings::inParamPassedByValue, 1,
-                             QT.getUnqualifiedType())
-                             .limitReached();
-      if (InstantiationLoc.isValid())
-        AutocheckDiagnostic::reportWarning(
-            DE, InstantiationLoc, AutocheckWarnings::noteInParamPassedByValue,
-            QT.getUnqualifiedType());
-      return !stopVisitor;
     }
   }
 
@@ -1885,8 +1771,8 @@ bool MismatchedNewDeleteVisitor::VisitCXXRecordDecl(
 
 const clang::CXXNewExpr *MismatchedNewDeleteVisitor::checkMismatch(
     const clang::Expr *E, const clang::Expr *NewOrDelete, bool isArray) {
-  assert((isa<clang::CXXNewExpr>(NewOrDelete) ||
-          isa<clang::CXXDeleteExpr>(NewOrDelete)) &&
+  assert((llvm::isa<clang::CXXNewExpr>(NewOrDelete) ||
+          llvm::isa<clang::CXXDeleteExpr>(NewOrDelete)) &&
          "second argument must be a 'new' or 'delete' expression");
 
   // If this is an array subscript operator then get the underneath pointer.
@@ -2298,6 +2184,305 @@ bool EnumTypeNotDefinedVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
   return true;
 }
 
+/* Implementation of BlockScopeFunctionVisitor */
+
+BlockScopeFunctionVisitor::BlockScopeFunctionVisitor(
+    clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool BlockScopeFunctionVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::functionAtBlockScope);
+}
+
+bool BlockScopeFunctionVisitor::VisitFunctionDecl(
+    const clang::FunctionDecl *FD) {
+  if (FD->getLexicalDeclContext()->isFunctionOrMethod()) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, FD->getLocation(), AutocheckWarnings::functionAtBlockScope)
+                .limitReached();
+  }
+  return true;
+}
+
+/* Implementation of StaticFunctionRedeclarationVisitor */
+
+StaticFunctionRedeclarationVisitor::StaticFunctionRedeclarationVisitor(
+    clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool StaticFunctionRedeclarationVisitor::isFlagPresent(
+    const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::staticFunctionRedeclaration);
+}
+
+bool StaticFunctionRedeclarationVisitor::VisitFunctionDecl(
+    const clang::FunctionDecl *FD) {
+  // If the function is already marked static, or if this is the first
+  // declaration there is nothing to do.
+  if (FD->getStorageClass() == clang::StorageClass::SC_Static ||
+      FD->getFirstDecl() == FD)
+    return true;
+
+  // Ignore method declarations.
+  if (llvm::dyn_cast_if_present<clang::CXXMethodDecl>(FD->getFirstDecl()))
+    return true;
+
+  // Iterate through all previous declarations
+  for (auto It = ++FD->redecls_begin(); It != FD->redecls_end(); ++It) {
+    if (llvm::dyn_cast_if_present<clang::CXXMethodDecl>(FD))
+      return true;
+
+    if (It->getLinkageAndVisibility().getLinkage() ==
+            clang::Linkage::InternalLinkage &&
+        It->getStorageClass() == clang::SC_Static) {
+      return !AutocheckDiagnostic::reportWarning(
+                  DE, FD->getLocation(),
+                  AutocheckWarnings::staticFunctionRedeclaration)
+                  .limitReached();
+    }
+
+    // If this was the first declaration, stop iterating.
+    if (*It == FD->getFirstDecl())
+      break;
+  }
+
+  return true;
+}
+
+/* Implementation of EnumDeclaredScopedVisitor */
+
+EnumDeclaredScopedVisitor::EnumDeclaredScopedVisitor(
+    clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool EnumDeclaredScopedVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::enumNotScopedEnumClass);
+}
+
+bool EnumDeclaredScopedVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
+  if (!ED->isScoped()) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, ED->getLocation(),
+                AutocheckWarnings::enumNotScopedEnumClass)
+                .limitReached();
+  }
+  return true;
+}
+
+/* Implementation of EnumConstantInitVisitor */
+
+EnumConstantInitVisitor::EnumConstantInitVisitor(clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool EnumConstantInitVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::enumeratorInitialization);
+}
+
+static bool isInitialized(const clang::EnumConstantDecl *ECD) {
+  return ECD->getInitExpr() != nullptr;
+}
+
+bool EnumConstantInitVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
+  // Skip forward declarations.
+  if (!ED->isCompleteDefinition())
+    return true;
+
+  // If there are less than 2 constants, the initialization is compliant.
+  if (std::distance(ED->enumerator_begin(), ED->enumerator_end()) < 2)
+    return true;
+
+  bool IsFirstInitialized = isInitialized(*ED->enumerator_begin());
+  if (IsFirstInitialized) {
+    // The first element was initialized, so either all other have to be
+    // initiazlied, or none of them.
+    clang::EnumDecl::enumerator_iterator Current = ++ED->enumerator_begin();
+    bool ShouldAllBeInitialized = isInitialized(*Current);
+    for (; Current != ED->enumerator_end(); ++Current) {
+      if (isInitialized(*Current) != ShouldAllBeInitialized) {
+        return !AutocheckDiagnostic::reportWarning(
+                    DE, ED->getLocation(),
+                    AutocheckWarnings::enumeratorInitialization)
+                    .limitReached();
+      }
+    }
+  } else {
+    // The first element wasn't initialized, so other musn't be as well.
+    if (std::any_of(++ED->enumerator_begin(), ED->enumerator_end(),
+                    [](const clang::EnumConstantDecl *ECD) {
+                      return ECD->getInitExpr() != nullptr;
+                    })) {
+      return !AutocheckDiagnostic::reportWarning(
+                  DE, ED->getLocation(),
+                  AutocheckWarnings::enumeratorInitialization)
+                  .limitReached();
+    }
+  }
+
+  return true;
+}
+
+/* Implementation of MainReusedVisitor */
+
+MainReusedVisitor::MainReusedVisitor(clang::DiagnosticsEngine &DE) : DE(DE) {}
+
+bool MainReusedVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::identifierMainReused);
+}
+
+bool MainReusedVisitor::VisitFunctionDecl(const clang::FunctionDecl *FD) {
+  if ((FD->getName() == "main") && !FD->isMain())
+    return !AutocheckDiagnostic::reportWarning(
+                DE, FD->getNameInfo().getLoc(),
+                AutocheckWarnings::identifierMainReused)
+                .limitReached();
+
+  return true;
+}
+
+/* Implementation of UnnamedNamespaceInHeaderVisitor */
+
+UnnamedNamespaceInHeaderVisitor::UnnamedNamespaceInHeaderVisitor(
+    clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool UnnamedNamespaceInHeaderVisitor::isFlagPresent(
+    const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::unnamedNamespaceInHeader);
+}
+
+bool UnnamedNamespaceInHeaderVisitor::VisitNamespaceDecl(
+    const clang::NamespaceDecl *ND) {
+  if (ND->isAnonymousNamespace() &&
+      !DE.getSourceManager().isInMainFile(ND->getBeginLoc()))
+    return !AutocheckDiagnostic::reportWarning(
+                DE, ND->getBeginLoc(),
+                AutocheckWarnings::unnamedNamespaceInHeader)
+                .limitReached();
+
+  return true;
+}
+
+/* Implementation of UsingDirectiveVisitor */
+
+UsingDirectiveVisitor::UsingDirectiveVisitor(clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool UsingDirectiveVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::usingDirectiveUsed);
+}
+
+bool UsingDirectiveVisitor::VisitUsingDirectiveDecl(
+    const clang::UsingDirectiveDecl *UDD) {
+  return !AutocheckDiagnostic::reportWarning(
+              DE, UDD->getLocation(), AutocheckWarnings::usingDirectiveUsed)
+              .limitReached();
+}
+
+/* Implementation of GlobalNamespaceVisitor */
+
+GlobalNamespaceVisitor::GlobalNamespaceVisitor(clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool GlobalNamespaceVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::globalNamespaceNodes);
+}
+
+bool GlobalNamespaceVisitor::VisitTranslationUnitDecl(
+    const clang::TranslationUnitDecl *TUD) {
+  for (auto It = TUD->decls_begin(); It != TUD->decls_end(); ++It) {
+    // Skip typedefs.
+    if (clang::TypedefDecl *TD =
+            llvm::dyn_cast_if_present<clang::TypedefDecl>(*It)) {
+      // Skip built-in typedefs.
+      if (!TD->getBeginLoc().isValid())
+        continue;
+      // Check allowed typedefs.
+      const auto &It = AllowedTypedefs.find(TD->getName().str());
+      if (It != AllowedTypedefs.end())
+        if (It->second == TD->getUnderlyingType().getAsString())
+          continue;
+      // Skip namespaces and extern "C".
+    } else if (llvm::dyn_cast_if_present<clang::NamespaceDecl>(*It) ||
+               llvm::dyn_cast_if_present<clang::LinkageSpecDecl>(*It)) {
+      continue;
+      // Skip implicit using directives.
+    } else if (clang::UsingDirectiveDecl *UDD =
+                   llvm::dyn_cast_if_present<clang::UsingDirectiveDecl>(*It)) {
+      if (UDD->getNominatedNamespace()->isAnonymousNamespace())
+        continue;
+      // Skip main function.
+    } else if (clang::FunctionDecl *FD =
+                   llvm::dyn_cast_if_present<clang::FunctionDecl>(*It)) {
+      if (FD->isMain())
+        continue;
+    }
+    if (It->getBeginLoc().isInvalid())
+      continue;
+    if (AutocheckDiagnostic::reportWarning(
+            DE, It->getBeginLoc(), AutocheckWarnings::globalNamespaceNodes)
+            .limitReached()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+const std::map<std::string, std::string>
+    GlobalNamespaceVisitor::AllowedTypedefs{{"char_t", "char"},
+                                            {"int8_t", "signed char"},
+                                            {"int16_t", "short"},
+                                            {"int32_t", "int"},
+                                            {"int64_t", "long"},
+                                            {"uint8_t", "unsigned char"},
+                                            {"uint16_t", "unsigned short"},
+                                            {"uint32_t", "unsigned int"},
+                                            {"uint64_t", "unsigned long"},
+                                            {"float32_t", "float"},
+                                            {"float64_t", "double"},
+                                            {"float128_t", "long double"}};
+
+/* Implementation of BitFieldTypeVisitor */
+
+BitFieldTypeVisitor::BitFieldTypeVisitor(clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool BitFieldTypeVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::bitFieldUnsignedIntegral);
+}
+
+static bool isUnsignedIntegerType(clang::QualType Type) {
+  return Type->isUnsignedIntegerType() && !Type->isBooleanType();
+}
+
+static bool isAllowedBitfieldType(const clang::QualType &Type) {
+  clang::QualType CanonicalType = Type.getCanonicalType();
+
+  // Check is builtin unsigned type.
+  if (CanonicalType->isBuiltinType())
+    return isUnsignedIntegerType(CanonicalType);
+
+  // Check is enum type with explicitly written unsigned underlying type.
+  if (const auto *ET = llvm::dyn_cast<clang::EnumType>(CanonicalType)) {
+    clang::EnumDecl *ED = ET->getDecl();
+
+    return ED->isComplete() && ED->getIntegerTypeSourceInfo() &&
+           isUnsignedIntegerType(ED->getIntegerTypeSourceInfo()->getType());
+  }
+
+  return false;
+}
+
+bool BitFieldTypeVisitor::VisitFieldDecl(const clang::FieldDecl *FD) {
+  if (FD->isBitField() && !isAllowedBitfieldType(FD->getType()))
+    return !AutocheckDiagnostic::reportWarning(
+                DE, FD->getBeginLoc(),
+                AutocheckWarnings::bitFieldUnsignedIntegral)
+                .limitReached();
+
+  return true;
+}
+
 /* DeclarationsVisitor */
 
 DeclarationsVisitor::DeclarationsVisitor(clang::DiagnosticsEngine &DE,
@@ -2311,8 +2496,6 @@ DeclarationsVisitor::DeclarationsVisitor(clang::DiagnosticsEngine &DE,
     AllVisitors.push_front(std::make_unique<VariadicFunctionUsedVisitor>(DE));
   if (FunctionRedeclParamsVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<FunctionRedeclParamsVisitor>(DE));
-  if (InParametersPassedByValue::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<InParametersPassedByValue>(DE, AC));
   if (AutoVarBracedInitVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
         std::make_unique<AutoVarBracedInitVisitor>(DE, SemaRef));
@@ -2365,6 +2548,26 @@ DeclarationsVisitor::DeclarationsVisitor(clang::DiagnosticsEngine &DE,
     AllVisitors.push_front(std::make_unique<FriendDeclUsedVisitor>(DE));
   if (EnumTypeNotDefinedVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<EnumTypeNotDefinedVisitor>(DE));
+  if (BlockScopeFunctionVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<BlockScopeFunctionVisitor>(DE));
+  if (StaticFunctionRedeclarationVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(
+        std::make_unique<StaticFunctionRedeclarationVisitor>(DE));
+  if (EnumDeclaredScopedVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<EnumDeclaredScopedVisitor>(DE));
+  if (EnumConstantInitVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<EnumConstantInitVisitor>(DE));
+  if (MainReusedVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<MainReusedVisitor>(DE));
+  if (UnnamedNamespaceInHeaderVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(
+        std::make_unique<UnnamedNamespaceInHeaderVisitor>(DE));
+  if (UsingDirectiveVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<UsingDirectiveVisitor>(DE));
+  if (GlobalNamespaceVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<GlobalNamespaceVisitor>(DE));
+  if (BitFieldTypeVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<BitFieldTypeVisitor>(DE));
 }
 
 void DeclarationsVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -2545,6 +2748,31 @@ bool DeclarationsVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
   AllVisitors.remove_if([ED](std::unique_ptr<DeclarationsVisitorInterface> &V) {
     return !V->VisitEnumDecl(ED);
   });
+  return true;
+}
+
+bool DeclarationsVisitor::VisitNamespaceDecl(const clang::NamespaceDecl *ND) {
+  AllVisitors.remove_if([ND](std::unique_ptr<DeclarationsVisitorInterface> &V) {
+    return !V->VisitNamespaceDecl(ND);
+  });
+  return true;
+}
+
+bool DeclarationsVisitor::VisitUsingDirectiveDecl(
+    const clang::UsingDirectiveDecl *UDD) {
+  AllVisitors.remove_if(
+      [UDD](std::unique_ptr<DeclarationsVisitorInterface> &V) {
+        return !V->VisitUsingDirectiveDecl(UDD);
+      });
+  return true;
+}
+
+bool DeclarationsVisitor::VisitTranslationUnitDecl(
+    const clang::TranslationUnitDecl *TUD) {
+  AllVisitors.remove_if(
+      [TUD](std::unique_ptr<DeclarationsVisitorInterface> &V) {
+        return !V->VisitTranslationUnitDecl(TUD);
+      });
   return true;
 }
 

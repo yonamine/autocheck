@@ -268,6 +268,38 @@ bool BoolVectorUsedVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
   return true;
 }
 
+/* Implementation of TypeLongDoubleVisitor */
+
+TypeLongDoubleVisitor::TypeLongDoubleVisitor(clang::DiagnosticsEngine &DE,
+                                             clang::ASTContext &AC)
+    : DE(DE), AC(AC) {}
+
+bool TypeLongDoubleVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::longDoubleUsed);
+}
+
+bool TypeLongDoubleVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
+  // Skip Elaborated, Typedef and Using types to avoid getting multiple warnings
+  // for same type.
+  if (llvm::dyn_cast_if_present<clang::ElaboratedType>(TL.getTypePtr()) ||
+      llvm::dyn_cast_if_present<clang::TypedefType>(TL.getTypePtr()) ||
+      llvm::dyn_cast_if_present<clang::UsingType>(TL.getTypePtr()))
+    return true;
+
+  // Skip auto-deduced types.
+  if (TL.getTypePtr()->getContainedAutoType())
+    return true;
+
+  if (TL.getType()->isBuiltinType() && TL.getType()->isFloatingType() &&
+      TL.getType().getDesugaredType(AC).getAsString() == "long double") {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, TL.getBeginLoc(), AutocheckWarnings::longDoubleUsed)
+                .limitReached();
+  }
+
+  return true;
+}
+
 /* Implementation of TypesVisitor */
 
 TypesVisitor::TypesVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
@@ -285,6 +317,8 @@ TypesVisitor::TypesVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
     AllVisitors.push_front(std::make_unique<BoolVectorUsedVisitor>(DE, AC));
   if (CStyleArrayVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<CStyleArrayVisitor>(DE, AC));
+  if (TypeLongDoubleVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<TypeLongDoubleVisitor>(DE, AC));
 }
 
 void TypesVisitor::run(clang::TranslationUnitDecl *TUD) {

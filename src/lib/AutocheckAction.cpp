@@ -21,6 +21,7 @@
 #include "AST/Matchers.h"
 #include "AST/StatementsVisitor.h"
 #include "AST/TypesVisitor.h"
+#include "AST/TemplatesVisitor.h"
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
 #include "Lex/AutocheckLex.h"
 #include "clang/Basic/SourceManager.h"
@@ -56,6 +57,7 @@ static void runVisitors(clang::ASTContext &ASTCtx,
   TypesVisitor(DE, ASTCtx).run(TUD);
   ForLoopVisitor(DE, ASTCtx).run(TUD);
   HeadersVisitor(DE, Callbacks).run(TUD);
+  TemplatesVisitor(DE, ASTCtx).run(TUD);
 }
 
 static void runMatchers(clang::ASTContext &ASTCtx) {

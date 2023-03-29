@@ -41,6 +41,9 @@ bool CVI::VisitArraySubscriptExpr(const clang::ArraySubscriptExpr *) {
   return true;
 }
 bool CVI::VisitVarDecl(const clang::VarDecl *) { return true; }
+bool CVI::VisitCXXConstCastExpr(const clang::CXXConstCastExpr *CE) {
+  return true;
+}
 
 /* Implementation of InvalidBoolExpressionVisitor */
 
@@ -623,6 +626,117 @@ bool NullptrOnlyNullPtrConstVisitor::VisitCastExpr(const clang::CastExpr *E) {
   return true;
 }
 
+/* Implementation of CastPtrToIntegralVisitor */
+
+CastPtrToIntegralVisitor::CastPtrToIntegralVisitor(clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool CastPtrToIntegralVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::castPtrToIntegralType);
+}
+
+bool CastPtrToIntegralVisitor::VisitCastExpr(const clang::CastExpr *E) {
+  if (E->getCastKind() == clang::CK_PointerToIntegral) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, E->getBeginLoc(), AutocheckWarnings::castPtrToIntegralType)
+                .limitReached();
+  }
+  return true;
+}
+
+/* Implementation of CVDiscardCastVisitor */
+
+CVDiscardCastVisitor::CVDiscardCastVisitor(clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool CVDiscardCastVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::castRemovesQual);
+}
+
+bool CVDiscardCastVisitor::VisitCXXConstCastExpr(
+    const clang::CXXConstCastExpr *CE) {
+  // This only handles const casts. Other CV discarding casts are handled by
+  // -Wcast-qual in AutocheckDiagnosticConsumer.
+  clang::QualType FromType = CE->getSubExpr()->getType();
+  clang::QualType ToType = CE->getType();
+  if (FromType->isPointerType()) {
+    FromType = FromType->getPointeeType();
+    ToType = ToType->getPointeeType();
+  } else if (FromType->isReferenceType()) {
+    FromType = FromType.getNonReferenceType();
+    ToType = ToType.getNonReferenceType();
+  } else {
+    // We are only interested in pointer and referece types.
+    return true;
+  }
+
+  bool DropsConstQual = false;
+  bool DropsVolatileQual = false;
+  if (FromType.isConstQualified() && !ToType.isConstQualified()) {
+    DropsConstQual = true;
+  }
+  if (FromType.isVolatileQualified() && !ToType.isVolatileQualified()) {
+    DropsVolatileQual = true;
+  }
+
+  // Match parameters for clang::diag::cast_qual diagnostic.
+  int Qualifiers = -1;
+  if (DropsConstQual && DropsVolatileQual)
+    Qualifiers = 0;
+  else if (DropsConstQual)
+    Qualifiers = 1;
+  else if (DropsVolatileQual)
+    Qualifiers = 2;
+
+  if (Qualifiers != -1) {
+    bool stopVisitor =
+        AutocheckDiagnostic::reportWarning(DE, CE->getBeginLoc(),
+                                           AutocheckWarnings::castRemovesQual)
+            .limitReached();
+
+    AutocheckDiagnostic::reportWarning(
+        DE, CE->getBeginLoc(), AutocheckWarnings::noteCastRemovesQual, 0,
+        CE->getSubExpr()->getType(), CE->getType(), Qualifiers);
+
+    return !stopVisitor;
+  }
+
+  return true;
+}
+
+/* Implementation of ImpcastChangesSignednessVisitor */
+
+ImpcastChangesSignednessVisitor::ImpcastChangesSignednessVisitor(
+    clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool ImpcastChangesSignednessVisitor::isFlagPresent(
+    const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::impcastChangesSignedness);
+}
+
+bool ImpcastChangesSignednessVisitor::VisitImplicitCastExpr(
+    const clang::ImplicitCastExpr *ICE) {
+  if (!ICE->isPartOfExplicitCast() &&
+      ICE->getCastKind() == clang::CK_IntegralCast &&
+      ICE->getType()->isUnsignedIntegerType() !=
+          ICE->getSubExpr()->getType()->isUnsignedIntegerType()) {
+    bool stopVisitor =
+        AutocheckDiagnostic::reportWarning(
+            DE, ICE->getBeginLoc(), AutocheckWarnings::impcastChangesSignedness)
+            .limitReached();
+
+    AutocheckDiagnostic::reportWarning(
+        DE, ICE->getBeginLoc(), AutocheckWarnings::noteImpcastChangesSignedness,
+        ICE->getSubExpr()->getType().getAsString(),
+        ICE->getType().getAsString());
+
+    return !stopVisitor;
+  }
+
+  return true;
+}
+
 /* Implementation of ConversionsVisitor */
 
 ConversionsVisitor::ConversionsVisitor(clang::DiagnosticsEngine &DE,
@@ -654,6 +768,13 @@ ConversionsVisitor::ConversionsVisitor(clang::DiagnosticsEngine &DE,
   if (NullptrOnlyNullPtrConstVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
         std::make_unique<NullptrOnlyNullPtrConstVisitor>(DE));
+  if (CastPtrToIntegralVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<CastPtrToIntegralVisitor>(DE));
+  if (CVDiscardCastVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<CVDiscardCastVisitor>(DE));
+  if (ImpcastChangesSignednessVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(
+        std::make_unique<ImpcastChangesSignednessVisitor>(DE));
 }
 
 void ConversionsVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -736,6 +857,14 @@ bool ConversionsVisitor::VisitArraySubscriptExpr(
 bool ConversionsVisitor::VisitVarDecl(const clang::VarDecl *VD) {
   AllVisitors.remove_if([VD](std::unique_ptr<ConversionsVisitorInterface> &V) {
     return !V->VisitVarDecl(VD);
+  });
+  return true;
+}
+
+bool ConversionsVisitor::VisitCXXConstCastExpr(
+    const clang::CXXConstCastExpr *CE) {
+  AllVisitors.remove_if([CE](std::unique_ptr<ConversionsVisitorInterface> &V) {
+    return !V->VisitCXXConstCastExpr(CE);
   });
   return true;
 }

@@ -31,6 +31,8 @@ add_clang_executable(autocheck
     "lib/AST/LoopsVisitor.cpp"
     "lib/AST/HeadersVisitor.cpp"
     "lib/AST/Matchers.cpp"
+    "lib/AST/TemplatesVisitor.cpp"
+    "lib/AST/SideEffectChecker.cpp"
 )
 clang_target_link_libraries(autocheck
     PRIVATE
@@ -40,6 +42,7 @@ clang_target_link_libraries(autocheck
     clangLex
     clangStaticAnalyzerFrontend
     clangTooling
+    clangToolingSyntax
 )
 set_target_properties(autocheck
     PROPERTIES

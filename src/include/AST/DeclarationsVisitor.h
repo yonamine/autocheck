@@ -10,9 +10,12 @@
 //
 // This implements the following checks:
 // - [A0-1-6]  There should be no unused type declarations.
+// - [M3-1-2]  Functions shall not be declared at block scope.
 // - [A3-1-4]  When an array with external linkage is declared, its size shall
 //             be stated explicitly.
 // - [A3-3-2]  Static and thread-local objects shall be constant-initialized.
+// - [M3-3-2]  If a function has internal linkage then all re-declarations shall
+//             include the static storage class specifier.
 // - [M3-4-1]  An identifier declared to be an object or type shall be defined
 //             in a block that minimizes its visibility.
 // - [A5-0-3]  The declaration of objects shall contain no more than two levels
@@ -24,6 +27,15 @@
 //             that is a typedef or a using name..
 // - [A7-1-6]  The typedef specifier shall not be used.
 // - [A7-2-2]  Enumeration underlying base type shall be explicitly defined.
+// - [A7-2-3]  Enumerations shall be declared as scoped enum classes.
+// - [A7-2-4]  In an enumeration, either (1) none, (2) the first or (3) all
+//             enumerators shall be initialized.
+// - [M7-3-1]  The global namespace shall only contain main, namespace
+//             declarations and extern "C" declarations.
+// - [M7-3-2]  The identifier main shall not be used for a function other than
+//             the global function main.
+// - [A7-3-3]  There shall be no unnamed namespaces in header files.
+// - [M7-3-4]  Using-directives shall not be used.
 // - [A7-4-1]  The asm declaration shall not be used.
 // - [A8-4-1]  Functions shall not be defined using the ellipsis notation.
 // - [M8-4-2]  The identifiers used for the parameters in a re-declaration of a
@@ -36,6 +48,8 @@
 //             non-zero initialization of arrays and structures.
 // - [A8-5-3]  A variable of type auto shall not be initialized using {} or ={}
 //             braced-initialization.
+// - [A9-6-1]  Bit-fields shall be either unsigned integral, or enumeration
+//             (with underlying type of unsigned integral type).
 // - [A11-3-1] Friend declarations shall not be used.
 // - [A12-1-2] Both NSDMI and a non-static member initializer in a constructor
 //             shall not be used in the same type.
@@ -108,6 +122,9 @@ public:
   virtual bool VisitTypedefDecl(const clang::TypedefDecl *TD);
   virtual bool VisitFriendDecl(const clang::FriendDecl *TD);
   virtual bool VisitEnumDecl(const clang::EnumDecl *ED);
+  virtual bool VisitNamespaceDecl(const clang::NamespaceDecl *ND);
+  virtual bool VisitUsingDirectiveDecl(const clang::UsingDirectiveDecl *UDD);
+  virtual bool VisitTranslationUnitDecl(const clang::TranslationUnitDecl *TUD);
 };
 
 /// [A7-4-1] The asm declaration shall not be used.
@@ -139,25 +156,6 @@ class FunctionRedeclParamsVisitor : public DeclarationsVisitorInterface {
 
 public:
   explicit FunctionRedeclParamsVisitor(clang::DiagnosticsEngine &DE);
-  static bool isFlagPresent(const AutocheckContext &Context);
-
-  bool VisitFunctionDecl(const clang::FunctionDecl *FD);
-};
-
-/// [A8-4-7] "in" parameters for "cheap to copy" types shall be passed by value.
-class InParametersPassedByValue : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
-  clang::ASTContext &AC;
-
-  bool checkParameter(const clang::ParmVarDecl *PVD,
-                      const clang::SourceLocation &InstantiationLoc);
-  // We consider that class is not cheap to copy if it has a field with a
-  // pointer type.
-  bool classHasPointerField(const clang::Type *T);
-
-public:
-  explicit InParametersPassedByValue(clang::DiagnosticsEngine &DE,
-                                     clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitFunctionDecl(const clang::FunctionDecl *FD);
@@ -658,6 +656,113 @@ public:
   bool VisitEnumDecl(const clang::EnumDecl *ED) override;
 };
 
+/// [M3-1-2] Functions shall not be declared at block scope.
+class BlockScopeFunctionVisitor : public DeclarationsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit BlockScopeFunctionVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
+};
+
+/// [M3-3-2] If a function has internal linkage then all re-declarations shall
+/// include the static storage class specifier.
+class StaticFunctionRedeclarationVisitor : public DeclarationsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit StaticFunctionRedeclarationVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
+};
+
+/// [A7-2-3] Enumerations shall be declared as scoped enum classes.
+class EnumDeclaredScopedVisitor : public DeclarationsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit EnumDeclaredScopedVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitEnumDecl(const clang::EnumDecl *ED) override;
+};
+
+/// [A7-2-4] In an enumeration, either (1) none, (2) the first or (3) all
+/// enumerators shall be initialized.
+class EnumConstantInitVisitor : public DeclarationsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit EnumConstantInitVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitEnumDecl(const clang::EnumDecl *ED) override;
+};
+
+/// [M7-3-2] The identifier main shall not be used for a function other than the
+/// global function main.
+class MainReusedVisitor : public DeclarationsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit MainReusedVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
+};
+
+/// [A7-3-3] There shall be no unnamed namespaces in header files.
+class UnnamedNamespaceInHeaderVisitor : public DeclarationsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit UnnamedNamespaceInHeaderVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitNamespaceDecl(const clang::NamespaceDecl *ND) override;
+};
+
+/// [M7-3-4] Using-directives shall not be used.
+class UsingDirectiveVisitor : public DeclarationsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit UsingDirectiveVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitUsingDirectiveDecl(const clang::UsingDirectiveDecl *UDD) override;
+};
+
+/// [M7-3-1] The global namespace shall only contain main, namespace
+/// declarations and extern "C" declarations.
+class GlobalNamespaceVisitor : public DeclarationsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit GlobalNamespaceVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitTranslationUnitDecl(const clang::TranslationUnitDecl *TUD) override;
+
+private:
+  static const std::map<std::string, std::string> AllowedTypedefs;
+};
+
+/// [A9-6-1] Bit-fields shall be either unsigned integral, or enumeration (with
+/// underlying type of unsigned integral type).
+class BitFieldTypeVisitor : public DeclarationsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit BitFieldTypeVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitFieldDecl(const clang::FieldDecl *FD) override;
+};
+
 /// Main visitor for declaration related checks. Makes an instance of every
 /// class that implement a DeclarationsVisitorInterface if appropriate flag is
 /// found. Runs all Declaration Visitors with one AST traversal.
@@ -675,7 +780,6 @@ public:
   bool TraverseDecl(clang::Decl *D);
 
   bool TraverseStmt(clang::Stmt *S);
-  bool shouldVisitTemplateInstantiations() const { return true; }
 
   bool VisitGCCAsmStmt(const clang::GCCAsmStmt *GAS);
   bool VisitVarDecl(const clang::VarDecl *VD);
@@ -695,6 +799,9 @@ public:
   bool VisitTypedefDecl(const clang::TypedefDecl *TD);
   bool VisitFriendDecl(const clang::FriendDecl *FD);
   bool VisitEnumDecl(const clang::EnumDecl *ED);
+  bool VisitNamespaceDecl(const clang::NamespaceDecl *ND);
+  bool VisitUsingDirectiveDecl(const clang::UsingDirectiveDecl *UDD);
+  bool VisitTranslationUnitDecl(const clang::TranslationUnitDecl *TUD);
 };
 
 } // namespace autocheck
