@@ -30,8 +30,12 @@ bool SVI::VisitCaseStmt(const clang::CaseStmt *) { return true; }
 bool SVI::VisitGotoStmt(const clang::GotoStmt *) { return true; }
 bool SVI::VisitIfStmt(const clang::IfStmt *) { return true; }
 bool SVI::VisitForStmt(const clang::ForStmt *FS) { return true; }
+bool SVI::VisitCXXForRangeStmt(const clang::CXXForRangeStmt *CFRS) {
+  return true;
+}
 bool SVI::VisitDoStmt(const clang::DoStmt *DS) { return true; }
 bool SVI::VisitWhileStmt(const clang::WhileStmt *WS) { return true; }
+bool SVI::VisitSwitchStmt(const clang::SwitchStmt *SS) { return true; }
 
 /* IfElseIfTerminatedVisitor */
 
@@ -201,6 +205,85 @@ bool DoWhileUsedVisitor::VisitDoStmt(const clang::DoStmt *DS) {
               .limitReached();
 }
 
+/* Implementation of BodyCompoundStmtVisitor */
+
+BodyCompoundStmtVisitor::BodyCompoundStmtVisitor(clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool BodyCompoundStmtVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::notCompoundStatement);
+}
+
+bool BodyCompoundStmtVisitor::VisitDoStmt(const clang::DoStmt *DS) {
+  if (!llvm::dyn_cast_if_present<clang::CompoundStmt>(DS->getBody())) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, DS->getBeginLoc(), AutocheckWarnings::notCompoundStatement)
+                .limitReached();
+  }
+  return true;
+}
+
+bool BodyCompoundStmtVisitor::VisitWhileStmt(const clang::WhileStmt *WS) {
+  if (!llvm::dyn_cast_if_present<clang::CompoundStmt>(WS->getBody())) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, WS->getBeginLoc(), AutocheckWarnings::notCompoundStatement)
+                .limitReached();
+  }
+  return true;
+}
+
+bool BodyCompoundStmtVisitor::VisitSwitchStmt(const clang::SwitchStmt *SS) {
+  if (!llvm::dyn_cast_if_present<clang::CompoundStmt>(SS->getBody())) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, SS->getBeginLoc(), AutocheckWarnings::notCompoundStatement)
+                .limitReached();
+  }
+  return true;
+}
+
+bool BodyCompoundStmtVisitor::VisitForStmt(const clang::ForStmt *FS) {
+  if (!llvm::dyn_cast_if_present<clang::CompoundStmt>(FS->getBody())) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, FS->getBeginLoc(), AutocheckWarnings::notCompoundStatement)
+                .limitReached();
+  }
+  return true;
+}
+
+bool BodyCompoundStmtVisitor::VisitCXXForRangeStmt(
+    const clang::CXXForRangeStmt *CFRS) {
+  if (!llvm::dyn_cast_if_present<clang::CompoundStmt>(CFRS->getBody())) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, CFRS->getBeginLoc(),
+                AutocheckWarnings::notCompoundStatement)
+                .limitReached();
+  }
+  return true;
+}
+
+/* Implementation of GotoBackJumpVisitor */
+
+GotoBackJumpVisitor::GotoBackJumpVisitor(clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool GotoBackJumpVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::gotoBackJump);
+}
+
+bool GotoBackJumpVisitor::VisitGotoStmt(const clang::GotoStmt *GS) {
+  // A label is always in the same function as a goto pointing to it, so we only
+  // need to check their relative locations.
+  clang::BeforeThanCompare<clang::SourceLocation> isBefore(
+      DE.getSourceManager());
+  if (isBefore(GS->getLabel()->getLocation(), GS->getGotoLoc())) {
+    return !AutocheckDiagnostic::reportWarning(DE, GS->getBeginLoc(),
+                                               AutocheckWarnings::gotoBackJump)
+                .limitReached();
+  }
+
+  return true;
+}
+
 /* StatementsVisitor */
 
 StatementsVisitor::StatementsVisitor(clang::DiagnosticsEngine &DE,
@@ -220,6 +303,10 @@ StatementsVisitor::StatementsVisitor(clang::DiagnosticsEngine &DE,
   if (DoWhileUsedVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<DoWhileUsedVisitor>(
         DE, Context, AC, Callbacks.getDoWhileMacros()));
+  if (BodyCompoundStmtVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<BodyCompoundStmtVisitor>(DE));
+  if (GotoBackJumpVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<GotoBackJumpVisitor>(DE));
 }
 
 void StatementsVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -288,6 +375,14 @@ bool StatementsVisitor::VisitForStmt(const clang::ForStmt *FS) {
   return true;
 }
 
+bool StatementsVisitor::VisitCXXForRangeStmt(
+    const clang::CXXForRangeStmt *CFRS) {
+  AllVisitors.remove_if([CFRS](std::unique_ptr<StatementsVisitorInterface> &V) {
+    return !V->VisitCXXForRangeStmt(CFRS);
+  });
+  return true;
+}
+
 bool StatementsVisitor::VisitDoStmt(const clang::DoStmt *DS) {
   AllVisitors.remove_if([DS](std::unique_ptr<StatementsVisitorInterface> &V) {
     return !V->VisitDoStmt(DS);
@@ -298,6 +393,13 @@ bool StatementsVisitor::VisitDoStmt(const clang::DoStmt *DS) {
 bool StatementsVisitor::VisitWhileStmt(const clang::WhileStmt *WS) {
   AllVisitors.remove_if([WS](std::unique_ptr<StatementsVisitorInterface> &V) {
     return !V->VisitWhileStmt(WS);
+  });
+  return true;
+}
+
+bool StatementsVisitor::VisitSwitchStmt(const clang::SwitchStmt *SS) {
+  AllVisitors.remove_if([SS](std::unique_ptr<StatementsVisitorInterface> &V) {
+    return !V->VisitSwitchStmt(SS);
   });
   return true;
 }

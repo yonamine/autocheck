@@ -12,6 +12,9 @@
 // - [A0-1-3]  Every function defined in an anonymous namespace, or static
 //             function with internal linkage, or private member function shall
 //             be used.
+// - [M5-2-11] The comma operator, && operator and the || operator shall not be
+//             overloaded.
+// - [M5-3-3] The unary & operator shall not be overloaded.
 // - [M8-3-1]  Parameters in an overriding virtual function shall either use the
 //             same default arguments as the function they override, or else
 //             shall not specify any default arguments.
@@ -26,14 +29,22 @@
 // - [A10-3-3] Virtual functions shall not be introduced in a final class.
 // - [M10-3-3] A virtual function shall only be overridden by a pure virtual
 //             function if it is itself declared as pure virtual.
+// - [A10-3-5] A user-defined assignment operator shall not be virtual.
 // - [A11-0-1] A non-POD type should be defined as class.
 // - [M11-0-1] Member data in non-POD class types shall be private.
+// - [A11-0-2] A type defined as struct shall: (1) provide only public data
+//             members, (2) not provide any special member functions or methods,
+//             (3) not be a base of another struct or class, (4) not inherit
+//             from another struct or class.
 // - [A12-1-4] All constructors that are callable with a single argument of
 //             fundamental type shall be declared explicit.
+// - [A12-4-1] Destructor of a base class shall be public virtual, public
+//             override or protected non-virtual.
 // - [A12-4-2] If a public destructor of a class is non-virtual, then the class
 //             should be declared final.
 // - [A12-8-2] User-defined copy and move assignment operators should use
 //             user-defined no-throw swap function.
+// - [A12-8-7] Assignment operators should be declared with the ref-qualifier &.
 // - [A13-2-3] A relational operator shall return a boolean value.
 // - [A13-5-1] If "operator[]" is to be overloaded with a non-const version,
 //             const version shall also be implemented.
@@ -319,6 +330,73 @@ public:
       : DE(DE), ASTCtx(ASTCtx) {}
   static bool isFlagPresent(const AutocheckContext &Context);
   bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CRD) override;
+};
+
+/// [M5-2-11] The comma operator, && operator and the || operator shall not be
+/// overloaded.
+class ForbiddenOperatorOverloadVisitor : public ClassesVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit ForbiddenOperatorOverloadVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
+};
+
+/// [M5-3-3] The unary & operator shall not be overloaded.
+class UnaryAmpOperatorOverloadVisitor : public ClassesVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit UnaryAmpOperatorOverloadVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
+};
+
+/// [A12-8-7] Assignment operators should be declared with the ref-qualifier &.
+/// [A10-3-5] A user-defined assignment operator shall not be virtual.
+class AssignmentOpVisitor : public ClassesVisitorInterface {
+private:
+  clang::DiagnosticsEngine &DE;
+  const AutocheckContext &Context;
+  bool CheckRefQual, CheckVirtual;
+
+public:
+  explicit AssignmentOpVisitor(clang::DiagnosticsEngine &DE,
+                               const AutocheckContext &Context);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
+};
+
+/// [A11-0-2] A type defined as struct shall: (1) provide only public data
+/// members, (2) not provide any special member functions or methods, (3) not be
+/// a base of another struct or class, (4) not inherit from another struct or
+/// class.
+class ProperStructureVisitor : public ClassesVisitorInterface {
+private:
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit ProperStructureVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
+};
+
+/// [A12-4-1] Destructor of a base class shall be public virtual, public
+/// override or protected non-virtual.
+class BaseDestructorVisitor : public ClassesVisitorInterface {
+private:
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit BaseDestructorVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
 };
 
 /// Main visitor for AutosarClasses. Makes an instance of every class that

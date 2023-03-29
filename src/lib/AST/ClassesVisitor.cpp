@@ -869,6 +869,217 @@ bool ChangedDefaultArgumentsVisitor::VisitCXXMethodDecl(
   return true;
 }
 
+/* Implementation of ForbiddenOperatorOverloadVisitor */
+
+ForbiddenOperatorOverloadVisitor::ForbiddenOperatorOverloadVisitor(
+    clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool ForbiddenOperatorOverloadVisitor::isFlagPresent(
+    const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::commaAndOrOpsOverloaded);
+}
+
+bool ForbiddenOperatorOverloadVisitor::VisitCXXMethodDecl(
+    const clang::CXXMethodDecl *CMD) {
+  if (CMD->isOverloadedOperator()) {
+    switch (CMD->getOverloadedOperator()) {
+    case clang::OO_Comma:
+    case clang::OO_AmpAmp:
+    case clang::OO_PipePipe:
+      return !AutocheckDiagnostic::reportWarning(
+                  DE, CMD->getLocation(),
+                  AutocheckWarnings::commaAndOrOpsOverloaded)
+                  .limitReached();
+    default:
+      return true;
+    }
+  }
+  return true;
+}
+
+/* Implementation of UnaryAmpOperatorOverloadVisitor */
+
+UnaryAmpOperatorOverloadVisitor::UnaryAmpOperatorOverloadVisitor(
+    clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool UnaryAmpOperatorOverloadVisitor::isFlagPresent(
+    const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::unaryAmpOpOverloaded);
+}
+
+bool UnaryAmpOperatorOverloadVisitor::VisitCXXMethodDecl(
+    const clang::CXXMethodDecl *CMD) {
+  if (CMD->isOverloadedOperator() &&
+      (CMD->getOverloadedOperator() == clang::OO_Amp)) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, CMD->getLocation(), AutocheckWarnings::unaryAmpOpOverloaded)
+                .limitReached();
+  }
+  return true;
+}
+
+/* Implementation of AssignmentOpVisitor */
+
+AssignmentOpVisitor::AssignmentOpVisitor(clang::DiagnosticsEngine &DE,
+                                         const AutocheckContext &Context)
+    : DE(DE), Context(Context),
+      CheckRefQual(Context.isEnabled(AutocheckWarnings::assignmentOpRefQual)),
+      CheckVirtual(Context.isEnabled(AutocheckWarnings::assignmentOpVirtual)) {}
+
+bool AssignmentOpVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::assignmentOpRefQual) ||
+         Context.isEnabled(AutocheckWarnings::assignmentOpVirtual);
+}
+
+bool AssignmentOpVisitor::VisitCXXMethodDecl(const clang::CXXMethodDecl *MD) {
+  switch (MD->getOverloadedOperator()) {
+  case clang::OO_Equal:
+  case clang::OO_PlusEqual:
+  case clang::OO_MinusEqual:
+  case clang::OO_StarEqual:
+  case clang::OO_SlashEqual:
+  case clang::OO_PercentEqual:
+  case clang::OO_AmpEqual:
+  case clang::OO_PipeEqual:
+  case clang::OO_CaretEqual:
+  case clang::OO_LessLessEqual:
+  case clang::OO_GreaterGreaterEqual:
+    if (CheckRefQual && (MD->getRefQualifier() != clang::RQ_LValue)) {
+      CheckRefQual =
+          !AutocheckDiagnostic::reportWarning(
+               DE, MD->getLocation(), AutocheckWarnings::assignmentOpRefQual)
+               .limitReached();
+    }
+    if (CheckVirtual && MD->isVirtual()) {
+      CheckVirtual =
+          !AutocheckDiagnostic::reportWarning(
+               DE, MD->getLocation(), AutocheckWarnings::assignmentOpVirtual)
+               .limitReached();
+    }
+    break;
+  default:
+    return true;
+  }
+
+  return CheckRefQual || CheckVirtual;
+}
+
+/* Implementation of ProperStructureVisitor */
+
+ProperStructureVisitor::ProperStructureVisitor(clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool ProperStructureVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::properStructure);
+}
+
+bool ProperStructureVisitor::VisitCXXRecordDecl(
+    const clang::CXXRecordDecl *CRD) {
+  if (CRD->isStruct() && CRD->isCompleteDefinition()) {
+    // (4) not inherit from another struct or class.
+    // This check is done before (2) so that no implicit method can trigger a
+    // warning for (2) which might confuse the user.
+    if (!CRD->bases().empty()) {
+      return !AutocheckDiagnostic::reportWarning(
+                  DE, CRD->getBeginLoc(), AutocheckWarnings::properStructure, 3)
+                  .limitReached();
+    }
+
+    // (2) not provide any special member functions or methods.
+    // This check is done before (1) so we don't have to iterate through every
+    // method to check if any of them is not public.
+    if (!CRD->methods().empty() &&
+        std::any_of(CRD->method_begin(), CRD->method_end(),
+                    [](const clang::CXXMethodDecl *CMD) {
+                      return !CMD->isImplicit();
+                    })) {
+      return !AutocheckDiagnostic::reportWarning(
+                  DE, CRD->getBeginLoc(), AutocheckWarnings::properStructure, 1)
+                  .limitReached();
+    }
+
+    // (1) provide only public data members.
+    if (CRD->hasPrivateFields() || CRD->hasProtectedFields()) {
+      return !AutocheckDiagnostic::reportWarning(
+                  DE, CRD->getBeginLoc(), AutocheckWarnings::properStructure, 0)
+                  .limitReached();
+    }
+  }
+
+  // (3) not be a base of another struct or class.
+  // This check is done last as it is most complex, in that it needs to iterate
+  // through every base class.
+  for (const clang::CXXBaseSpecifier &BaseSpec : CRD->bases()) {
+    const clang::Type *TypeNode = BaseSpec.getType().getTypePtr();
+    const clang::CXXRecordDecl *BaseDecl =
+        BaseSpec.getType()->getAsCXXRecordDecl();
+
+    if (BaseDecl && BaseDecl->isStruct()) {
+      bool stopVisitor =
+          AutocheckDiagnostic::reportWarning(
+              DE, CRD->getBeginLoc(), AutocheckWarnings::properStructure, 2)
+              .limitReached();
+      AutocheckDiagnostic::reportWarning(
+          DE, BaseDecl->getBeginLoc(), AutocheckWarnings::noteProperStructure);
+      return !stopVisitor;
+    }
+  }
+
+  return true;
+}
+
+/* Implementation of BaseDestructorVisitor */
+
+BaseDestructorVisitor::BaseDestructorVisitor(clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool BaseDestructorVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::baseDestructor);
+}
+
+bool BaseDestructorVisitor::VisitCXXRecordDecl(
+    const clang::CXXRecordDecl *CRD) {
+  if (CRD->isImplicit() || !CRD->isCompleteDefinition() ||
+      !(CRD->isClass() || CRD->isStruct()))
+    return true;
+
+  for (const clang::CXXBaseSpecifier &BaseSpec : CRD->bases()) {
+    const clang::Type *TypeNode = BaseSpec.getType().getTypePtr();
+    const clang::CXXRecordDecl *BaseDecl = TypeNode->getAsCXXRecordDecl();
+    if (BaseDecl) {
+      const clang::CXXDestructorDecl *Dtor = BaseDecl->getDestructor();
+      if (Dtor) {
+        clang::AccessSpecifier AS = Dtor->getAccess();
+
+        // Is destructor public virtual or public override.
+        if (AS == clang::AS_public &&
+            (Dtor->isVirtual() || Dtor->size_overridden_methods() > 0 ||
+             Dtor->hasAttr<clang::OverrideAttr>()))
+          return true;
+
+        // Is destructor protected non-virtual.
+        if (AS == clang::AS_protected && !Dtor->isVirtual())
+          return true;
+
+        // Every other type of destructor is not allowed.
+        bool stopVisitor =
+            AutocheckDiagnostic::reportWarning(
+                DE, CRD->getBeginLoc(), AutocheckWarnings::baseDestructor)
+                .limitReached();
+        AutocheckDiagnostic::reportWarning(
+            DE, Dtor->getBeginLoc(), AutocheckWarnings::noteBaseDestructor,
+            Dtor->isImplicit());
+        if (stopVisitor)
+          return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 /* ClassesVisitor */
 
 ClassesVisitor::ClassesVisitor(clang::DiagnosticsEngine &DE,
@@ -915,6 +1126,18 @@ ClassesVisitor::ClassesVisitor(clang::DiagnosticsEngine &DE,
   if (ChangedDefaultArgumentsVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
         std::make_unique<ChangedDefaultArgumentsVisitor>(DE, ASTCtx));
+  if (ForbiddenOperatorOverloadVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(
+        std::make_unique<ForbiddenOperatorOverloadVisitor>(DE));
+  if (UnaryAmpOperatorOverloadVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(
+        std::make_unique<UnaryAmpOperatorOverloadVisitor>(DE));
+  if (AssignmentOpVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<AssignmentOpVisitor>(DE, Context));
+  if (ProperStructureVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<ProperStructureVisitor>(DE));
+  if (BaseDestructorVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<BaseDestructorVisitor>(DE));
 }
 
 void ClassesVisitor::run(clang::TranslationUnitDecl *TUD) {

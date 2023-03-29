@@ -15,6 +15,7 @@
 #include "clang/AST/ParentMapContext.h"
 #include "clang/Basic/ExceptionSpecificationType.h"
 #include "clang/Lex/Lexer.h"
+#include "clang/Tooling/Syntax/Tokens.h"
 #include "llvm/Support/Casting.h"
 
 namespace autocheck {
@@ -1050,6 +1051,91 @@ SeparateLineStatementVisitor::getBodyStart(const clang::Stmt *Body) {
   return BodyStart;
 }
 
+/* Implementation of LambdaDeclaratorVisitor */
+
+LambdaDeclaratorVisitor::LambdaDeclaratorVisitor(clang::DiagnosticsEngine &DE,
+                                                 clang::ASTContext &AC)
+    : DE(DE), AC(AC) {}
+
+bool LambdaDeclaratorVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::lambdaDeclaratorMissing);
+}
+
+bool LambdaDeclaratorVisitor::VisitLambdaExpr(const clang::LambdaExpr *LE) {
+  // Note: LE->getCallOperator()->getParametersSourceRange() is invalid if there
+  // are no parameters, no matter if the parentheses are present or not, so it
+  // can't be used to check this rule.
+
+  // If there are more than 0 parameters, parentheses are required. The only
+  // case that needs checking is for empty parentheses.
+  if (LE->getCallOperator()->getNumParams() > 0)
+    return true;
+
+  // Extract the code after the introducer and before the body.
+  const clang::SourceManager &SM = DE.getSourceManager();
+  clang::SourceRange DeclaratorRange(
+      LE->getIntroducerRange().getEnd().getLocWithOffset(1),
+      LE->getBody()->getBeginLoc());
+  clang::syntax::FileRange DeclaratorFileRange(SM, DeclaratorRange.getBegin(),
+                                               DeclaratorRange.getEnd());
+
+  // If the range is too short, report the warning.
+  if (DeclaratorFileRange.length() < 2) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, DeclaratorRange.getBegin(),
+                AutocheckWarnings::lambdaDeclaratorMissing)
+                .limitReached();
+  }
+
+  // Tokenize the declarator range.
+  auto tokens = clang::syntax::tokenize(
+      DeclaratorFileRange, DE.getSourceManager(), AC.getLangOpts());
+
+  // Manually check for parentheses.
+  if (tokens.size() != 2 || tokens[0].kind() != clang::tok::l_paren ||
+      tokens[1].kind() != clang::tok::r_paren) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, DeclaratorRange.getBegin(),
+                AutocheckWarnings::lambdaDeclaratorMissing)
+                .limitReached();
+  }
+
+  return true;
+}
+
+/* Implementation of IfElseCompoundStmtVisitor */
+
+IfElseCompoundStmtVisitor::IfElseCompoundStmtVisitor(
+    clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
+
+bool IfElseCompoundStmtVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::ifFollowedByCompoundStmt);
+}
+
+bool IfElseCompoundStmtVisitor::VisitIfStmt(const clang::IfStmt *IS) {
+  // Check compound statement after if.
+  if (!llvm::dyn_cast_if_present<clang::CompoundStmt>(IS->getThen())) {
+    if (AutocheckDiagnostic::reportWarning(
+            DE, IS->getIfLoc(), AutocheckWarnings::ifFollowedByCompoundStmt)
+            .limitReached())
+      return false;
+  }
+
+  // Check compound statement or if stmt after else.
+  if (const clang::Stmt *Else = IS->getElse()) {
+    if (!llvm::dyn_cast<clang::IfStmt>(Else) &&
+        !llvm::dyn_cast<clang::CompoundStmt>(Else)) {
+      if (AutocheckDiagnostic::reportWarning(
+              DE, IS->getElseLoc(), AutocheckWarnings::ifFollowedByCompoundStmt)
+              .limitReached())
+        return false;
+    }
+  }
+
+  return true;
+}
+
 /* LexicalRulesVisitor */
 
 LexicalRulesVisitor::LexicalRulesVisitor(clang::DiagnosticsEngine &DE,
@@ -1076,6 +1162,10 @@ LexicalRulesVisitor::LexicalRulesVisitor(clang::DiagnosticsEngine &DE,
   if (SeparateLineStatementVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
         std::make_unique<SeparateLineStatementVisitor>(DE, Context, AC));
+  if (LambdaDeclaratorVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<LambdaDeclaratorVisitor>(DE, AC));
+  if (IfElseCompoundStmtVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<IfElseCompoundStmtVisitor>(DE));
 }
 
 void LexicalRulesVisitor::run(clang::TranslationUnitDecl *TUD) {

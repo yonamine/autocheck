@@ -9,6 +9,7 @@
 // AST.
 //
 // This implements the following checks:
+// - [A0-4-2]  Type long double shall not be used.
 // - [A2-13-3] Type wchar_t shall not be used.
 // - [A5-0-2]  The condition of an if-statement and the condition of an
 //             iteration statement shall have type bool.
@@ -143,6 +144,19 @@ class BoolVectorUsedVisitor : public TypesVisitorInterface {
 
 public:
   explicit BoolVectorUsedVisitor(clang::DiagnosticsEngine &DE,
+                                 clang::ASTContext &AC);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitTypeLoc(const clang::TypeLoc &TL) override;
+};
+
+/// [A0-4-2] Type long double shall not be used.
+class TypeLongDoubleVisitor : public TypesVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+  clang::ASTContext &AC;
+
+public:
+  explicit TypeLongDoubleVisitor(clang::DiagnosticsEngine &DE,
                                  clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 

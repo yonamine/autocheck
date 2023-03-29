@@ -4,7 +4,9 @@
 | ---  | ---  | ---  |
 | A0-1-2 | The value returned by a function having a non-void return type that is not an overloaded operator shall be used. | unused-return-value |
 | A0-1-3 | Every function defined in an anonymous namespace, or static function with internal linkage, or private member function shall be used. | unused-function-or-method |
+| A0-1-4 | There shall be no unused named parameters in non-virtual functions. | unused-parameter |
 | A0-1-6 | There should be no unused type declarations. | unused-typedef |
+| A0-4-2 | Type long double shall not be used. | long-double-used |
 | A2-3-1 | Only those characters specified in the C++ Language Standard basic source character set shall be used in the source code. | non-cplusplus-standard-char-used |
 | A2-5-1 | Trigraphs shall not be used. | trigraphs-used |
 | A2-5-2 | Digraphs shall not be used. | digraphs-used |
@@ -21,8 +23,10 @@
 | A2-13-5 | Hexadecimal constants should be upper case. | hex-const-upper-case |
 | A2-13-6 | Universal character names shall be used only inside character or string literals. | non-universal-names |
 | A3-1-2 | Header files, that are defined locally in the project, shall have a file name extension of one of: ".h", ".hpp" or ".hxx". | header-extension |
+| M3-1-2 | Functions shall not be declared at block scope. | function-at-block-scope |
 | A3-1-4 | When an array with external linkage is declared, its size shall be stated explicitly. | extern-array-implicit-size |
 | A3-3-2 | Static and thread-local objects shall be constant-initialized. | constant-initializer |
+| M3-3-2 | If a function has internal linkage then all re-declarations shall include the static storage class specifier. | static-function-redeclaration |
 | M3-4-1 | An identifier declared to be an object or type shall be defined in a block that minimizes its visibility. | broad-scope-identifier |
 | A3-9-1 | Fixed width integer types from \<cstdint\>, indicating the size and signedness, shall be used in place of the basic numerical types. | fixed-width-integer-types |
 | A4-5-1 | Expressions with type enum or enum class shall not be used as operands to built-in and overloaded operators other than the subscript operator [ ], the assignment operator =, the equality operators == and !=, the unary & operator, and the relational operators \<, \<=, \>, \>=. | invalid-enum-expression |
@@ -33,25 +37,41 @@
 | M4-10-2 | Literal zero (0) shall not be used as the null-pointer-constant. | zero-to-null-pointer |
 | A5-0-2 | The condition of an if-statement and the condition of an iteration statement shall have type bool. | condition-not-bool |
 | A5-0-3 | The declaration of objects shall contain no more than two levels of pointer indirection. | pointer-indirection-levels |
+| M5-0-4 | An implicit integral conversion shall not change the signedness of the underlying type. | impcast-changes-signedness |
 | M5-0-5 | There shall be no implicit floating-integral conversions. | implicit-float-integral-conversion |
 | M5-0-6 | An implicit integral or floating-point conversion shall not reduce the size of the underlying type. | implicit-size-reduction-conversion |
 | M5-0-10 | If the bitwise operators ~and \<\< are applied to an operand with an underlying type of unsigned char or unsigned short, the result shall be immediately cast to the underlying type of the operand. | implicit-bitwise-result-conversion |
 | M5-0-11 | The plain char type shall only be used for the storage and use of character values. | char-storage |
 | M5-0-12 | Signed char and unsigned char type shall only be used for the storage and use of numeric values. | sign-char-storage |
+| M5-0-14 | The first operand of a conditional-operator shall have type bool. | conditional-op-operand-type |
 | M5-0-20 | Non-constant operands to a binary bitwise operator shall have the same underlying type. | implicit-bitwise-binop-conversion |
+| M5-0-21 | Bitwise operators shall only be applied to operands of unsigned underlying type. | bitwise-operand-not-unsigned |
 | A5-1-2 | Variables shall not be implicitly captured in a lambda expression. | implicitly-captured-var |
+| A5-1-3 | Parameter list (possibly empty) shall be included in every lambda expression. | lambda-declarator-missing |
 | A5-1-6 | Return type of a non-void return type lambda expression should be explicitly specified. | lambda-return-type-unspecified |
 | A5-1-8 | Lambda expressions should not be defined inside another lambda expression. | nested-lambda |
 | A5-2-1 | dynamic_cast should not be used. | dynamic-cast-used |
+| A5-2-2 | Traditional C-style casts shall not be used. | c-style-cast-used |
+| A5-2-3 | A cast shall not remove any const or volatile qualification from the type of a pointer or reference. | cast-removes-qual |
 | A5-2-4 | reinterpret_cast shall not be used. | reinterpret-cast-used |
+| M5-2-9 | A cast shall not convert a pointer type to an integral type. | cast-ptr-to-integral-type |
 | M5-2-10 | The increment (++) and decrement (−−) operators shall not be mixed with other operators in an expression. | inc-dec-op-mixed |
+| M5-2-11 | The comma operator, && operator and the \|\| operator shall not be overloaded. | comma-and-or-ops-overloaded |
 | M5-2-12 | An identifier with array type passed as a function argument shall not decay to a pointer. | array-decays-to-pointer |
+| M5-3-1 | Each operand of the ! operator, the logical && or the logical \|\| operators shall have type bool. | not-and-or-ops-bool-operands |
+| M5-3-2 | The unary minus operator shall not be applied to an expression whose underlying type is unsigned. | unary-minus-on-unsigned-type |
+| M5-3-3 | The unary & operator shall not be overloaded. | unary-amp-op-overloaded |
 | M5-3-4 | Evaluation of the operand to the sizeof operator shall not contain side effects. | sizeof-side-effect |
 | A5-7-1 | A lambda shall not be an operand to decltype or typeid. | lambda-decltype-typeid |
+| M5-14-1 | The right hand operand of a logical &&, \|\| operators shall not contain side effects. | rhs-operand-and-or-side-effect |
 | A5-16-1 | The ternary conditional operator shall not be used as a sub-expression. | ternary-op-sub-expr |
+| M5-18-1 | The comma operator shall not be used. | comma-operator-used |
 | M6-2-1 | Assignment operators shall not be used in sub-expressions. | assignment-op-sub-expr |
 | M6-2-3 | Before preprocessing, a null statement shall only occur on a line by itself; it may be followed by a comment, provided that the first character following the null statement is a white-space character. | null-stmt-not-alone |
+| M6-3-1 | The statement forming the body of a switch, while, do ... while or for statement shall be a compound statement. | not-compound-statement |
+| M6-4-1 | An if ( condition ) construct shall be followed by a compound statement. The else keyword shall be followed by either a compound statement, or another if statement. | if-followed-by-compound-stmt |
 | M6-4-2 | All if ... else if constructs shall be terminated with an else clause. | if-else-if-terminated |
+| M6-4-5 | An unconditional throw or break statement shall terminate every non-empty switch-clause. | break-switch-case |
 | M6-4-6 | The final clause of a switch statement shall be the default-clause. | switch-stmt-default-clause |
 | A6-5-1 | A for-loop that loops through all elements of the container and does not use its loop-counter shall not be used. | container-loop-ill-formed |
 | A6-5-2 | A for loop shall contain a single loop-counter which shall not have floating-point type. | single-loop-counter-float-type |
@@ -64,42 +84,60 @@
 | M6-5-6 | A loop-control-variable other than the loop-counter which is modified in statement shall have type bool. | non-loop-counter-bool |
 | A6-6-1 | The goto statement shall not be used. | goto-used |
 | M6-6-1 | Any label referenced by a goto statement shall be declared in the same block, or in a block enclosing the goto statement. | goto-label-block |
+| M6-6-2 | The goto statement shall jump to a label declared later in the same function body. | goto-back-jump |
 | M6-6-3 | The continue statement shall only be used within a well-formed for loop. | continue-stmt-well-formed-loop |
 | A7-1-1 | Constexpr or const specifiers shall be used for immutable data declaration. | const-unused-for-immutable-data |
 | A7-1-3 | CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name. | cv-qualifiers-placed-left |
 | A7-1-6 | The typedef specifier shall not be used. | typedef-used |
 | A7-1-7 | Each expression statement and identifier declaration shall be placed on a separate line. | separate-line-expression-statement |
 | A7-2-2 | Enumeration underlying base type shall be explicitly defined. | enum-type-not-defined |
+| A7-2-3 | Enumerations shall be declared as scoped enum classes. | enum-not-scoped-enum-class |
+| A7-2-4 | In an enumeration, either (1) none, (2) the first or (3) all enumerators shall be initialized. | enumerator-initialization |
+| M7-3-1 | The global namespace shall only contain main, namespace declarations and extern "C" declarations. | global-namespace-nodes |
+| M7-3-2 | The identifier main shall not be used for a function other than the global function main. | identifier-main-reused |
+| M7-3-3 | There shall be no unnamed namespaces in header files. | unnamed-namespace-in-header |
+| M7-3-4 | Using-directives shall not be used. | using-directive-used |
 | M7-3-6 | Using-directives and using-declarations (excluding class scope or function scope using-declarations) shall not be used in header files. | using-inside-header |
 | A7-4-1 | The asm declaration shall not be used. | asm-declaration-used |
+| M7-5-1 | A function shall not return a reference or a pointer to an automatic variable (including parameters), defined within the function. | return-stack-address |
 | M8-3-1 | Parameters in an overriding virtual function shall either use the same default arguments as the function they override, or else shall not specify any default arguments. | changed-default-arguments |
 | A8-4-1 | Functions shall not be defined using the ellipsis notation. | variadic-function-used |
+| A8-4-2 | All exit paths from a function with non-void return type shall have an explicit return statement with an expression. | return-nonvoid-function  |
 | M8-4-2 | The identifiers used for the parameters in a re-declaration of a function shall be identical to those in the declaration. | function-redecl-params |
 | A8-4-7 | "in" parameters for "cheap to copy" types shall be passed by value. | in-parm-passed-by-value |
+| A8-5-0 | All memory shall be initialized before it is read. | uninitialized-memory |
 | A8-5-2 | Braced-initialization {}, without equals sign, shall be used for variable initialization. | non-braced-init-used |
 | M8-5-2 | Braces shall be used to indicate and match the structure in the non-zero initialization of arrays and structures. | missing-braces-or-elements |
 | A8-5-3 | A variable of type auto shall not be initialized using {} or ={} braced-initialization. | auto-var-braced-init |
 | M9-3-1 | Const member functions shall not return non-const pointers or references to class-data. | non-const-returned-from-const |
 | A9-5-1 | Unions shall not be used. | unions-used |
+| A9-6-1 | Bit-fields shall be either unsigned integral, or enumeration (with underlying type of unsigned integral type). | bit-field-unsigned-integral |
 | M10-1-1 | Classes should not be derived from virtual bases. | derived-from-virtual |
 | A10-3-1 | Virtual function declaration shall contain exactly one of the three specifiers: (1) virtual, (2) override, (3) final. | virtual-func-specifier |
 | A10-3-2 | Each overriding virtual function shall be declared with the override or final specifier. | override-func-specifier |
 | A10-3-3 | Virtual functions shall not be introduced in a final class. | virtual-method-final-class |
 | M10-3-3 | A virtual function shall only be overridden by a pure virtual function if it is itself declared as pure virtual. | pure-func-override |
+| A10-3-5 | A user-defined assignment operator shall not be virtual. | assignment-op-virtual |
 | A11-0-1 | A non-POD type should be defined as class. | non-pod-as-class |
 | M11-0-1 | Member data in non-POD class types shall be private. | member-data-private |
+| A11-0-2 | A type defined as struct shall: (1) provide only public data members, (2) not provide any special member functions or methods, (3) not be a base of another struct or class, (4) not inherit from another struct or class. | proper-structure |
 | A11-3-1 | Friend declarations shall not be used. | friend-used |
 | A12-1-2 | Both NSDMI and a non-static member initializer in a constructor shall not be used in the same type. | nsdmi-and-ctor-init-used |
 | A12-1-4 | All constructors that are callable with a single argument of fundamental type shall be declared explicit. | explicit-ctors |
+| A12-4-1 | Destructor of a base class shall be public virtual, public override or protected non-virtual. | base-destructor |
 | A12-4-2 | If a public destructor of a class is non-virtual, then the class should be declared final. | final-class-destructor |
 | A12-8-2 | User-defined copy and move assignment operators should use user-defined no-throw swap function. | swap-not-in-copy-and-move-assignment |
 | A12-8-5 | A copy assignment and a move assignment operators shall handle self-assignment. | self-assignment-unhandled |
+| A12-8-7 | Assignment operators should be declared with the ref-qualifier &. | assignment-op-ref-qual |
 | A13-2-1 | An assignment operator shall return a reference to "this". | assignment-operator-return-type |
 | A13-2-3 | A relational operator shall return a boolean value. | rel-op-bool-value |
 | A13-5-1 | If “operator[]” is to be overloaded with a non-const version, const version shall also be implemented. | subscript-op-overload |
 | A13-5-2 | All user-defined conversion operators shall be defined explicit. | implicit-conversion-op |
 | A13-5-3 | User-defined conversion operators should not be used. | conversion-op-used |
 | A13-6-1 | Digit sequences separators ’ shall only be used as follows: (1) for decimal, every 3 digits, (2) for hexadecimal, every 2 digits, (3) for binary, every 4 digits. | digit-sequence-separator |
+| A15-1-2 | An exception object shall not be a pointer. | exception-object-is-pointer |
+| M15-1-2 | NULL shall not be thrown explicitly. | null-thrown-explicitly |
+| M15-3-6 | Where multiple handlers are provided in a single try-catch statement or function-try-block for a derived class and some or all of its bases, the handlers shall be ordered most-derived to base class. | exception-handler-inversion |
 | A15-4-1 | Dynamic exception-specification shall not be used. | deprecated-dynamic-exception-spec |
 | A15-4-2 | If a function is declared to be noexcept, noexcept(true) or noexcept(\<true condition\>), then it shall not exit with an exception. | throw-in-noexcept-func |
 | A15-5-1 | All user-provided class destructors, deallocation functions, move constructors, move assignment operators and swap functions shall not exit with an exception. A noexcept exception specification shall be added to these functions as appropriate. | ctors-dtors-deallocation-move-swap-noexcept |

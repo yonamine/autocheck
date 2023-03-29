@@ -25,12 +25,17 @@
 // - [A4-10-1] Only nullptr literal shall be used as the null-pointer-constant.
 // - [M4-10-1] NULL shall not be used as an integer value.
 // - [M4-10-2] Literal zero (0) shall not be used as the null-pointer-constant.
+// - [M5-0-4]  An implicit integral conversion shall not change the signedness
+//             of the underlying type.
 // - [M5-0-5]  There shall be no implicit floating-integral conversions.
 // - [M5-0-6]  An implicit integral or floating-point conversion shall not
 //             reduce the size of the underlying type.
 // - [M5-0-10] If the bitwise operators ~and << are applied to an operand with
 //             an underlying type of unsigned char or unsigned short, the result
 //             shall be immediately cast to the underlying type of the operand.
+// - [A5-2-3]  A cast shall not remove any const or volatile qualification from
+//             the type of a pointer or reference.
+// - [M5-2-9]  A cast shall not convert a pointer type to an integral type.
 // - [M5-2-12] An identifier with array type passed as a function argument shall
 //             not decay to a pointer.
 //
@@ -61,6 +66,7 @@ public:
   virtual bool VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE);
   virtual bool VisitArraySubscriptExpr(const clang::ArraySubscriptExpr *ASE);
   virtual bool VisitVarDecl(const clang::VarDecl *VD);
+  virtual bool VisitCXXConstCastExpr(const clang::CXXConstCastExpr *CE);
 };
 
 /// [M4-5-1] Expressions with type bool shall not be used as operands to
@@ -249,6 +255,41 @@ public:
   bool VisitCastExpr(const clang::CastExpr *E);
 };
 
+/// [M5-2-9] A cast shall not convert a pointer type to an integral type.
+class CastPtrToIntegralVisitor : public ConversionsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit CastPtrToIntegralVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitCastExpr(const clang::CastExpr *E) override;
+};
+
+/// [A5-2-3] A cast shall not remove any const or volatile qualification from
+/// the type of a pointer or reference.
+class CVDiscardCastVisitor : public ConversionsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit CVDiscardCastVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitCXXConstCastExpr(const clang::CXXConstCastExpr *CE) override;
+};
+
+/// [M5-0-4] An implicit integral conversion shall not change the signedness of
+/// the underlying type.
+class ImpcastChangesSignednessVisitor : public ConversionsVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit ImpcastChangesSignednessVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE) override;
+};
+
 /// Main visitor for conversion related checks. Makes an instance of every class
 /// that implement a ConversionsVisitorInterface if appropriate flag is found.
 /// Runs all Conversion Visitors with one AST traversal.
@@ -273,6 +314,7 @@ public:
   bool VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE);
   bool VisitArraySubscriptExpr(const clang::ArraySubscriptExpr *ASE);
   bool VisitVarDecl(const clang::VarDecl *VD);
+  bool VisitCXXConstCastExpr(const clang::CXXConstCastExpr *CE);
 };
 
 } // namespace autocheck

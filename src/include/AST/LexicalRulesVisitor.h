@@ -16,10 +16,15 @@
 //             literals of unsigned type.
 // - [A3-9-1]  Fixed width integer types from <cstdint>, indicating the size and
 //             signedness, shall be used in place of the basic numerical types.
+// - [A5-1-3]  Parameter list (possibly empty) shall be included in every lambda
+//             expression.
 // - [M6-2-3]  Before preprocessing, a null statement shall only occur on a line
 //             by itself; it may be followed by a comment, provided that the
 //             first character following the null statement is a white-space
 //             character.
+// - [M6-4-1]  An if ( condition ) construct shall be followed by a compound
+//             statement. The else keyword shall be followed by either a
+//             compound statement, or another if statement.
 // - [M7-3-6]  Using-directives and using-declarations (excluding class scope or
 //             function scope using-declarations) shall not be used in header
 //             files.
@@ -436,6 +441,33 @@ public:
   bool diagnoseSameLine(const clang::SourceLocation &Prev,
                         const clang::SourceLocation &Curr);
   clang::SourceLocation getBodyStart(const clang::Stmt *Body);
+};
+
+/// [A5-1-3] Parameter list (possibly empty) shall be included in every lambda
+/// expression.
+class LambdaDeclaratorVisitor : public LexicalRulesVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+  clang::ASTContext &AC;
+
+public:
+  explicit LambdaDeclaratorVisitor(clang::DiagnosticsEngine &DE,
+                                   clang::ASTContext &AC);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitLambdaExpr(const clang::LambdaExpr *LE) override;
+};
+
+// [M6-4-1] An if ( condition ) construct shall be followed by a compound
+// statement. The else keyword shall be followed by either a compound statement,
+// or another if statement.
+class IfElseCompoundStmtVisitor : public LexicalRulesVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+
+public:
+  explicit IfElseCompoundStmtVisitor(clang::DiagnosticsEngine &DE);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitIfStmt(const clang::IfStmt *IS) override;
 };
 
 /// Main visitor for lexical rules. Makes an instance of every class that

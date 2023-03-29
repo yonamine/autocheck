@@ -90,6 +90,23 @@ getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
     if (Context.isEnabled(
             autocheck::AutocheckWarnings::deprecatedDynamicExceptionSpec))
       WarningsToEnable.push_back("-Wdynamic-exception-spec");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::cStyleCastUsed))
+      WarningsToEnable.push_back("-Wold-style-cast");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::castRemovesQual))
+      WarningsToEnable.push_back("-Wcast-qual");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::unusedParameter))
+      WarningsToEnable.push_back("-Wunused-parameter");
+    if (Context.isEnabled(
+            autocheck::AutocheckWarnings::exceptionHandlerInversion))
+      WarningsToEnable.push_back("-Wexceptions");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::returnStackAddress))
+      WarningsToEnable.push_back("-Wreturn-stack-address");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::returnNonVoidFunction))
+      WarningsToEnable.push_back("-Wreturn-type");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::breakSwitchCase))
+      WarningsToEnable.push_back("-Wimplicit-fallthrough");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::uninitializedMemory))
+      WarningsToEnable.push_back("-Wuninitialized");
 
     if (!WarningsToEnable.empty())
       AdjustedArgs.insert(llvm::find(AdjustedArgs, "--"),
