@@ -11,6 +11,7 @@
 
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
 
+#include "AutocheckContext.h"
 #include "Diagnostics/AutocheckDiagnostic.h"
 #include "clang/AST/Type.h"
 #include "clang/Basic/DiagnosticLex.h"
@@ -65,7 +66,12 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
     EmitDiag(AutocheckWarnings::reservedIdentifiers, Info.getLocation());
     return;
   case clang::diag::warn_unused_function:
-    EmitDiag(AutocheckWarnings::unusedFunctionOrMethod, Info.getLocation());
+    // Emit only one of unusedFunctionOrMethod or unusedFunction.
+    if (AutocheckContext::Get().isEnabled(
+            AutocheckWarnings::unusedFunctionOrMethod))
+      EmitDiag(AutocheckWarnings::unusedFunctionOrMethod, Info.getLocation());
+    else
+      EmitDiag(AutocheckWarnings::unusedFunction, Info.getLocation());
     return;
   case clang::diag::warn_unused_local_typedef:
     EmitDiag(AutocheckWarnings::unusedTypedef, Info.getLocation());
@@ -150,7 +156,6 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
   case clang::diag::warn_maybe_falloff_nonvoid_lambda:
     EmitDiag(AutocheckWarnings::returnNonVoidFunction, Info.getLocation());
     return;
-  case clang::diag::warn_falloff_noreturn_function:
   case clang::diag::err_falloff_nonvoid_block:
   case clang::diag::err_maybe_falloff_nonvoid_block:
     // Mute excess diagnostics enabled by -Wreturn-type
@@ -174,6 +179,64 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
   case clang::diag::warn_uninit_const_reference:
     // TODO: Re-emit as custom diagnostic.
     break;
+  case clang::diag::warn_deprecated_register:
+  case clang::diag::ext_register_storage_class:
+    EmitDiag(AutocheckWarnings::registerKeywordUsed, Info.getLocation());
+    return;
+  case clang::diag::warn_ptr_arith_precedes_bounds:
+  case clang::diag::warn_ptr_arith_exceeds_bounds:
+  case clang::diag::warn_array_index_precedes_bounds:
+  case clang::diag::warn_array_index_exceeds_bounds:
+  case clang::diag::warn_ptr_arith_exceeds_max_addressable_bounds:
+  case clang::diag::warn_array_index_exceeds_max_addressable_bounds:
+  case clang::diag::warn_static_array_too_small: {
+    // Save built-in diagnostic to reemit as a note.
+    llvm::SmallVector<char> Message;
+    Info.FormatDiagnostic(Message);
+
+    EmitDiag(AutocheckWarnings::arrayBounds, Info.getLocation());
+
+    Diags.Clear();
+    AutocheckDiagnostic::reportWarning(Diags, Info.getLocation(),
+                                       AutocheckWarnings::reemitNote,
+                                       Message.data());
+
+    return;
+  }
+  case clang::diag::note_array_declared_here: {
+    llvm::SmallVector<char> Message;
+    Info.FormatDiagnostic(Message);
+    Diags.Clear();
+    AutocheckDiagnostic::reportWarning(Diags, Info.getLocation(),
+                                       AutocheckWarnings::reemitNote,
+                                       Message.data());
+    return;
+  }
+  case clang::diag::warn_noreturn_function_has_return_expr:
+  // warn_falloff_noreturn_function is also emmited for -Wreturn-type where is
+  // should be ignored.
+  // TODO: Add getter for type of the last emitted warning to check when
+  // emitting a note.
+  case clang::diag::warn_falloff_noreturn_function:
+    if (AutocheckContext::Get().isEnabled(AutocheckWarnings::invalidNoreturn))
+      EmitDiag(AutocheckWarnings::invalidNoreturn, Info.getLocation());
+    return;
+  case clang::diag::ext_delete_void_ptr_operand:
+  case clang::diag::warn_delete_incomplete:
+    EmitDiag(AutocheckWarnings::deleteIncomplete, Info.getLocation());
+    return;
+  case clang::diag::note_forward_declaration:
+    // Allow note for -Wdelete-incomplete.
+    break;
+  case clang::diag::warn_bool_switch_condition:
+    EmitDiag(AutocheckWarnings::switchBool, Info.getLocation());
+    return;
+  case clang::diag::ext_deprecated_string_literal_conversion:
+    EmitDiag(AutocheckWarnings::writableString, Info.getLocation());
+    return;
+  case clang::diag::warn_pp_undef_identifier:
+    EmitDiag(AutocheckWarnings::undefMacroUsed, Info.getLocation());
+    return;
   }
 
   Client->HandleDiagnostic(DiagLevel, Info);

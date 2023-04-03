@@ -19,6 +19,7 @@
 //             storage and use of numeric values.
 // - [A18-1-1] C-style arrays shall not be used.
 // - [A18-1-2] The std::vector<bool> specialization shall not be used.
+// - [A18-1-3] The std::auto_ptr type shall not be used.
 //
 //===----------------------------------------------------------------------===//
 
@@ -158,6 +159,18 @@ class TypeLongDoubleVisitor : public TypesVisitorInterface {
 public:
   explicit TypeLongDoubleVisitor(clang::DiagnosticsEngine &DE,
                                  clang::ASTContext &AC);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitTypeLoc(const clang::TypeLoc &TL) override;
+};
+
+/// [A18-1-3] The std::auto_ptr type shall not be used.
+class AutoPtrVisitor : public TypesVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+  clang::ASTContext &AC;
+
+public:
+  explicit AutoPtrVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitTypeLoc(const clang::TypeLoc &TL) override;

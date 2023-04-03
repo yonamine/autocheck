@@ -300,6 +300,44 @@ bool TypeLongDoubleVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
   return true;
 }
 
+/* Implementation of AutoPtrVisitor */
+
+AutoPtrVisitor::AutoPtrVisitor(clang::DiagnosticsEngine &DE,
+                               clang::ASTContext &AC)
+    : DE(DE), AC(AC) {}
+
+bool AutoPtrVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::typeAutoPtrUsed);
+}
+
+bool AutoPtrVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
+  // Skip Elaborated, Typedef and Using types to avoid getting multiple warnings
+  // for same type.
+  if (llvm::dyn_cast_if_present<clang::ElaboratedType>(TL.getTypePtr()) ||
+      llvm::dyn_cast_if_present<clang::TypedefType>(TL.getTypePtr()) ||
+      llvm::dyn_cast_if_present<clang::UsingType>(TL.getTypePtr()))
+    return true;
+
+  // Skip auto-deduced types.
+  if (TL.getTypePtr()->getContainedAutoType())
+    return true;
+
+  const clang::TemplateSpecializationType *Type =
+      llvm::dyn_cast_if_present<clang::TemplateSpecializationType>(
+          TL.getTypePtr());
+  if (Type &&
+      llvm::StringRef(TL.getType().getDesugaredType(AC).getAsString())
+          .starts_with("class std::auto_ptr<") &&
+      DE.getSourceManager().isInSystemHeader(
+          TL.getType()->getAsRecordDecl()->getLocation())) {
+    return !AutocheckDiagnostic::reportWarning(
+                DE, TL.getBeginLoc(), AutocheckWarnings::typeAutoPtrUsed)
+                .limitReached();
+  }
+
+  return true;
+}
+
 /* Implementation of TypesVisitor */
 
 TypesVisitor::TypesVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
@@ -319,6 +357,8 @@ TypesVisitor::TypesVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
     AllVisitors.push_front(std::make_unique<CStyleArrayVisitor>(DE, AC));
   if (TypeLongDoubleVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<TypeLongDoubleVisitor>(DE, AC));
+  if (AutoPtrVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<AutoPtrVisitor>(DE, AC));
 }
 
 void TypesVisitor::run(clang::TranslationUnitDecl *TUD) {
