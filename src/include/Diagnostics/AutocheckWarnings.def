@@ -23,6 +23,7 @@
 #define NOTE
 #endif
 
+NOTE(reemitNote, "%0")
 DIAG(hashhashOpUsed, "hash-hash-op-used",
      "The # and ## operators should not be used", "M16-3-2")
 DIAG(clibHeaderUsed, "clib-header-used",
@@ -606,6 +607,28 @@ DIAG(breakSwitchCase, "break-switch-case",
      "M6-4-5")
 DIAG(uninitializedMemory, "uninitialized-memory",
      "All memory shall be initialized before it is read", "A8-5-0")
+DIAG(registerKeywordUsed, "register-keyword-used",
+     "The register keyword shall not be used", "A7-1-4")
+DIAG(typeAutoPtrUsed, "type-auto-ptr-used",
+     "The std::auto_ptr type shall not be used", "A18-1-3")
+DIAG(invalidNoreturn, "invalid-noreturn",
+     "Functions declared with the [[noreturn]] attribute shall not return",
+     "A7-6-1")
+DIAG(arrayBounds, "array-bounds",
+     "An array or container shall not be accessed beyond its range", "A5-2-5")
+DIAG(deleteIncomplete, "delete-incomplete",
+     "Pointers to incomplete class types shall not be deleted", "A5-3-3")
+DIAG(switchBool, "switch-bool",
+     "The condition of a switch statement shall not have bool type", "M6-4-7")
+DIAG(unusedFunction, "unused-function",
+     "Every defined function should be called at least once", "M0-1-10")
+DIAG(writableString, "writable-strings",
+     "String literals shall not be assigned to non-constant pointers",
+     "A2-13-4")
+DIAG(undefMacroUsed, "undef-macro-used",
+     "Undefined macro identifiers shall not be used in #if or #elif "
+     "pre-processor directives, except as operands to the defined operator",
+     "M16-0-7")
 
 #undef DIAG
 #undef NOTE

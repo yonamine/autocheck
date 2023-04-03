@@ -6,6 +6,7 @@
 | A0-1-3 | Every function defined in an anonymous namespace, or static function with internal linkage, or private member function shall be used. | unused-function-or-method |
 | A0-1-4 | There shall be no unused named parameters in non-virtual functions. | unused-parameter |
 | A0-1-6 | There should be no unused type declarations. | unused-typedef |
+| M0-1-10 | Every defined function should be called at least once. | unused-function |
 | A0-4-2 | Type long double shall not be used. | long-double-used |
 | A2-3-1 | Only those characters specified in the C++ Language Standard basic source character set shall be used in the source code. | non-cplusplus-standard-char-used |
 | A2-5-1 | Trigraphs shall not be used. | trigraphs-used |
@@ -19,6 +20,7 @@
 | M2-13-2 | Octal constants (other than zero) and octal escape sequences (other than “\0” ) shall not be used. | ocatal-constant-used |
 | A2-13-3 | Type wchar_t shall not be used. | type-wchart-used |
 | M2-13-3 | A "U" suffix shall be applied to all octal or hexadecimal integer literals of unsigned type. | unsigned-literal-suffix |
+| A2-13-4 | String literals shall not be assigned to non-constant pointers. | writable-strings |
 | M2-13-4 | Literal suffixes shall be upper case. | literal-suffix-lower-case |
 | A2-13-5 | Hexadecimal constants should be upper case. | hex-const-upper-case |
 | A2-13-6 | Universal character names shall be used only inside character or string literals. | non-universal-names |
@@ -54,12 +56,14 @@
 | A5-2-2 | Traditional C-style casts shall not be used. | c-style-cast-used |
 | A5-2-3 | A cast shall not remove any const or volatile qualification from the type of a pointer or reference. | cast-removes-qual |
 | A5-2-4 | reinterpret_cast shall not be used. | reinterpret-cast-used |
+| A5-2-5 | An array or container shall not be accessed beyond its range. | array-bounds |
 | M5-2-9 | A cast shall not convert a pointer type to an integral type. | cast-ptr-to-integral-type |
 | M5-2-10 | The increment (++) and decrement (−−) operators shall not be mixed with other operators in an expression. | inc-dec-op-mixed |
 | M5-2-11 | The comma operator, && operator and the \|\| operator shall not be overloaded. | comma-and-or-ops-overloaded |
 | M5-2-12 | An identifier with array type passed as a function argument shall not decay to a pointer. | array-decays-to-pointer |
 | M5-3-1 | Each operand of the ! operator, the logical && or the logical \|\| operators shall have type bool. | not-and-or-ops-bool-operands |
 | M5-3-2 | The unary minus operator shall not be applied to an expression whose underlying type is unsigned. | unary-minus-on-unsigned-type |
+| A5-3-3 | Pointers to incomplete class types shall not be deleted. | delete-incomplete |
 | M5-3-3 | The unary & operator shall not be overloaded. | unary-amp-op-overloaded |
 | M5-3-4 | Evaluation of the operand to the sizeof operator shall not contain side effects. | sizeof-side-effect |
 | A5-7-1 | A lambda shall not be an operand to decltype or typeid. | lambda-decltype-typeid |
@@ -73,6 +77,7 @@
 | M6-4-2 | All if ... else if constructs shall be terminated with an else clause. | if-else-if-terminated |
 | M6-4-5 | An unconditional throw or break statement shall terminate every non-empty switch-clause. | break-switch-case |
 | M6-4-6 | The final clause of a switch statement shall be the default-clause. | switch-stmt-default-clause |
+| M6-4-7 | The condition of a switch statement shall not have bool type. | switch-bool |
 | A6-5-1 | A for-loop that loops through all elements of the container and does not use its loop-counter shall not be used. | container-loop-ill-formed |
 | A6-5-2 | A for loop shall contain a single loop-counter which shall not have floating-point type. | single-loop-counter-float-type |
 | M6-5-2 | If loop-counter is not modified by −− or ++, then, within condition, the loop-counter shall only be used as an operand to \<=, \<, \> or \>=. | cond-expr-inc-dec-loop |
@@ -88,6 +93,7 @@
 | M6-6-3 | The continue statement shall only be used within a well-formed for loop. | continue-stmt-well-formed-loop |
 | A7-1-1 | Constexpr or const specifiers shall be used for immutable data declaration. | const-unused-for-immutable-data |
 | A7-1-3 | CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name. | cv-qualifiers-placed-left |
+| A7-1-4 | The register keyword shall not be used. | register-keyword-used |
 | A7-1-6 | The typedef specifier shall not be used. | typedef-used |
 | A7-1-7 | Each expression statement and identifier declaration shall be placed on a separate line. | separate-line-expression-statement |
 | A7-2-2 | Enumeration underlying base type shall be explicitly defined. | enum-type-not-defined |
@@ -100,6 +106,7 @@
 | M7-3-6 | Using-directives and using-declarations (excluding class scope or function scope using-declarations) shall not be used in header files. | using-inside-header |
 | A7-4-1 | The asm declaration shall not be used. | asm-declaration-used |
 | M7-5-1 | A function shall not return a reference or a pointer to an automatic variable (including parameters), defined within the function. | return-stack-address |
+| A7-6-1 | Functions declared with the [[noreturn]] attribute shall not return. | invalid-noreturn |
 | M8-3-1 | Parameters in an overriding virtual function shall either use the same default arguments as the function they override, or else shall not specify any default arguments. | changed-default-arguments |
 | A8-4-1 | Functions shall not be defined using the ellipsis notation. | variadic-function-used |
 | A8-4-2 | All exit paths from a function with non-void return type shall have an explicit return statement with an expression. | return-nonvoid-function  |
@@ -142,6 +149,7 @@
 | A15-4-2 | If a function is declared to be noexcept, noexcept(true) or noexcept(\<true condition\>), then it shall not exit with an exception. | throw-in-noexcept-func |
 | A15-5-1 | All user-provided class destructors, deallocation functions, move constructors, move assignment operators and swap functions shall not exit with an exception. A noexcept exception specification shall be added to these functions as appropriate. | ctors-dtors-deallocation-move-swap-noexcept |
 | M16-0-5 | Arguments to a function-like macro shall not contain tokens that look like pre-processing directives. | embedded-directive |
+| M16-0-7 | Undefined macro identifiers shall not be used in #if or #elif pre-processor directives, except as operands to the defined operator. | undef-macro-used |
 | M16-0-8 | If the # token appears as the first token on a line, then it shall be immediately followed by a pre-processing token. | preprocessor-token-error |
 | M16-1-1 | The defined pre-processor operator shall only be used in one of the two standard forms. | expansion-to-defined |
 | A16-2-1 | The ’, ", /*, //, \ characters shall not occur in a header file name or in #include directive. | include-directive-restricted-char |
@@ -159,6 +167,7 @@
 | M18-0-5 | The unbounded functions of library \<cstring\> shall not be used. | cstring-func-used |
 | A18-1-1 | C-style arrays shall not be used. | c-style-array-used |
 | A18-1-2 | The std::vector\<bool\> specialization shall not be used. | bool-vector-specialization-used |
+| A18-1-3 | The std::auto_ptr type shall not be used. | type-auto-ptr-used |
 | M18-2-1 | The macro offsetof shall not be used. | offsetof-used |
 | A18-5-1 | Functions malloc, calloc, realloc and free shall not be used. | cstdlib-memfunc-used |
 | A18-5-3 | The form of delete operator shall match the form of new operator used to allocate the memory. | mismatched-new-delete |

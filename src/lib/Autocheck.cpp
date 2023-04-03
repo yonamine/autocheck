@@ -83,7 +83,9 @@ getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
       WarningsToEnable.push_back("-Wbuiltin-macro-redifined");
       WarningsToEnable.push_back("-Wreserved-macro-identifier");
     }
-    if (Context.isEnabled(autocheck::AutocheckWarnings::unusedFunctionOrMethod))
+    if (Context.isEnabled(
+            autocheck::AutocheckWarnings::unusedFunctionOrMethod) ||
+        Context.isEnabled(autocheck::AutocheckWarnings::unusedFunction))
       WarningsToEnable.push_back("-Wunused-function");
     if (Context.isEnabled(autocheck::AutocheckWarnings::unusedTypedef))
       WarningsToEnable.push_back("-Wunused-local-typedef");
@@ -107,6 +109,22 @@ getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
       WarningsToEnable.push_back("-Wimplicit-fallthrough");
     if (Context.isEnabled(autocheck::AutocheckWarnings::uninitializedMemory))
       WarningsToEnable.push_back("-Wuninitialized");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::registerKeywordUsed))
+      WarningsToEnable.push_back("-Wregister");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::invalidNoreturn))
+      WarningsToEnable.push_back("-Winvalid-noreturn");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::arrayBounds)) {
+      WarningsToEnable.push_back("-Warray-bounds");
+      WarningsToEnable.push_back("-Warray-bounds-pointer-arithmetic");
+    }
+    if (Context.isEnabled(autocheck::AutocheckWarnings::deleteIncomplete))
+      WarningsToEnable.push_back("-Wdelete-incomplete");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::switchBool))
+      WarningsToEnable.push_back("-Wswitch-bool");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::writableString))
+      WarningsToEnable.push_back("-Wwritable-strings");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::undefMacroUsed))
+      WarningsToEnable.push_back("-Wundef");
 
     if (!WarningsToEnable.empty())
       AdjustedArgs.insert(llvm::find(AdjustedArgs, "--"),
