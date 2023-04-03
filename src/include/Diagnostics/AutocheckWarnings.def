@@ -629,6 +629,21 @@ DIAG(undefMacroUsed, "undef-macro-used",
      "Undefined macro identifiers shall not be used in #if or #elif "
      "pre-processor directives, except as operands to the defined operator",
      "M16-0-7")
+DIAG(divByZero, "div-by-zero",
+     "The right hand operand of the integer division or remainder operators "
+     "shall not be equal to zero",
+     "A5-6-1")
+DIAG(pointerSub, "pointer-sub",
+     "A pointer operand and any pointer resulting from pointer arithmetic "
+     "using that operand shall both address elements of the same array",
+     "M5-0-16")
+DIAG(recursionUsed, "recursion-used",
+     "Functions shall not call themselves, either directly or indirectly",
+     "A7-5-2")
+DIAG(unreachableCode, "unreachable-code",
+     "A project shall not contain unreachable code", "M0-1-1")
+DIAG(nullDereference, "null-dereference",
+     "Null pointers shall not be dereferenced", "A5-3-2")
 
 #undef DIAG
 #undef NOTE

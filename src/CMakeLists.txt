@@ -33,6 +33,9 @@ add_clang_executable(autocheck
     "lib/AST/Matchers.cpp"
     "lib/AST/TemplatesVisitor.cpp"
     "lib/AST/SideEffectChecker.cpp"
+    "lib/StaticAnalyzer/DivZeroChecker.cpp"
+    "lib/StaticAnalyzer/RecursionChecker.cpp"
+    "lib/StaticAnalyzer/UnreachableCodeChecker.cpp"
 )
 clang_target_link_libraries(autocheck
     PRIVATE
