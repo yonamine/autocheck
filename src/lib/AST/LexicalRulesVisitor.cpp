@@ -69,7 +69,6 @@ UnsignedLiterals::UnsignedLiterals(clang::DiagnosticsEngine &DE,
     : DE(DE), Context(Context), ASTCtx(ASTCtx) {}
 
 bool UnsignedLiterals::VisitIntegerLiteral(const clang::IntegerLiteral *IL) {
-  llvm::outs() << "unsigned literal \n";
   clang::SourceLocation Loc = IL->getBeginLoc();
 
   // Checks if literal is marked as unsigned.

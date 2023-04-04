@@ -166,17 +166,13 @@ static void HandleToken(const AutocheckContext &Context,
   if (Context.isEnabled(AutocheckWarnings::literalSuffixLowerCase) &&
       Tok.is(clang::tok::numeric_constant)) {
     llvm::StringRef Literal(Tok.getLiteralData(), Tok.getLength());
-    // TODO: C++23 adds new suffixes (e.g. f32) for which this method wont
-    // work. Instead we could parse the entire literal, find the position
-    // where the suffix starts and check all those characters for islower.
-    for (unsigned i = Literal.size() - 1; i >= 0; i--) {
-      char C = Literal[i];
-      if (C == 'l' || C == 'u' || C == 'z' || C == 'f') {
+
+    ParsedNumber ParsedLiteral = parseNumberLiteral(Literal);
+    for (unsigned i = 0; i < ParsedLiteral.SuffixLen; ++i) {
+      char C = ParsedLiteral.SuffixBegin[i];
+      if (isalpha(C) && !isupper(C)) {
         AutocheckDiagnostic::reportWarning(
             DE, Tok.getLocation(), AutocheckWarnings::literalSuffixLowerCase);
-        break;
-      } else if (C != 'L' && C != 'U' && C != 'Z' && C != 'F') {
-        // No longer in the range of the suffix.
         break;
       }
     }
