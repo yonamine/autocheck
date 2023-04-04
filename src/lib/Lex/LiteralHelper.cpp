@@ -43,15 +43,22 @@ static void parseNumberLiteral_(llvm::StringRef Literal, ParsedNumber &Result,
         Result.HasSeparator = true;
       else
         Result.ExponentHasSeparator = true;
+    } else if (!IsDigit(*CurrentChar) &&
+               *CurrentChar != '+' && *CurrentChar != '-') {
+      if (Result.RadixPos == nullptr) {
+        Result.RadixPos = CurrentChar;
+      }
+      if (Result.ExponentBegin == nullptr) {
+        Result.ExponentBegin = CurrentChar;
+      }
+      Result.SuffixBegin = CurrentChar;
+      Result.SuffixLen = Literal.end() - CurrentChar;
+      break;
     }
     if (Result.RadixPos == nullptr) {
       Result.WholeLen++;
     } else if (Result.ExponentBegin == nullptr) {
       Result.FractionLen++;
-    } else if (!IsDigit(*CurrentChar) && *CurrentChar != '\'' &&
-               *CurrentChar != '+' && *CurrentChar != '-') {
-      Result.SuffixBegin = CurrentChar;
-      break;
     } else {
       Result.ExponentLen++;
     }
