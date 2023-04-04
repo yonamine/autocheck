@@ -2,6 +2,7 @@
 
 | Rule | Text | Flag |
 | ---  | ---  | ---  |
+| M0-1-1 | A project shall not contain unreachable code. | unreachable-code |
 | A0-1-2 | The value returned by a function having a non-void return type that is not an overloaded operator shall be used. | unused-return-value |
 | A0-1-3 | Every function defined in an anonymous namespace, or static function with internal linkage, or private member function shall be used. | unused-function-or-method |
 | A0-1-4 | There shall be no unused named parameters in non-virtual functions. | unused-parameter |
@@ -46,6 +47,7 @@
 | M5-0-11 | The plain char type shall only be used for the storage and use of character values. | char-storage |
 | M5-0-12 | Signed char and unsigned char type shall only be used for the storage and use of numeric values. | sign-char-storage |
 | M5-0-14 | The first operand of a conditional-operator shall have type bool. | conditional-op-operand-type |
+| M5-0-16 | A pointer operand and any pointer resulting from pointer arithmetic using that operand shall both address elements of the same array. | pointer-sub |
 | M5-0-20 | Non-constant operands to a binary bitwise operator shall have the same underlying type. | implicit-bitwise-binop-conversion |
 | M5-0-21 | Bitwise operators shall only be applied to operands of unsigned underlying type. | bitwise-operand-not-unsigned |
 | A5-1-2 | Variables shall not be implicitly captured in a lambda expression. | implicitly-captured-var |
@@ -62,10 +64,12 @@
 | M5-2-11 | The comma operator, && operator and the \|\| operator shall not be overloaded. | comma-and-or-ops-overloaded |
 | M5-2-12 | An identifier with array type passed as a function argument shall not decay to a pointer. | array-decays-to-pointer |
 | M5-3-1 | Each operand of the ! operator, the logical && or the logical \|\| operators shall have type bool. | not-and-or-ops-bool-operands |
+| A5-3-2 | Null pointers shall not be dereferenced. | null-dereference |
 | M5-3-2 | The unary minus operator shall not be applied to an expression whose underlying type is unsigned. | unary-minus-on-unsigned-type |
 | A5-3-3 | Pointers to incomplete class types shall not be deleted. | delete-incomplete |
 | M5-3-3 | The unary & operator shall not be overloaded. | unary-amp-op-overloaded |
 | M5-3-4 | Evaluation of the operand to the sizeof operator shall not contain side effects. | sizeof-side-effect |
+| A5-6-1 | The right hand operand of the integer division or remainder operators shall not be equal to zero. | div-by-zero |
 | A5-7-1 | A lambda shall not be an operand to decltype or typeid. | lambda-decltype-typeid |
 | M5-14-1 | The right hand operand of a logical &&, \|\| operators shall not contain side effects. | rhs-operand-and-or-side-effect |
 | A5-16-1 | The ternary conditional operator shall not be used as a sub-expression. | ternary-op-sub-expr |
@@ -106,6 +110,7 @@
 | M7-3-6 | Using-directives and using-declarations (excluding class scope or function scope using-declarations) shall not be used in header files. | using-inside-header |
 | A7-4-1 | The asm declaration shall not be used. | asm-declaration-used |
 | M7-5-1 | A function shall not return a reference or a pointer to an automatic variable (including parameters), defined within the function. | return-stack-address |
+| A7-5-2 | Functions shall not call themselves, either directly or indirectly. | recursion-used |
 | A7-6-1 | Functions declared with the [[noreturn]] attribute shall not return. | invalid-noreturn |
 | M8-3-1 | Parameters in an overriding virtual function shall either use the same default arguments as the function they override, or else shall not specify any default arguments. | changed-default-arguments |
 | A8-4-1 | Functions shall not be defined using the ellipsis notation. | variadic-function-used |

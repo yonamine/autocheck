@@ -40,12 +40,6 @@ private:
   AutocheckPPCallbacks *PPCallbacks;
 };
 
-// This class performs all Autosar rule checks on the generated AST.
-class AutocheckASTConsumer : public clang::ASTConsumer {
-public:
-  void HandleTranslationUnit(clang::ASTContext &Context) override;
-};
-
 } // namespace autocheck
 
 #endif

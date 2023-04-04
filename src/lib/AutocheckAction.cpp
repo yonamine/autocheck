@@ -24,9 +24,14 @@
 #include "AST/TypesVisitor.h"
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
 #include "Lex/AutocheckLex.h"
+#include "StaticAnalyzer/DivZeroChecker.h"
+#include "StaticAnalyzer/RecursionChecker.h"
+#include "StaticAnalyzer/UnreachableCodeChecker.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Parse/ParseAST.h"
+#include "clang/StaticAnalyzer/Frontend/AnalysisConsumer.h"
+#include "clang/StaticAnalyzer/Frontend/CheckerRegistry.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -135,14 +140,34 @@ void AutocheckAction::ExecuteAction() {
 std::unique_ptr<clang::ASTConsumer>
 AutocheckAction::CreateASTConsumer(clang::CompilerInstance &CI,
                                    llvm::StringRef InFile) {
-  return std::make_unique<AutocheckASTConsumer>();
-}
+  // Run static analysis checks:
+  std::unique_ptr<clang::ento::AnalysisASTConsumer> AnalysisConsumer =
+      clang::ento::CreateAnalysisConsumer(CI);
+  AnalysisConsumer->AddCheckerRegistrationFn(
+      [](clang::ento::CheckerRegistry &Registry) {
+        Registry.addChecker<DivZeroChecker>("autosar.DivZeroChecker",
+                                            "Check for division by zero", "");
+        Registry.addChecker<RecursionChecker>("autosar.RecursionChecker",
+                                              "Check for use of recursion", "");
+        Registry.addChecker<UnreachableCodeChecker>(
+            "autosar.UnreachableCodeChecker", "Check for unreachable code", "");
+      });
+  CI.getAnalyzerOpts()->CheckersAndPackages = {
+      {"autosar.DivZeroChecker",
+       Context.isEnabled(AutocheckWarnings::divByZero)},
+      {"alpha.core.PointerSub",
+       Context.isEnabled(AutocheckWarnings::pointerSub)},
+      {"autosar.RecursionChecker",
+       Context.isEnabled(AutocheckWarnings::recursionUsed)},
+      {"autosar.UnreachableCodeChecker",
+       Context.isEnabled(AutocheckWarnings::unreachableCode)},
+      {"core.NullDereference",
+       Context.isEnabled(AutocheckWarnings::nullDereference)},
+      {"cplusplus.NewDelete",
+       Context.isEnabled(AutocheckWarnings::nullDereference)},
+  };
 
-void AutocheckASTConsumer::HandleTranslationUnit(clang::ASTContext &ASTCtx) {
-  // NO-OP
-  // All checks are performed in AutocheckAction::ExecuteAction after ParseAST
-  // because the visitors require references to AutocheckPPCallbacks and Sema
-  // which are not available at the time of creating this consumer.
+  return std::move(AnalysisConsumer);
 }
 
 } // namespace autocheck
