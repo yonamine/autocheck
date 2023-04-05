@@ -1091,8 +1091,9 @@ bool LambdaDeclaratorVisitor::VisitLambdaExpr(const clang::LambdaExpr *LE) {
       DeclaratorFileRange, DE.getSourceManager(), AC.getLangOpts());
 
   // Manually check for parentheses.
-  if (tokens.size() != 2 || tokens[0].kind() != clang::tok::l_paren ||
-      tokens[1].kind() != clang::tok::r_paren) {
+  if (tokens[0].kind() != clang::tok::l_paren ||
+      tokens[1].kind() != clang::tok::r_paren ||
+      (tokens.size() > 2 && tokens[2].kind() != clang::tok::arrow)) {
     return !AutocheckDiagnostic::reportWarning(
                 DE, DeclaratorRange.getBegin(),
                 AutocheckWarnings::lambdaDeclaratorMissing)

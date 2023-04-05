@@ -2330,7 +2330,7 @@ bool MainReusedVisitor::isFlagPresent(const AutocheckContext &Context) {
 }
 
 bool MainReusedVisitor::VisitFunctionDecl(const clang::FunctionDecl *FD) {
-  if ((FD->getName() == "main") && !FD->isMain())
+  if (FD->getIdentifier() && (FD->getName() == "main") && !FD->isMain())
     return !AutocheckDiagnostic::reportWarning(
                 DE, FD->getNameInfo().getLoc(),
                 AutocheckWarnings::identifierMainReused)
