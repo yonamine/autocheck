@@ -715,10 +715,14 @@ bool ImpcastChangesSignednessVisitor::isFlagPresent(
   return Context.isEnabled(AutocheckWarnings::impcastChangesSignedness);
 }
 
+static bool isIntegralCast(const clang::CastExpr *CE) {
+  return CE->getCastKind() == clang::CK_IntegralCast &&
+         !CE->getSubExpr()->getType()->isBooleanType();
+}
+
 bool ImpcastChangesSignednessVisitor::VisitImplicitCastExpr(
     const clang::ImplicitCastExpr *ICE) {
-  if (!ICE->isPartOfExplicitCast() &&
-      ICE->getCastKind() == clang::CK_IntegralCast &&
+  if (!ICE->isPartOfExplicitCast() && isIntegralCast(ICE) &&
       ICE->getType()->isUnsignedIntegerType() !=
           ICE->getSubExpr()->getType()->isUnsignedIntegerType()) {
     bool stopVisitor =
