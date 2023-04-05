@@ -15,6 +15,10 @@ Its main purpose is to check code against AUTOSAR guidelines for the use of the 
 - ninja
 - python 3 (for tests)
 
+## Runtime dependencies
+
+- libstdc++11 development package
+
 ## Clone the repo
 
 Since we use ```llvm-project``` as submodule, we need to clone the submodule as well:
@@ -65,7 +69,9 @@ After the first build, you can just run `ninja` or `ninja autocheck` to compile 
 
 ## Install package
 
-### Debian / Ubuntu
+### Ubuntu
+
+Supports Ubutu 22.04 or newer.
 
 To install the DEB package, run the following command:
 ```console
@@ -80,6 +86,18 @@ To check all AUTOSAR rules on a file run the following command from the build di
 $ ./bin/autocheck [file]
 ```
 For more options and examples see the following sections.
+
+Autocheck will try to automatically detect a compilation database file (like `compile-commands.json`) if it is not specifed using the `-p` flag.
+It will first search the directory of the first input file and all of its parent directories.
+If the file can't be found the following warning will be displayed:
+```
+Error while trying to load a compilation database:
+Could not auto-detect compilation database for file "test.cpp"
+No compilation database found in /path/to/input or any parent directory
+fixed-compilation-database: Error while opening fixed database: No such file or directory
+json-compilation-database: Error while opening JSON database: No such file or directory
+Running without flags.
+```
 
 ## Command line options
 
