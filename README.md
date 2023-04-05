@@ -63,6 +63,16 @@ After the first build, you can just run `ninja` or `ninja autocheck` to compile 
 
 After the first build, you can just run `ninja` or `ninja autocheck` to compile again
 
+## Install package
+
+### Debian / Ubuntu
+
+To install the DEB package, run the following command:
+```console
+sudo apt install ./autocheck_[version]_amd64.deb
+```
+or open it using your Software Manager and click `Install`.
+
 ## Run the tool
 
 To check all AUTOSAR rules on a file run the following command from the build directory:
