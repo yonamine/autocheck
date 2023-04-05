@@ -977,6 +977,9 @@ bool ProperStructureVisitor::isFlagPresent(const AutocheckContext &Context) {
 
 bool ProperStructureVisitor::VisitCXXRecordDecl(
     const clang::CXXRecordDecl *CRD) {
+  if (!CRD->hasDefinition())
+    return true;
+
   if (CRD->isStruct() && CRD->isCompleteDefinition()) {
     // (4) not inherit from another struct or class.
     // This check is done before (2) so that no implicit method can trigger a
