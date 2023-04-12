@@ -23,7 +23,6 @@
 
 namespace autocheck {
 
-
 DeclarationsVisitorInterface::~DeclarationsVisitorInterface() {}
 
 using DVI = DeclarationsVisitorInterface;
@@ -180,8 +179,10 @@ bool AutoVarBracedInitVisitor::isFlagPresent(const AutocheckContext &Context) {
 bool AutoVarBracedInitVisitor::VisitVarDecl(const clang::VarDecl *VD) {
   if (VD->hasInit()) {
     const clang::QualType &InitQualType = VD->getInit()->getType();
-    if (!InitQualType.isNull() &&
-        InitQualType.getTypePtr()->getContainedAutoType()) {
+    if (VD->getTypeSourceInfo()
+            ->getTypeLoc()
+            .getUnqualifiedLoc()
+            .getTypeLocClass() == clang::TypeLoc::Auto) {
       const clang::VarDecl::InitializationStyle &IS = VD->getInitStyle();
       // Call-style initialization (e.g. int x(0)).
       if (IS == clang::VarDecl::InitializationStyle::CallInit) {
