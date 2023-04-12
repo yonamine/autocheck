@@ -15,9 +15,14 @@ B *operator&() { // expected-warning {{The unary & operator shall not be overloa
   return nullptr;
 }
 };
+
+class C {};
+void *operator&(C c) { // expected-warning {{The unary & operator shall not be overloaded}}
+  return nullptr;
+}
 } // namespace
 
 int main() {
-  const B<int> b{};
-  const B<float> c{};
+  const B<int> b1{};
+  const B<float> b2{};
 }

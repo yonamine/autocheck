@@ -48,6 +48,7 @@ bool CVI::VisitCXXConversionDecl(const clang::CXXConversionDecl *) {
 bool CVI::VisitCXXMemberCallExpr(const clang::CXXMemberCallExpr *) {
   return true;
 }
+bool CVI::VisitFunctionDecl(const clang::FunctionDecl *) { return true; }
 
 /* DerivedFromVirtualVisitor */
 
@@ -909,12 +910,12 @@ bool UnaryAmpOperatorOverloadVisitor::isFlagPresent(
   return Context.isEnabled(AutocheckWarnings::unaryAmpOpOverloaded);
 }
 
-bool UnaryAmpOperatorOverloadVisitor::VisitCXXMethodDecl(
-    const clang::CXXMethodDecl *CMD) {
-  if (CMD->isOverloadedOperator() &&
-      (CMD->getOverloadedOperator() == clang::OO_Amp)) {
+bool UnaryAmpOperatorOverloadVisitor::VisitFunctionDecl(
+    const clang::FunctionDecl *FD) {
+  if (FD->isOverloadedOperator() &&
+      (FD->getOverloadedOperator() == clang::OO_Amp)) {
     return !AutocheckDiagnostic::reportWarning(
-                DE, CMD->getLocation(), AutocheckWarnings::unaryAmpOpOverloaded)
+                DE, FD->getLocation(), AutocheckWarnings::unaryAmpOpOverloaded)
                 .limitReached();
   }
   return true;
@@ -1197,6 +1198,13 @@ bool ClassesVisitor::VisitCXXMemberCallExpr(
     const clang::CXXMemberCallExpr *CMCE) {
   AllVisitors.remove_if([CMCE](std::unique_ptr<ClassesVisitorInterface> &V) {
     return !V->VisitCXXMemberCallExpr(CMCE);
+  });
+  return true;
+}
+
+bool ClassesVisitor::VisitFunctionDecl(const clang::FunctionDecl *FD) {
+  AllVisitors.remove_if([FD](std::unique_ptr<ClassesVisitorInterface> &V) {
+    return !V->VisitFunctionDecl(FD);
   });
   return true;
 }

@@ -85,6 +85,7 @@ public:
   virtual bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD);
   virtual bool VisitCXXConversionDecl(const clang::CXXConversionDecl *CCD);
   virtual bool VisitCXXMemberCallExpr(const clang::CXXMemberCallExpr *CMCE);
+  virtual bool VisitFunctionDecl(const clang::FunctionDecl *FD);
 };
 
 /// [M10-1-1] Classes should not be derived from virtual bases.
@@ -352,7 +353,7 @@ public:
   explicit UnaryAmpOperatorOverloadVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
+  bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
 };
 
 /// [A12-8-7] Assignment operators should be declared with the ref-qualifier &.
@@ -417,6 +418,7 @@ public:
   bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD);
   bool VisitCXXConversionDecl(const clang::CXXConversionDecl *CCD);
   bool VisitCXXMemberCallExpr(const clang::CXXMemberCallExpr *CMCE);
+  bool VisitFunctionDecl(const clang::FunctionDecl *FD);
 };
 } // namespace autocheck
 
