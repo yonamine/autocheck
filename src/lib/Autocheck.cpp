@@ -143,6 +143,24 @@ ArgumentsAdjuster getVerifyModeAdjuster(const std::string &Verify) {
   };
 }
 
+ArgumentsAdjuster getResourceDirAdjuster(const char *ExecPath) {
+  // Find the absolute path to the directory of the executable.
+  static int Symbol;
+  std::string ExecutablePath =
+      sys::fs::getMainExecutable(ExecPath, &Symbol);
+  StringRef ExecutableDir = sys::path::parent_path(ExecutablePath);
+
+  // Resource dir should be in ../lib/autocheck relative to the executable
+  // directory.
+  SmallString<128> ResourceDir = sys::path::parent_path(ExecutableDir);
+  sys::path::append(ResourceDir, "lib", "autocheck");
+
+  // Create the argument aduster.
+  return getInsertArgumentAdjuster(
+      {Twine("-resource-dir=").concat(ResourceDir).str()},
+      ArgumentInsertPosition::BEGIN);
+}
+
 int main(int argc, const char **argv) {
   outs() << "=== Autocheck - Modern and Free Autosar checker\n";
 
@@ -190,6 +208,11 @@ int main(int argc, const char **argv) {
       Verify = "expected";
     Tool.appendArgumentsAdjuster(getVerifyModeAdjuster(Verify));
   }
+
+  // TODO: Since no linux distro currently has clang 16, we ship our own clang
+  // headers and specify where to find them. We should change this to be a
+  // package dependency when clang 16 comes to repositories.
+  Tool.appendArgumentsAdjuster(getResourceDirAdjuster(argv[0]));
 
   // Create and run autocheck checks.
   return Tool.run(newFrontendActionFactory<autocheck::AutocheckAction>().get());
