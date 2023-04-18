@@ -11,6 +11,8 @@
 
 #include "AutocheckAction.h"
 #include "AutocheckContext.h"
+#include "Version.h"
+#include "clang/Basic/Version.h"
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/StaticAnalyzer/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
@@ -163,6 +165,12 @@ ArgumentsAdjuster getResourceDirAdjuster(const char *ExecPath) {
 
 int main(int argc, const char **argv) {
   outs() << "=== Autocheck - Modern and Free Autosar checker\n";
+
+  if (argc >= 2 && (strcmp(argv[1], "--version") == 0)) {
+    llvm::outs() << "Autocheck version " << AUTOCHECK_VERSION << "\n"
+                 << "Based on Clang " << CLANG_VERSION_STRING << "\n";
+    return 0;
+  }
 
   auto ExpectedParser =
       CommonOptionsParser::create(argc, argv, AutocheckCategory);
