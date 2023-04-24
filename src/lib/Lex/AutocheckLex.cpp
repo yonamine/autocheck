@@ -126,14 +126,10 @@ static void HandleToken(const AutocheckContext &Context,
     // Case 1: Octal constants (other than zero) shall not be used.
     if (Tok.is(clang::tok::numeric_constant)) {
       llvm::StringRef Literal(Tok.getLiteralData(), Tok.getLength());
-      if (Literal.size() > 1 && Literal[0] == '0' &&
-          tolower(Literal[1]) != 'x' && tolower(Literal[1]) != 'b' &&
-          !Literal.contains('.')) {
-        if (std::any_of(Literal.begin(), Literal.end(),
-                        [](char C) { return isdigit(C) && C != '0'; })) {
-          AutocheckDiagnostic::reportWarning(
-              DE, Tok.getLocation(), AutocheckWarnings::octalConstantUsed);
-        }
+      if (Literal.size() > 1 && Literal[0] == '0' && isOctalDigit(Literal[1]) &&
+          !Literal.contains('.') && !Literal.contains_insensitive('e')) {
+        AutocheckDiagnostic::reportWarning(
+            DE, Tok.getLocation(), AutocheckWarnings::octalConstantUsed);
       }
     }
 
