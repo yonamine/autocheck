@@ -2,6 +2,7 @@ include_directories(
     ${LLVM_INCLUDE_DIRS}
     ${CLANG_INCLUDE_DIRS}
     ${AUTOCHECK_ROOT_SRC_DIR}/src/include
+    ${CMAKE_BINARY_DIR}/include
 )
 
 set(LLVM_LINK_COMPONENTS
@@ -9,6 +10,8 @@ set(LLVM_LINK_COMPONENTS
     Option
     Support
 )
+
+configure_file(include/Version.h.in ${CMAKE_BINARY_DIR}/include/Version.h)
 
 add_clang_executable(autocheck 
     "lib/Autocheck.cpp"

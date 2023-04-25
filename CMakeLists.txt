@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-project(autocheck)
+project(autocheck 
+  VERSION 0.1.3
+  DESCRIPTION "AUTOSAR C++ Guidelines compliance checker"
+)
 
 set(AUTOCHECK_ROOT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -18,8 +21,16 @@ include(AddLLVM)
 include(AddClang)
 
 # Copy clang built-in headers.
-file(COPY "${LLVM_BINARY_DIR}/lib/clang" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/lib")
+file(COPY "${LLVM_BINARY_DIR}/lib/clang/16/include" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/lib/autocheck")
 
 # Add autocheck targets.
 add_subdirectory(src)
 add_subdirectory(test)
+
+# Install autocheck.
+include(GNUInstallDirs)
+install(TARGETS autocheck RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/autocheck DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+# Set up CPack.
+include(cmake/Pack.cmake)
