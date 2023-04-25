@@ -2413,6 +2413,9 @@ bool GlobalNamespaceVisitor::VisitTranslationUnitDecl(
                    llvm::dyn_cast_if_present<clang::UsingDirectiveDecl>(*It)) {
       if (UDD->getNominatedNamespace()->isAnonymousNamespace())
         continue;
+      // Skip using shadow declarations.
+    } else if (llvm::dyn_cast_if_present<clang::UsingShadowDecl>(*It)) {
+      continue;
       // Skip main function.
     } else if (clang::FunctionDecl *FD =
                    llvm::dyn_cast_if_present<clang::FunctionDecl>(*It)) {
