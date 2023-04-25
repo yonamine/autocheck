@@ -46,5 +46,9 @@ void test() {
   c |= c;      // expected-warning {{Bitwise operators shall only be applied to operands of unsigned underlying type}}
   c = c ^ c;   // expected-warning {{Bitwise operators shall only be applied to operands of unsigned underlying type}}
   c ^= c;      // expected-warning {{Bitwise operators shall only be applied to operands of unsigned underlying type}}
+
+  unsigned char d;
+  b = d | // This unsigned char is promoted to int which changes its sign. These implicit casts should not count as violations.
+      0;  // expected-warning {{Bitwise operators shall only be applied to operands of unsigned underlying type}}
 }
 } // namespace

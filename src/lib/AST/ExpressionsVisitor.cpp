@@ -787,13 +787,13 @@ bool BitwiseUnsignedOperandsVisitor::VisitBinaryOperator(
   case clang::BO_ShlAssign:
   case clang::BO_Shr:
   case clang::BO_ShrAssign:
-    if (!isUnsignedType(BO->getLHS()->getType())) {
+    if (!isUnsignedType(BO->getLHS()->IgnoreImpCasts()->getType())) {
       return !AutocheckDiagnostic::reportWarning(
                   DE, BO->getLHS()->getBeginLoc(),
                   AutocheckWarnings::bitwiseOperandNotUnsigned)
                   .limitReached();
     }
-    if (!isUnsignedType(BO->getRHS()->getType())) {
+    if (!isUnsignedType(BO->getRHS()->IgnoreImpCasts()->getType())) {
       return !AutocheckDiagnostic::reportWarning(
                   DE, BO->getRHS()->getBeginLoc(),
                   AutocheckWarnings::bitwiseOperandNotUnsigned)
