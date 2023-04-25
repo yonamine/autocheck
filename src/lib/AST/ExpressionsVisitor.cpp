@@ -700,31 +700,6 @@ bool UnaryMinusOnUnsignedVisitor::VisitUnaryOperator(
   return true;
 }
 
-/* Implementation of RHSOperandSideEffectVisitor */
-
-RHSOperandSideEffectVisitor::RHSOperandSideEffectVisitor(
-    clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
-
-bool RHSOperandSideEffectVisitor::isFlagPresent(
-    const AutocheckContext &Context) {
-  return Context.isEnabled(AutocheckWarnings::rhsOperandAndOrSideEffect);
-}
-
-bool RHSOperandSideEffectVisitor::VisitBinaryOperator(
-    const clang::BinaryOperator *BO) {
-  if (BO->getOpcode() == clang::BO_LAnd || BO->getOpcode() == clang::BO_LOr) {
-    if (hasAutosarSideEffects(BO->getRHS(), AC)) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, BO->getRHS()->getBeginLoc(),
-                  AutocheckWarnings::rhsOperandAndOrSideEffect)
-                  .limitReached();
-    }
-  }
-
-  return true;
-}
-
 /* Implementation of ExceptionObjectPtrVisitor */
 
 ExceptionObjectPtrVisitor::ExceptionObjectPtrVisitor(
@@ -889,9 +864,6 @@ ExpressionsVisitor::ExpressionsVisitor(clang::DiagnosticsEngine &DE,
     AllVisitors.push_front(std::make_unique<LogicalOpBoolOperandVisitor>(DE));
   if (UnaryMinusOnUnsignedVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<UnaryMinusOnUnsignedVisitor>(DE));
-  if (RHSOperandSideEffectVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(
-        std::make_unique<RHSOperandSideEffectVisitor>(DE, AC));
   if (ExceptionObjectPtrVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<ExceptionObjectPtrVisitor>(DE));
   if (ExceptionObjectNullVisitor::isFlagPresent(Context))

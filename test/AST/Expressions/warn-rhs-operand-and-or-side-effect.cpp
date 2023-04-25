@@ -80,4 +80,22 @@ int32_t foo(A a) {
   }
 }
 
+bool PossibleSideEffect(int param) {
+  return param++ > 0;
+}
+bool PossibleSideEffect(double param) {
+  return param > 0;
+}
+
+template<typename T>
+void TemplateDependentSideEffect(T param) {
+  // This should emit a warning per non-compliant specialization. In this case only for int, and not for double.
+  true && PossibleSideEffect(param); // expected-warning {{The right hand operand of a logical &&, || operators shall not contain side effects}}
+}
+
+void test2() {
+  TemplateDependentSideEffect(1);   // Compliant
+  TemplateDependentSideEffect(1.0); // Non-compliant
+}
+
 } // namespace

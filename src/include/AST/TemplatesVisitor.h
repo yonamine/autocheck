@@ -9,8 +9,10 @@
 // instantiations by traversing the clang AST.
 //
 // This implements the following checks:
-// - [A8-4-7] "in" parameters for "cheap to copy" types shall be passed by
-//            value.
+// - [M5-14-1] The right hand operand of a logical &&, || operators shall not
+///            contain side effects.
+// - [A8-4-7]  "in" parameters for "cheap to copy" types shall be passed by
+//             value.
 //
 //===----------------------------------------------------------------------===//
 
@@ -31,6 +33,7 @@ public:
   virtual ~TemplateVisitorInterface();
 
   virtual bool VisitFunctionDecl(const clang::FunctionDecl *FD);
+  virtual bool VisitBinaryOperator(const clang::BinaryOperator *BO);
 };
 
 /// [A8-4-7] "in" parameters for "cheap to copy" types shall be passed by value.
@@ -52,6 +55,20 @@ public:
   bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
 };
 
+/// [M5-14-1] The right hand operand of a logical &&, || operators shall not
+/// contain side effects.
+class RHSOperandSideEffectVisitor : public TemplateVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+  clang::ASTContext &AC;
+
+public:
+  explicit RHSOperandSideEffectVisitor(clang::DiagnosticsEngine &DE,
+                                       clang::ASTContext &AC);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
+};
+
 /// Main visitor for checks that involve template instantiations. Makes an
 /// instance of every class that implement a DeclarationsVisitorInterface if
 /// appropriate flag is found. Runs all Declaration Visitors with one AST
@@ -68,6 +85,7 @@ public:
 
   bool shouldVisitTemplateInstantiations() const { return true; }
   bool VisitFunctionDecl(const clang::FunctionDecl *FD);
+  bool VisitBinaryOperator(const clang::BinaryOperator *BO);
 };
 
 } // namespace autocheck

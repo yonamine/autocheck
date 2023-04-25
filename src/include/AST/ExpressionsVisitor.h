@@ -28,8 +28,6 @@
 //             whose underlying type is unsigned.
 // - [M5-3-4]  Evaluation of the operand to the sizeof operator shall not
 //             contain side effects.
-// - [M5-14-1] The right hand operand of a logical &&, || operators shall not
-//             contain side effects.
 // - [A5-16-1] The ternary conditional operator shall not be used as a
 //             sub-expression.
 // - [M5-18-1] The comma operator shall not be used.
@@ -296,20 +294,6 @@ public:
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitUnaryOperator(const clang::UnaryOperator *UO) override;
-};
-
-/// [M5-14-1] The right hand operand of a logical &&, || operators shall not
-/// contain side effects.
-class RHSOperandSideEffectVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
-  clang::ASTContext &AC;
-
-public:
-  explicit RHSOperandSideEffectVisitor(clang::DiagnosticsEngine &DE,
-                                       clang::ASTContext &AC);
-  static bool isFlagPresent(const AutocheckContext &Context);
-
-  bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
 };
 
 /// [A15-1-2] An exception object shall not be a pointer.
