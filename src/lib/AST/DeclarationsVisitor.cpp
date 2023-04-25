@@ -815,11 +815,13 @@ bool BroadScopeIdentifierVisitor::isFlagPresent(
 }
 
 bool BroadScopeIdentifierVisitor::VisitVarDecl(const clang::VarDecl *VD) {
-  // Ignore function parameter declarations, static data members and static
-  // local variables. If variable is declared inside of If statement's condition
-  // part, it is okay to use it throughout If statement, even in nested scopes.
+  // Ignore function parameter declarations, static data members, static
+  // local variables and duplicated variable template specializations. If
+  // variable is declared inside of If statement's condition part, it is okay to
+  // use it throughout If statement, even in nested scopes.
   if (!llvm::dyn_cast_if_present<clang::ParmVarDecl>(VD) &&
-      !VD->isStaticDataMember() && !VD->isStaticLocal() && !isIfCond) {
+      !VD->isStaticDataMember() && !VD->isStaticLocal() && !isIfCond &&
+      !llvm::dyn_cast_if_present<clang::VarTemplateSpecializationDecl>(VD)) {
     // If the variable is ever referenced, there is a chance it's usage is
     // illegal.
     if (VD->isReferenced()) {

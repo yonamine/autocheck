@@ -167,4 +167,12 @@ void test13() {
       break;
   }
 }
+
+template<typename T>
+T var; // Compliant. var cannot be lowered to test14
+
+void test14() {
+  var<int> = 0;
+  var<double> = 0.0;
+}
 }
