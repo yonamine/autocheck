@@ -712,7 +712,7 @@ bool ExceptionObjectPtrVisitor::isFlagPresent(const AutocheckContext &Context) {
 
 bool ExceptionObjectPtrVisitor::VisitCXXThrowExpr(
     const clang::CXXThrowExpr *TE) {
-  if (TE->getSubExpr()->getType()->isPointerType()) {
+  if (TE->getSubExpr() && TE->getSubExpr()->getType()->isPointerType()) {
     return !AutocheckDiagnostic::reportWarning(
                 DE, TE->getSubExpr()->getBeginLoc(),
                 AutocheckWarnings::exceptionObjectIsPointer)
