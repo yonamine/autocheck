@@ -46,6 +46,7 @@
 
 #include "AutocheckContext.h"
 #include "Diagnostics/AutocheckDiagnostic.h"
+#include "clang/AST/ASTContext.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "llvm/ADT/SmallSet.h"
 #include <forward_list>
@@ -57,6 +58,8 @@ class ConversionsVisitorInterface {
 public:
   virtual ~ConversionsVisitorInterface();
 
+  virtual bool PreTraverseInitListExpr(const clang::InitListExpr *ILE);
+  virtual bool PostTraverseInitListExpr(const clang::InitListExpr *ILE);
   virtual bool VisitCastExpr(const clang::CastExpr *E);
   virtual bool VisitBinaryOperator(const clang::BinaryOperator *BO);
   virtual bool VisitUnaryOperator(const clang::UnaryOperator *UO);
@@ -282,11 +285,16 @@ public:
 /// the underlying type.
 class ImpcastChangesSignednessVisitor : public ConversionsVisitorInterface {
   clang::DiagnosticsEngine &DE;
+  const clang::ASTContext &AC;
+  llvm::SmallVector<bool, 4> IsInsideSyntacticILEForm;
 
 public:
-  explicit ImpcastChangesSignednessVisitor(clang::DiagnosticsEngine &DE);
+  explicit ImpcastChangesSignednessVisitor(clang::DiagnosticsEngine &DE,
+                                           const clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
+  bool PreTraverseInitListExpr(const clang::InitListExpr *ILE) override ;
+  bool PostTraverseInitListExpr(const clang::InitListExpr *ILE) override;
   bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE) override;
 };
 
@@ -304,6 +312,7 @@ public:
                               clang::ASTContext &ASTCtx);
   void run(clang::TranslationUnitDecl *TUD);
   bool TraverseDecl(clang::Decl *D);
+  bool TraverseInitListExpr(clang::InitListExpr *ILE);
   bool shouldVisitImplicitCode() { return true; }
   bool VisitCastExpr(const clang::CastExpr *E);
   bool VisitBinaryOperator(const clang::BinaryOperator *BO);
