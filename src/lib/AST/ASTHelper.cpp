@@ -11,6 +11,9 @@
 
 #include "AST/ASTHelper.h"
 
+#include "llvm/ADT/DenseSet.h"
+#include "clang/AST/ASTStructuralEquivalence.h"
+
 namespace autocheck {
 
 bool isSwapFunction(const clang::FunctionDecl *FD) {
@@ -49,6 +52,14 @@ bool isSwapFunction(const clang::FunctionDecl *FD) {
     return false;
 
   return true;
+}
+
+bool areTypesEquivalent(clang::ASTContext &AC, clang::QualType T1,
+                               clang::QualType T2) {
+  llvm::DenseSet<std::pair<clang::Decl *, clang::Decl *>> DS;
+  clang::StructuralEquivalenceContext SEC(
+      AC, AC, DS, clang::StructuralEquivalenceKind::Default);
+  return SEC.IsEquivalent(T1, T2);
 }
 
 } // namespace autocheck

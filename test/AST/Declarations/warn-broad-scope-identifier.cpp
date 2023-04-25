@@ -175,4 +175,10 @@ void test14() {
   var<int> = 0;
   var<double> = 0.0;
 }
+
+void test15() {
+  std::int32_t var = 0; // expected-warning {{An identifier declared to be an object or type shall be defined in a block that minimizes its visibility}}
+  for (std::int32_t i = 0; i < 10; i++)
+    useCounter(var); 
+}
 }

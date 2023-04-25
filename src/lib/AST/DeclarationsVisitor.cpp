@@ -619,7 +619,7 @@ bool ConstUnusedForImmutableData::CheckFunctionArguments(
       // If the argument is array or variable associated with the reference,
       // erase it from the immutable candidates. If the argument is pointer or
       // reference that is passed by value, do not erase it.
-      if (Qt.getUnqualifiedType() != VD->getType())
+      if (!areTypesEquivalent(AC, Qt.getUnqualifiedType(), VD->getType()))
         ImmutableVarCandidates.erase(VD->getLocation());
     }
   }
@@ -878,7 +878,8 @@ bool BroadScopeIdentifierVisitor::VisitDeclRefExpr(
       // different type to the one previously declared here or if it's used in
       // any expression other than some form of assignment.
       const auto &Parents = ASTCtx.getParents(*DRE);
-      if ((!forInitType.isNull() && It->first->getType() != forInitType) ||
+      if ((!forInitType.isNull() &&
+           !areTypesEquivalent(ASTCtx, forInitType, It->first->getType())) ||
           (isForInit && !(Parents[0].get<clang::CompoundAssignOperator>()) &&
            !(Parents[0].get<clang::BinaryOperator>()))) {
         PotentiallyBadVars.erase(It);
