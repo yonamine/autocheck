@@ -1061,11 +1061,11 @@ bool BaseDestructorVisitor::VisitCXXRecordDecl(
         if (AS == clang::AS_public &&
             (Dtor->isVirtual() || Dtor->size_overridden_methods() > 0 ||
              Dtor->hasAttr<clang::OverrideAttr>()))
-          return true;
+          continue;
 
         // Is destructor protected non-virtual.
         if (AS == clang::AS_protected && !Dtor->isVirtual())
-          return true;
+          continue;
 
         // Every other type of destructor is not allowed.
         bool stopVisitor =
@@ -1077,6 +1077,20 @@ bool BaseDestructorVisitor::VisitCXXRecordDecl(
             Dtor->isImplicit());
         if (stopVisitor)
           return false;
+        continue;
+      }
+
+      if (BaseDecl->hasSimpleDestructor()) {
+        bool stopVisitor =
+            AutocheckDiagnostic::reportWarning(
+                DE, CRD->getBeginLoc(), AutocheckWarnings::baseDestructor)
+                .limitReached();
+        AutocheckDiagnostic::reportWarning(
+            DE, BaseDecl->getBeginLoc(), AutocheckWarnings::noteBaseDestructor,
+            true);
+        if (stopVisitor)
+          return false;
+        continue;
       }
     }
   }

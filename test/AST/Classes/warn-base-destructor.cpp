@@ -47,6 +47,8 @@ protected:
   ~B9() override {}; // expected-note {{destructor is declared here}}
 };
 
+class B10 {}; // expected-note {{class has implicit destructor}}
+
 class D1 : public B1 {}; // expected-warning {{Destructor of a base class shall be public virtual, public override or protected non-virtual}}
 class D2 : public B2 {}; // expected-warning {{Destructor of a base class shall be public virtual, public override or protected non-virtual}}
 class D3 : public B3 {};
@@ -56,6 +58,7 @@ class D6 : public B6 {}; // expected-warning {{Destructor of a base class shall 
 class D7 : public B7 { ~D7(); }; // expected-warning {{Destructor of a base class shall be public virtual, public override or protected non-virtual}}
 class D8 : public B8 {};
 class D9 : public B9 {}; // expected-warning {{Destructor of a base class shall be public virtual, public override or protected non-virtual}}
+class D10 : public B10 {}; // expected-warning {{Destructor of a base class shall be public virtual, public override or protected non-virtual}}
 
 class I1 { ~I1() {}; }; // expected-note {{destructor is declared here}}
 
