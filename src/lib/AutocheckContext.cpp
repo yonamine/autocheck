@@ -22,11 +22,39 @@ const std::unordered_map<std::string, AutocheckWarnings>
 #include "Diagnostics/AutocheckWarnings.def"
     };
 
+// Set of analysis based warnings. These are more expensive to check, so we keep
+// them separate.
+const std::unordered_set<AutocheckWarnings> AnalysisWarnings{
+    AutocheckWarnings::divByZero,       AutocheckWarnings::pointerSub,
+    AutocheckWarnings::unreachableCode, AutocheckWarnings::recursionUsed,
+    AutocheckWarnings::nullDereference,
+};
+
+// Set of unused header diagnostics. These all perform the same check, just in
+// different ways. At most one should be active at a time.
+const std::unordered_set<AutocheckWarnings> HeaderUnusedWarnings{
+    AutocheckWarnings::headersUnused, AutocheckWarnings::headersUnusedSystemOff,
+    AutocheckWarnings::headersUnusedSystemSmart};
+
 bool AutocheckContext::enableWarning(const std::string &Warning) {
   if (Warning == "all") {
     for (const auto &WarningItem : WarningMap) {
+      // Only turn on default version of headersUnused.
+      if (WarningItem.second == AutocheckWarnings::headersUnusedSystemOff ||
+          WarningItem.second == AutocheckWarnings::headersUnusedSystemSmart)
+        continue;
+
+      // Skip analysis warnings.
+      if (AnalysisWarnings.find(WarningItem.second) != AnalysisWarnings.cend())
+        continue;
+
       EnabledWarnings.insert(WarningItem.second);
     }
+    return true;
+  }
+
+  if (Warning == "analysis") {
+    EnabledWarnings.insert(AnalysisWarnings.cbegin(), AnalysisWarnings.cend());
     return true;
   }
 
@@ -38,10 +66,19 @@ bool AutocheckContext::enableWarning(const std::string &Warning) {
   }
   auto It = WarningMap.find(W.str());
   if (It != WarningMap.end()) {
-    if (Disable)
+    if (Disable) {
       EnabledWarnings.erase(It->second);
-    else
+    } else {
+      // At most one headersUnused option can be enabled at a time.
+      if (HeaderUnusedWarnings.find(It->second) != HeaderUnusedWarnings.end()) {
+        std::for_each(HeaderUnusedWarnings.cbegin(), HeaderUnusedWarnings.cend(), [this](AutocheckWarnings W){
+          const auto It = EnabledWarnings.find(W);
+          if (It != EnabledWarnings.cend())
+            EnabledWarnings.erase(It);
+        });
+      }
       EnabledWarnings.insert(It->second);
+    }
     return true;
   }
   return false;
