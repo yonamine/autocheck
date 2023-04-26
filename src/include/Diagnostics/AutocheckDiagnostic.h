@@ -60,6 +60,9 @@ class WarningCounter {
 public:
   WarningCounter(const unsigned MaxWarning) : MaxWarning(MaxWarning) {}
 
+  /// Type of the latest warning. Used to check to whom following note
+  /// diagnostics belongs.
+  AutocheckWarnings Warning;
   bool limitReached() const;
   bool limitExceeded() const;
 
@@ -105,12 +108,12 @@ public:
   AutocheckDiagnosticBuilder(clang::DiagnosticBuilder &DB,
                              clang::DiagnosticsEngine &DE,
                              const clang::SourceLocation &Loc,
-                             AutocheckWarnings Warning);
+                             AutocheckWarnings Warning,
+                             clang::DiagnosticIDs::Level Level);
 
   ~AutocheckDiagnosticBuilder();
 
 private:
-  const clang::SourceLocation &Loc;
   clang::DiagnosticsEngine &DE;
   AutocheckWarnings Warning;
   bool ReportWarning = true;
@@ -133,6 +136,8 @@ public:
 
     return getWarningCounter();
   }
+
+  static AutocheckWarnings getLatestWarning();
 
 private:
   static AutocheckDiagnosticBuilder Diag(clang::DiagnosticsEngine &DE,

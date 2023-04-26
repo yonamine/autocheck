@@ -168,16 +168,16 @@ WarningCounter &getWarningCounter() {
 
 AutocheckDiagnosticBuilder::AutocheckDiagnosticBuilder(
     clang::DiagnosticBuilder &DB, clang::DiagnosticsEngine &DE,
-    const clang::SourceLocation &SL, AutocheckWarnings Warning)
-    : DiagnosticBuilder(DB), Loc(Loc), DE(DE), Warning(Warning),
-      ReportWarning(true) {
+    const clang::SourceLocation &Loc, AutocheckWarnings Warning,
+    clang::DiagnosticIDs::Level Level)
+    : DiagnosticBuilder(DB), DE(DE), Warning(Warning), ReportWarning(true) {
   WarningCounter &WarningCount = getWarningCounter();
   WarningCount.resetLimitPair();
-  if (!appropriateLocation(DE, SL)) {
+  if (!appropriateLocation(DE, Loc)) {
     ReportWarning = false;
     return;
   }
-  if (shouldIgnoreMacroExpansions(DE, SL)) {
+  if (shouldIgnoreMacroExpansions(DE, Loc)) {
     ReportWarning = false;
     return;
   }
@@ -189,12 +189,16 @@ AutocheckDiagnosticBuilder::AutocheckDiagnosticBuilder(
   WarningRepeatChecker &warningRepeatChecker =
       WarningRepeatChecker::getWarningRepeatChecker();
   if (warningRepeatChecker.shouldControl(Warning)) {
-    if (warningRepeatChecker.updateLineNumber(DE, SL, Warning)
+    if (warningRepeatChecker.updateLineNumber(DE, Loc, Warning)
             .isAlreadyEmitted()) {
       ReportWarning = false;
       return;
     }
   }
+
+  // Save the type of current warning.
+  if (Level == clang::DiagnosticIDs::Level::Warning)
+    WarningCount.Warning = Warning;
 }
 
 AutocheckDiagnosticBuilder::~AutocheckDiagnosticBuilder() {
@@ -203,6 +207,10 @@ AutocheckDiagnosticBuilder::~AutocheckDiagnosticBuilder() {
     DiagnosticBuilder::Clear();
     DE.Clear();
   }
+}
+
+AutocheckWarnings AutocheckDiagnostic::getLatestWarning() {
+  return getWarningCounter().Warning;
 }
 
 AutocheckDiagnosticBuilder
@@ -219,7 +227,7 @@ AutocheckDiagnostic::Diag(clang::DiagnosticsEngine &DE,
       DE.getDiagnosticIDs()->getCustomDiagID(DiagInfo.Level, DiagMessage.str());
 
   clang::DiagnosticBuilder DB = DE.Report(Loc, ID);
-  return AutocheckDiagnosticBuilder(DB, DE, Loc, Warning);
+  return AutocheckDiagnosticBuilder(DB, DE, Loc, Warning, DiagInfo.Level);
 }
 
 void AutocheckDiagnostic::addArgsToDiagBuilder(AutocheckDiagnosticBuilder &DB) {

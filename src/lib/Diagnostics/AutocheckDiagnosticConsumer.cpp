@@ -143,6 +143,13 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
   case clang::diag::warn_throw_in_noexcept_func:
     // Mute excess diagnostics enabled by -Wexception
     return;
+  case clang::diag::note_throw_in_dtor:
+  case clang::diag::note_throw_in_function:
+    // This should only be emitted after throw in noexcept warning.
+    if (AutocheckDiagnostic::getLatestWarning() !=
+        AutocheckWarnings::throwInNoexceptFunc)
+      return;
+    break;
   case clang::diag::warn_ret_stack_addr_ref:
   case clang::diag::warn_ret_addr_label:
   case clang::diag::warn_ret_local_temp_addr_ref:
