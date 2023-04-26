@@ -14,6 +14,7 @@
 
 #include "AST/SideEffectChecker.h"
 #include "Diagnostics/AutocheckDiagnostic.h"
+#include "clang/AST/QualTypeNames.h"
 
 namespace autocheck {
 
@@ -117,9 +118,11 @@ bool InParametersPassedByValue::checkParameter(
         return true;
 
       if (AC.getTypeSize(NRT) <= PtrWidth) {
-        bool stopVisitor = AutocheckDiagnostic::reportWarning(
-                               DE, SL, AutocheckWarnings::inParamPassedByValue,
-                               0, NRQT.getUnqualifiedType())
+        bool stopVisitor =
+            AutocheckDiagnostic::reportWarning(
+                DE, SL, AutocheckWarnings::inParamPassedByValue, 0,
+                clang::TypeName::getFullyQualifiedType(
+                    NRQT.getLocalUnqualifiedType(), AC))
                                .limitReached();
         if (InstantiationLoc.isValid()) {
           AutocheckDiagnostic::reportWarning(
@@ -134,7 +137,8 @@ bool InParametersPassedByValue::checkParameter(
     if (AC.getTypeSize(T) > PtrWidth || classHasPointerField(T)) {
       bool stopVisitor = AutocheckDiagnostic::reportWarning(
                              DE, SL, AutocheckWarnings::inParamPassedByValue, 1,
-                             QT.getUnqualifiedType())
+                             clang::TypeName::getFullyQualifiedType(
+                                 QT.getLocalUnqualifiedType(), AC))
                              .limitReached();
       if (InstantiationLoc.isValid())
         AutocheckDiagnostic::reportWarning(

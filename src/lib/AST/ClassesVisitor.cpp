@@ -424,7 +424,8 @@ bool UnusedPrivateMethodVisitor::isFlagPresent(
 void UnusedPrivateMethodVisitor::PostWork() {
   for (const clang::CXXMethodDecl *CMD : PrivateMethods) {
     if (AutocheckDiagnostic::reportWarning(
-            DE, CMD->getLocation(), AutocheckWarnings::unusedFunctionOrMethod)
+            DE, CMD->getLocation(), AutocheckWarnings::unusedFunctionOrMethod,
+            1, CMD->getNameInfo().getName())
             .limitReached())
       break;
   }

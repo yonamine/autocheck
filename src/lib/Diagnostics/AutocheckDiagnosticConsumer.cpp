@@ -65,14 +65,23 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
   case clang::diag::ext_pp_undef_builtin_macro:
     EmitDiag(AutocheckWarnings::reservedIdentifiers, Info.getLocation());
     return;
-  case clang::diag::warn_unused_function:
+  case clang::diag::warn_unused_function: {
+    // Read diagnostic parameters.
+    clang::NamedDecl *Name =
+        reinterpret_cast<clang::NamedDecl *>(Info.getRawArg(0));
+
     // Emit only one of unusedFunctionOrMethod or unusedFunction.
     if (AutocheckContext::Get().isEnabled(
-            AutocheckWarnings::unusedFunctionOrMethod))
-      EmitDiag(AutocheckWarnings::unusedFunctionOrMethod, Info.getLocation());
-    else
+            AutocheckWarnings::unusedFunctionOrMethod)) {
+      Diags.Clear();
+      AutocheckDiagnostic::reportWarning(
+          Diags, Info.getLocation(), AutocheckWarnings::unusedFunctionOrMethod,
+          0, Name);
+    } else {
       EmitDiag(AutocheckWarnings::unusedFunction, Info.getLocation());
+    }
     return;
+  }
   case clang::diag::warn_unused_local_typedef:
     EmitDiag(AutocheckWarnings::unusedTypedef, Info.getLocation());
     return;
@@ -123,12 +132,9 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
     clang::DeclarationName Name =
         clang::DeclarationName::getFromOpaqueInteger(Info.getRawArg(0));
 
-    EmitDiag(AutocheckWarnings::unusedParameter, Info.getLocation());
-
     Diags.Clear();
-    AutocheckDiagnostic::reportWarning(Diags, Info.getLocation(),
-                                       AutocheckWarnings::noteUnusedParameter,
-                                       Name);
+    AutocheckDiagnostic::reportWarning(
+        Diags, Info.getLocation(), AutocheckWarnings::unusedParameter, Name);
 
     return;
   }
