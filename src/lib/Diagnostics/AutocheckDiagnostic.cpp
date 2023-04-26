@@ -29,7 +29,7 @@ struct DiagnosticInfo {
 // List of warning messages and rule ids indexed by AutocheckWarnings enum
 // value.
 const DiagnosticInfo DiagnosticMessages[]{
-#define DIAG(ENUM, FLAG, MESSAGE, RULE)                                 \
+#define DIAG(ENUM, FLAG, MESSAGE, RULE)                                        \
   {MESSAGE, RULE, clang::DiagnosticIDs::Level::Warning},
 #define NOTE(ENUM, MESSAGE) {MESSAGE, "", clang::DiagnosticIDs::Level::Note},
 #include "Diagnostics/AutocheckWarnings.def"
@@ -72,6 +72,9 @@ WarningRepeatChecker::WarningRepeatChecker() {
       {AutocheckWarnings::bitwiseOperandNotUnsigned, -1},
       {AutocheckWarnings::impcastChangesSignedness, -1},
       {AutocheckWarnings::commaOperatorUsed, -1},
+      {AutocheckWarnings::cStyleCastUsed, -1},
+      {AutocheckWarnings::typedefUsed, -1},
+      {AutocheckWarnings::assignmentOpSubExpr, -1},
   });
 }
 
