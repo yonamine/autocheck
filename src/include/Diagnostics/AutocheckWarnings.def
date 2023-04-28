@@ -624,6 +624,7 @@ DIAG(undefMacroUsed, "undef-macro-used",
      "Undefined macro identifiers shall not be used in #if or #elif "
      "pre-processor directives, except as operands to the defined operator",
      "M16-0-7")
+DIAG(unusedVariable, "unused-variable", "Unused variable %0", "M0-1-3")
 DIAG(divByZero, "div-by-zero",
      "The right hand operand of the integer division or remainder operators "
      "shall not be equal to zero",
