@@ -62,7 +62,7 @@ static void runVisitors(clang::ASTContext &ASTCtx,
   TypesVisitor(DE, ASTCtx).run(TUD);
   ForLoopVisitor(DE, ASTCtx).run(TUD);
   HeadersVisitor(DE, Callbacks).run(TUD);
-  TemplatesVisitor(DE, ASTCtx).run(TUD);
+  TemplatesVisitor(DE, ASTCtx, SemaRef).run(TUD);
 }
 
 static void runMatchers(clang::ASTContext &ASTCtx) {
