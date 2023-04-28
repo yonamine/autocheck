@@ -19,6 +19,7 @@ typedef long double float128_t;
 
 namespace {}
 namespace NS {
+class C {};
 namespace {}
 namespace {}
 } // namespace NS
@@ -35,3 +36,5 @@ int x; // expected-warning {{The global namespace shall only contain main, names
 class Foo2 {}; // expected-warning {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}
 
 using namespace NS; // expected-warning {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}
+
+using NS::C; // expected-warning {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}

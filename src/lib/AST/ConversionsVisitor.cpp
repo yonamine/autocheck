@@ -14,6 +14,7 @@
 
 #include "Diagnostics/AutocheckDiagnostic.h"
 #include "clang/AST/ParentMapContext.h"
+#include "clang/AST/QualTypeNames.h"
 #include "clang/Basic/SourceManager.h"
 #include <cctype>
 
@@ -24,6 +25,12 @@ namespace autocheck {
 ConversionsVisitorInterface::~ConversionsVisitorInterface() {}
 
 using CVI = ConversionsVisitorInterface;
+bool CVI::PreTraverseInitListExpr(const clang::InitListExpr *ILE) {
+  return true;
+}
+bool CVI::PostTraverseInitListExpr(const clang::InitListExpr *ILE) {
+  return true;
+}
 bool CVI::VisitCastExpr(const clang::CastExpr *) { return true; }
 bool CVI::VisitBinaryOperator(const clang::BinaryOperator *) { return true; }
 bool CVI::VisitUnaryOperator(const clang::UnaryOperator *) { return true; }
@@ -707,8 +714,8 @@ bool CVDiscardCastVisitor::VisitCXXConstCastExpr(
 /* Implementation of ImpcastChangesSignednessVisitor */
 
 ImpcastChangesSignednessVisitor::ImpcastChangesSignednessVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    clang::DiagnosticsEngine &DE, const clang::ASTContext &AC)
+    : DE(DE), AC(AC) {}
 
 bool ImpcastChangesSignednessVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -717,11 +724,33 @@ bool ImpcastChangesSignednessVisitor::isFlagPresent(
 
 static bool isIntegralCast(const clang::CastExpr *CE) {
   return CE->getCastKind() == clang::CK_IntegralCast &&
-         !CE->getSubExpr()->getType()->isBooleanType();
+         !CE->getSubExpr()->getType()->isBooleanType() &&
+         !CE->getSubExpr()->getType()->isEnumeralType();
+}
+
+bool ImpcastChangesSignednessVisitor::PreTraverseInitListExpr(
+    const clang::InitListExpr *ILE) {
+  if ((ILE->isSyntacticForm() && !ILE->isSemanticForm()) ||
+      (!IsInsideSyntacticILEForm.empty() && IsInsideSyntacticILEForm.back()))
+    IsInsideSyntacticILEForm.emplace_back(true);
+  else
+    IsInsideSyntacticILEForm.emplace_back(false);
+  return true;
+}
+
+bool ImpcastChangesSignednessVisitor::PostTraverseInitListExpr(
+    const clang::InitListExpr *ILE) {
+  IsInsideSyntacticILEForm.pop_back();
+  return true;
 }
 
 bool ImpcastChangesSignednessVisitor::VisitImplicitCastExpr(
     const clang::ImplicitCastExpr *ICE) {
+  // We are only interested in the sematic form since the syntactic form doesn't
+  // generate implcit casts.
+  if (!IsInsideSyntacticILEForm.empty() && IsInsideSyntacticILEForm.back())
+    return true;
+
   if (!ICE->isPartOfExplicitCast() && isIntegralCast(ICE) &&
       ICE->getType()->isUnsignedIntegerType() !=
           ICE->getSubExpr()->getType()->isUnsignedIntegerType()) {
@@ -730,10 +759,12 @@ bool ImpcastChangesSignednessVisitor::VisitImplicitCastExpr(
             DE, ICE->getBeginLoc(), AutocheckWarnings::impcastChangesSignedness)
             .limitReached();
 
+    const clang::PrintingPolicy &Policy = AC.getPrintingPolicy();
     AutocheckDiagnostic::reportWarning(
         DE, ICE->getBeginLoc(), AutocheckWarnings::noteImpcastChangesSignedness,
-        ICE->getSubExpr()->getType().getAsString(),
-        ICE->getType().getAsString());
+        clang::TypeName::getFullyQualifiedName(ICE->getSubExpr()->getType(), AC,
+                                               Policy),
+        clang::TypeName::getFullyQualifiedName(ICE->getType(), AC, Policy));
 
     return !stopVisitor;
   }
@@ -778,7 +809,7 @@ ConversionsVisitor::ConversionsVisitor(clang::DiagnosticsEngine &DE,
     AllVisitors.push_front(std::make_unique<CVDiscardCastVisitor>(DE));
   if (ImpcastChangesSignednessVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ImpcastChangesSignednessVisitor>(DE));
+        std::make_unique<ImpcastChangesSignednessVisitor>(DE, ASTCtx));
 }
 
 void ConversionsVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -794,6 +825,28 @@ bool ConversionsVisitor::TraverseDecl(clang::Decl *D) {
 
   if (Loc.isInvalid() || appropriateHeaderLocation(DE, Loc)) {
     clang::RecursiveASTVisitor<ConversionsVisitor>::TraverseDecl(D);
+  }
+  return true;
+}
+
+bool ConversionsVisitor::TraverseInitListExpr(clang::InitListExpr *ILE) {
+  if (!ILE) // Can be null if code had errors.
+    return true;
+
+  clang::SourceLocation Loc = ILE->getBeginLoc();
+
+  if (Loc.isInvalid() || appropriateHeaderLocation(DE, Loc)) {
+    AllVisitors.remove_if(
+        [ILE](std::unique_ptr<ConversionsVisitorInterface> &V) {
+          return !V->PreTraverseInitListExpr(ILE);
+        });
+
+    RecursiveASTVisitor<ConversionsVisitor>::TraverseInitListExpr(ILE);
+
+    AllVisitors.remove_if(
+        [ILE](std::unique_ptr<ConversionsVisitorInterface> &V) {
+          return !V->PostTraverseInitListExpr(ILE);
+        });
   }
   return true;
 }

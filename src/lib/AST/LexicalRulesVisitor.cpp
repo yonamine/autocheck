@@ -845,11 +845,15 @@ bool SeparateLineStatementVisitor::VisitDeclStmt(const clang::DeclStmt *DS) {
   if (!Parents.empty() && Parents[0].get<clang::ForStmt>()) {
     return true;
   }
+  // DS->dump(llvm::outs(), AC);
   // Diagnose multiple declarations in the same line
   if (!DS->isSingleDecl()) {
+    // llvm::outs() << "not single decl\n";
     unsigned previousDeclLine = -1;
     for (const auto Decl : DS->getDeclGroup()) {
+      // llvm::outs() << "in group\n";
       if (SM.getSpellingLineNumber(Decl->getLocation()) == previousDeclLine) {
+        // llvm::outs() << "same line\n";
         previousWarning = Decl->getLocation();
         if (AutocheckDiagnostic::reportWarning(
                 DE, Decl->getLocation(),
@@ -859,6 +863,7 @@ bool SeparateLineStatementVisitor::VisitDeclStmt(const clang::DeclStmt *DS) {
         break;
       }
       previousDeclLine = SM.getSpellingLineNumber(Decl->getLocation());
+      // llvm::outs() << previousDeclLine << "\n";
     }
   }
 
@@ -996,6 +1001,7 @@ bool SeparateLineStatementVisitor::VisitDecl(const clang::Decl *D) {
       !llvm::dyn_cast_if_present<clang::ParmVarDecl>(D) &&
       !llvm::dyn_cast_if_present<clang::TemplateTypeParmDecl>(D) &&
       !llvm::dyn_cast_if_present<clang::TemplateDecl>(D) &&
+      !llvm::dyn_cast_if_present<clang::VarTemplateSpecializationDecl>(D) &&
       !llvm::dyn_cast_if_present<clang::NonTypeTemplateParmDecl>(D) &&
       !llvm::dyn_cast_if_present<clang::EmptyDecl>(D) &&
       !llvm::dyn_cast_if_present<clang::FriendDecl>(D)) {
@@ -1009,9 +1015,12 @@ bool SeparateLineStatementVisitor::VisitDecl(const clang::Decl *D) {
     const clang::SourceLocation EndPreviousExprOrStmt =
         previousExprOrStmtRange.getEnd();
 
+    llvm::outs() << "decl\n";
+    D->dump(llvm::outs());
     if (!diagnoseSameLine(EndPreviousExprOrStmt, DeclBegin) ||
         !diagnoseSameLine(BeginPreviousExprOrStmt, DeclBegin))
       return false;
+    llvm::outs() << "decl2\n";
     previousExprOrStmtRange = clang::SourceRange(DeclBegin, DeclEnd);
   }
   return true;

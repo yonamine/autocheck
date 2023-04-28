@@ -1,6 +1,4 @@
 // RUN: autocheck -verify -Wconst-unused-for-immutable-data %s
-// XFAIL: *
-// TODO: Fix for UsingType creating multiple pointers for the same type
 
 #include <cstdint>
 #include <string>

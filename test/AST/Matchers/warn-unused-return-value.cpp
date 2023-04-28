@@ -73,4 +73,6 @@ void test7() {
     i++;
   } while ((2 * 3 + test1()) * 7);
 }
+
+int32_t global = test1();
 } // namespace

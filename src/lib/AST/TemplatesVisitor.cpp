@@ -12,7 +12,9 @@
 
 #include "AST/TemplatesVisitor.h"
 
+#include "AST/SideEffectChecker.h"
 #include "Diagnostics/AutocheckDiagnostic.h"
+#include "clang/AST/QualTypeNames.h"
 
 namespace autocheck {
 
@@ -22,6 +24,7 @@ TemplateVisitorInterface::~TemplateVisitorInterface() {}
 
 using TVI = TemplateVisitorInterface;
 bool TVI::VisitFunctionDecl(const clang::FunctionDecl *) { return true; }
+bool TVI::VisitBinaryOperator(const clang::BinaryOperator *) { return true; }
 
 /* Implementation of InParametersPassedByValue */
 
@@ -115,9 +118,11 @@ bool InParametersPassedByValue::checkParameter(
         return true;
 
       if (AC.getTypeSize(NRT) <= PtrWidth) {
-        bool stopVisitor = AutocheckDiagnostic::reportWarning(
-                               DE, SL, AutocheckWarnings::inParamPassedByValue,
-                               0, NRQT.getUnqualifiedType())
+        bool stopVisitor =
+            AutocheckDiagnostic::reportWarning(
+                DE, SL, AutocheckWarnings::inParamPassedByValue, 0,
+                clang::TypeName::getFullyQualifiedType(
+                    NRQT.getLocalUnqualifiedType(), AC))
                                .limitReached();
         if (InstantiationLoc.isValid()) {
           AutocheckDiagnostic::reportWarning(
@@ -132,13 +137,42 @@ bool InParametersPassedByValue::checkParameter(
     if (AC.getTypeSize(T) > PtrWidth || classHasPointerField(T)) {
       bool stopVisitor = AutocheckDiagnostic::reportWarning(
                              DE, SL, AutocheckWarnings::inParamPassedByValue, 1,
-                             QT.getUnqualifiedType())
+                             clang::TypeName::getFullyQualifiedType(
+                                 QT.getLocalUnqualifiedType(), AC))
                              .limitReached();
       if (InstantiationLoc.isValid())
         AutocheckDiagnostic::reportWarning(
             DE, InstantiationLoc, AutocheckWarnings::noteInParamPassedByValue,
             QT.getUnqualifiedType());
       return !stopVisitor;
+    }
+  }
+
+  return true;
+}
+
+/* Implementation of RHSOperandSideEffectVisitor */
+
+RHSOperandSideEffectVisitor::RHSOperandSideEffectVisitor(
+    clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
+    : DE(DE), AC(AC) {}
+
+bool RHSOperandSideEffectVisitor::isFlagPresent(
+    const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::rhsOperandAndOrSideEffect);
+}
+
+bool RHSOperandSideEffectVisitor::VisitBinaryOperator(
+    const clang::BinaryOperator *BO) {
+  if (BO->getRHS()->isInstantiationDependent())
+    return true;
+
+  if (BO->getOpcode() == clang::BO_LAnd || BO->getOpcode() == clang::BO_LOr) {
+    if (hasAutosarSideEffects(BO->getRHS(), AC)) {
+      return !AutocheckDiagnostic::reportWarning(
+                  DE, BO->getRHS()->getBeginLoc(),
+                  AutocheckWarnings::rhsOperandAndOrSideEffect)
+                  .limitReached();
     }
   }
 
@@ -153,6 +187,9 @@ TemplatesVisitor::TemplatesVisitor(clang::DiagnosticsEngine &DE,
   const AutocheckContext &Context = AutocheckContext::Get();
   if (InParametersPassedByValue::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<InParametersPassedByValue>(DE, AC));
+  if (RHSOperandSideEffectVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(
+        std::make_unique<RHSOperandSideEffectVisitor>(DE, AC));
     }
 
 void TemplatesVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -164,6 +201,13 @@ void TemplatesVisitor::run(clang::TranslationUnitDecl *TUD) {
 bool TemplatesVisitor::VisitFunctionDecl(const clang::FunctionDecl *FD) {
   AllVisitors.remove_if([FD](std::unique_ptr<TemplateVisitorInterface> &V) {
     return !V->VisitFunctionDecl(FD);
+  });
+  return true;
+}
+
+bool TemplatesVisitor::VisitBinaryOperator(const clang::BinaryOperator *BO) {
+  AllVisitors.remove_if([BO](std::unique_ptr<TemplateVisitorInterface> &V) {
+    return !V->VisitBinaryOperator(BO);
   });
   return true;
 }

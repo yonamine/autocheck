@@ -23,7 +23,6 @@
 
 namespace autocheck {
 
-
 DeclarationsVisitorInterface::~DeclarationsVisitorInterface() {}
 
 using DVI = DeclarationsVisitorInterface;
@@ -180,8 +179,10 @@ bool AutoVarBracedInitVisitor::isFlagPresent(const AutocheckContext &Context) {
 bool AutoVarBracedInitVisitor::VisitVarDecl(const clang::VarDecl *VD) {
   if (VD->hasInit()) {
     const clang::QualType &InitQualType = VD->getInit()->getType();
-    if (!InitQualType.isNull() &&
-        InitQualType.getTypePtr()->getContainedAutoType()) {
+    if (VD->getTypeSourceInfo()
+            ->getTypeLoc()
+            .getUnqualifiedLoc()
+            .getTypeLocClass() == clang::TypeLoc::Auto) {
       const clang::VarDecl::InitializationStyle &IS = VD->getInitStyle();
       // Call-style initialization (e.g. int x(0)).
       if (IS == clang::VarDecl::InitializationStyle::CallInit) {
@@ -618,7 +619,7 @@ bool ConstUnusedForImmutableData::CheckFunctionArguments(
       // If the argument is array or variable associated with the reference,
       // erase it from the immutable candidates. If the argument is pointer or
       // reference that is passed by value, do not erase it.
-      if (Qt.getUnqualifiedType() != VD->getType())
+      if (!areTypesEquivalent(AC, Qt.getUnqualifiedType(), VD->getType()))
         ImmutableVarCandidates.erase(VD->getLocation());
     }
   }
@@ -814,11 +815,13 @@ bool BroadScopeIdentifierVisitor::isFlagPresent(
 }
 
 bool BroadScopeIdentifierVisitor::VisitVarDecl(const clang::VarDecl *VD) {
-  // Ignore function parameter declarations, static data members and static
-  // local variables. If variable is declared inside of If statement's condition
-  // part, it is okay to use it throughout If statement, even in nested scopes.
+  // Ignore function parameter declarations, static data members, static
+  // local variables and duplicated variable template specializations. If
+  // variable is declared inside of If statement's condition part, it is okay to
+  // use it throughout If statement, even in nested scopes.
   if (!llvm::dyn_cast_if_present<clang::ParmVarDecl>(VD) &&
-      !VD->isStaticDataMember() && !VD->isStaticLocal() && !isIfCond) {
+      !VD->isStaticDataMember() && !VD->isStaticLocal() && !isIfCond &&
+      !llvm::dyn_cast_if_present<clang::VarTemplateSpecializationDecl>(VD)) {
     // If the variable is ever referenced, there is a chance it's usage is
     // illegal.
     if (VD->isReferenced()) {
@@ -875,7 +878,8 @@ bool BroadScopeIdentifierVisitor::VisitDeclRefExpr(
       // different type to the one previously declared here or if it's used in
       // any expression other than some form of assignment.
       const auto &Parents = ASTCtx.getParents(*DRE);
-      if ((!forInitType.isNull() && It->first->getType() != forInitType) ||
+      if ((!forInitType.isNull() &&
+           !areTypesEquivalent(ASTCtx, forInitType, It->first->getType())) ||
           (isForInit && !(Parents[0].get<clang::CompoundAssignOperator>()) &&
            !(Parents[0].get<clang::BinaryOperator>()))) {
         PotentiallyBadVars.erase(It);
@@ -1236,6 +1240,11 @@ bool ConstantInitializer::hasRedeclaration(const clang::VarDecl *VD) {
 }
 
 bool ConstantInitializer::VisitVarDecl(const clang::VarDecl *VD) {
+  // Skip template specializations. Only check the VarDecl in the variable
+  // template declaration.
+  if (llvm::dyn_cast_if_present<clang::VarTemplateSpecializationDecl>(VD))
+    return true;
+
   clang::StorageDuration SD = VD->getStorageDuration();
   if (SD == clang::StorageDuration::SD_Static ||
       SD == clang::StorageDuration::SD_Thread) {
@@ -2410,6 +2419,9 @@ bool GlobalNamespaceVisitor::VisitTranslationUnitDecl(
                    llvm::dyn_cast_if_present<clang::UsingDirectiveDecl>(*It)) {
       if (UDD->getNominatedNamespace()->isAnonymousNamespace())
         continue;
+      // Skip using shadow declarations.
+    } else if (llvm::dyn_cast_if_present<clang::UsingShadowDecl>(*It)) {
+      continue;
       // Skip main function.
     } else if (clang::FunctionDecl *FD =
                    llvm::dyn_cast_if_present<clang::FunctionDecl>(*It)) {

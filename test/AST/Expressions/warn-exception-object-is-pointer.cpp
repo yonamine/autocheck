@@ -9,17 +9,19 @@ void test() {
   A *a3{new A};
 
   int i;
-  if (i == 1) {
+  if (i == 0) {
+    throw;
+  } else if (i == 1) {
     throw a1;
   } else if (i == 2) {
     throw A();
-  } else if (i == 2) {
+  } else if (i == 3) {
     throw a2;
-  } else if (i == 2) {
+  } else if (i == 4) {
     throw &a1; // expected-warning {{An exception object shall not be a pointer}}
-  } else if (i == 2) {
+  } else if (i == 5) {
     throw a3; // expected-warning {{An exception object shall not be a pointer}}
-  } else if (i == 2) {
+  } else if (i == 6) {
     throw(*a3);
   } else {
     throw new A; // expected-warning {{An exception object shall not be a pointer}}

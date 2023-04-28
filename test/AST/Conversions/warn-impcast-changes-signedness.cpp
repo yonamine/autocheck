@@ -28,5 +28,12 @@ int main() {
   b = c; //expected-warning {{An implicit integral conversion shall not change the signedness of the underlying type}}
          //expected-note@-1 {{Casts 'int32_t' to 'uint32_t'}}
 
+  uint32_t d[2][2] = {
+    {1, 2}, //expected-warning {{An implicit integral conversion shall not change the signedness of the underlying type}}
+            //expected-note@-1 {{Casts 'int' to 'uint32_t'}}
+    {3, 4}  //expected-warning {{An implicit integral conversion shall not change the signedness of the underlying type}}
+            //expected-note@-1 {{Casts 'int' to 'uint32_t'}}
+  };
+
   return 0;
 }

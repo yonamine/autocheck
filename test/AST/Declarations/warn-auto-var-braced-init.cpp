@@ -15,7 +15,11 @@ void test() {
   auto y1(0);
   auto y2 = 0;
 
-  auto y3{0};    // expected-warning 1 {{A variable of type auto shall not be initialized using {} or ={} braced-initialization}}
-  auto y4 = {0}; // expected-warning 1 {{A variable of type auto shall not be initialized using {} or ={} braced-initialization}}
+  auto y3{0};          // expected-warning 1 {{A variable of type auto shall not be initialized using {} or ={} braced-initialization}}
+  const auto y4{0};    // expected-warning 1 {{A variable of type auto shall not be initialized using {} or ={} braced-initialization}}
+  auto y5 = {0};       // expected-warning 1 {{A variable of type auto shall not be initialized using {} or ={} braced-initialization}}
+  const auto y6 = {0}; // expected-warning 1 {{A variable of type auto shall not be initialized using {} or ={} braced-initialization}}
+
+  auto y7{[](){ return 0; }}; // expected-warning 1 {{A variable of type auto shall not be initialized using {} or ={} braced-initialization}}
 }
 } // namespace

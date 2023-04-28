@@ -54,6 +54,11 @@ StatementMatcher UnusedReturnMatcher::makeMatcher() {
       whileStmt(callExprNotInCondition), switchStmt(callExprNotInCondition),
       doStmt(callExprNotInCondition)))));
 
+  // Match if the node is used to initialize a variable. This rule considers
+  // that as a used return value. If however that variable isn't used, that is
+  // checked by rule [M0-1-3].
+  auto usedInsideDecl = hasParent(varDecl());
+
   // Matches against callExpr which:
   // (i) has return value other than void,
   // (ii) is considered unused, and
@@ -61,7 +66,8 @@ StatementMatcher UnusedReturnMatcher::makeMatcher() {
   // callExpr is considered unused if it is not part of a statement, or it is a
   // part of a statement listed in usedInsideStatement matcher.
   return callExpr(callExpr().bind(CallExprName),
-                  allOf(hasReturnValue, unless(usedInsideStatement)),
+                  allOf(hasReturnValue,
+                        unless(anyOf(usedInsideStatement, usedInsideDecl))),
                   unless(callExpr(cxxOperatorCallExpr())))
       .bind("unusedReturn");
 }
