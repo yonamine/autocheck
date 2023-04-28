@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wunused-parameter %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <string>
 #include <cstdint>
@@ -18,7 +19,7 @@ void test2(std::int32_t a, std::int32_t b, std::int32_t c, std::int32_t d, // ex
 void test3(std::int32_t a, std::int32_t b);
 std::int32_t test4(std::int32_t a, std::int32_t b, std::int32_t c,
                    std::int32_t d, std::int32_t e, std::int32_t f, // expected-warning {{Unused parameter 'e'}} // expected-warning {{Unused parameter 'f'}}
-                   std::int32_t g, std::int32_t h) {  // expected-warning {{Unused parameter 'h'}}
+                   std::int32_t g, std::int32_t h) { // expected-warning {{Unused parameter 'h'}}
   test2(a, b, c, d, g);
   if (a > b) {
     return a;
@@ -67,3 +68,35 @@ void GHI::test(std::string &, std::string &b, std::string &c) { // expected-warn
   count = b.size();
 }
 } // namespace
+
+// autosar-warning@4 0-1 {{There shall be no unused include directives:}} // libstdc++ shows this warning, libc++ does not
+// autosar-note@4 0-1 {{But one or more of it's own #include directives is used}} // libstdc++ shows this warning, libc++ does not
+// autosar-warning@5 1 {{There shall be no unused include directives:}}
+// autosar-warning@19 1 {{Unused function 'test3'}}
+// autosar-warning@20 1 {{Unused function 'test4'}}
+// autosar-warning@30 1 {{Unused function 'test5'}}
+// autosar-warning@35 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@40 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@41 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@42 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@55 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@56 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@60 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@65 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@66 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@34 1 {{Unused private method 'f1'}}
+// autosar-warning@35 1 {{Unused private method 'f2'}}
+// autosar-warning@61 1 {{Unused private method 'f'}}
+// autosar-warning@62 1 {{Unused private method 'g'}}
+// autosar-warning@63 1 {{Unused private method 'test'}}
+// autosar-warning@68 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@68 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@68 1 {{Casts 'std::basic_string<char, std::char_traits<char>, std::allocator<char>>::size_type' to 'int'}}
+// autosar-warning@33 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@38 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@46 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@59 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@46 1 {{Destructor of a base class shall be public virtual, public override or protected non-virtual}}
+// autosar-note@38 1 {{class has implicit destructor}}
+// autosar-warning@59 1 {{Destructor of a base class shall be public virtual, public override or protected non-virtual}}
+// autosar-note@46 1 {{class has implicit destructor}}

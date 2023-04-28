@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wregister-keyword-used %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 namespace {
@@ -21,3 +22,12 @@ public:
   }
 };
 } // namespace
+
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@20 1 {{The value returned by a function having a non-void return type that is not an overloaded operator shall be used}}
+// autosar-warning@14 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@10 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@11 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@19 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@16 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}

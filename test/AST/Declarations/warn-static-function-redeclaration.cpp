@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wstatic-function-redeclaration %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <iostream>
 namespace {
@@ -28,3 +29,8 @@ int32_t main() {
   std::cout << test::A::a(4) << std::endl;
   return 0;
 }
+
+// autosar-warning@7 1 {{Unused function 'func_1'}}
+// autosar-warning@10 1 {{Unused function 'func_2'}}
+// autosar-warning@14 1 {{Unused function 'func_3'}}
+// autosar-warning@18 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}

@@ -1,4 +1,5 @@
 // RUN:  autocheck -verify -Wc-style-array-used %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 #include <array>
@@ -53,3 +54,72 @@ public:
   static constexpr std::int32_t b[]{0, 1, 2, 3, 4}; // expected-warning 0 {{C-style arrays shall not be used}}
 };
 } // namespace
+
+// autosar-warning@46 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@32 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@32 1 {{C-style strings shall not be used}}
+// autosar-warning@36 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@4 1 {{There shall be no unused include directives: }}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@13 1 {{Unused variable 'c'}}
+// autosar-warning@17 1 {{Unused variable 'f'}}
+// autosar-warning@16 1 {{Unused variable 'e'}}
+// autosar-warning@22 1 {{Unused variable 'j'}}
+// autosar-warning@22 1 {{Unused variable 'k'}}
+// autosar-warning@22 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@27 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@23 1 {{Unused variable 'l'}}
+// autosar-warning@18 1 {{Unused variable 'g'}}
+// autosar-warning@20 1 {{Unused variable 'hs'}}
+// autosar-warning@21 1 {{Unused variable 'i'}}
+// autosar-warning@27 1 {{Return type of a non-void return type lambda expression should be explicitly specified}}
+// autosar-warning@28 1 {{Unused variable 'b'}}
+// autosar-warning@33 1 {{Unused variable 't'}}
+// autosar-warning@34 1 {{Unused variable 'numbers'}}
+// autosar-warning@32 1 {{Unused variable 'arr'}}
+// autosar-warning@35 1 {{Unused variable 'a'}}
+// autosar-warning@36 1 {{Unused variable 'char_ptr'}}
+// autosar-warning@42 1 {{Unused variable 'b'}}
+// autosar-warning@40 1 {{Unused variable 'a'}}
+// autosar-warning@46 1 {{Traditional C-style casts shall not be used}}
+// autosar-warning@46 1 {{Functions malloc, calloc, realloc and free shall not be used}}
+// autosar-warning@48 1 {{Functions malloc, calloc, realloc and free shall not be used}}
+// autosar-warning@6 1 {{There shall be no unused include directives: }}
+// autosar-note@6 0-1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@9 1 {{Unused function 'test1'}}
+// autosar-warning@26 1 {{Unused function 'test2'}}
+// autosar-warning@31 1 {{Unused function 'test3'}}
+// autosar-warning@39 1 {{Unused function 'test4'}}
+// autosar-warning@45 1 {{Unused function 'test5'}}
+// autosar-warning@53 1 {{Unused variable 'a'}}
+// autosar-warning@54 1 {{Unused variable 'b'}}
+// autosar-warning@42 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@33 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@33 1 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@46 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note-re@46 1 {{Casts 'int' to '{{(std::)?}}size_t'}}
+// autosar-warning@51 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@10 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@13 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@16 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@17 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@18 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@20 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@21 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@22 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@23 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@28 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@32 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@33 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@34 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@35 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@36 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@40 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@42 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@19 1 {{CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name}}
+// autosar-warning@41 1 {{CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name}}
+// autosar-warning@40 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note-re@40 {{Casts 'int' to '{{(std::)?}}size_t'}}
+// autosar-warning@42 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note-re@42 {{Casts 'int32_t' to '{{(std::)?}}size_t'}}
+// autosar-warning@34 1 {{Braces shall be used to indicate and match the structure in the non-zero initialization of arrays and structures}}

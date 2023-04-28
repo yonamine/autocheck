@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wconst-unused-for-immutable-data %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 #include <string>
@@ -260,3 +261,111 @@ void test20() {
 }
 
 } // namespace
+
+// autosar-warning@62 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@63 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@64 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@65 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@66 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@74 {{C-style arrays shall not be used}}
+// autosar-warning@75 {{C-style arrays shall not be used}}
+// autosar-warning@91 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@92 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@105 {{C-style arrays shall not be used}}
+// autosar-warning@105 {{C-style strings shall not be used}}
+// autosar-warning@106 {{C-style arrays shall not be used}}
+// autosar-warning@134 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@151 {{C-style arrays shall not be used}}
+// autosar-warning@152 {{C-style arrays shall not be used}}
+// autosar-warning@154 {{C-style arrays shall not be used}}
+// autosar-warning@156 {{C-style arrays shall not be used}}
+// autosar-warning@164 {{C-style arrays shall not be used}}
+// autosar-warning@164 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@165 {{C-style arrays shall not be used}}
+// autosar-warning@165 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@166 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@167 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@168 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@234 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@170 {{C-style arrays shall not be used}}
+// autosar-warning@171 {{C-style arrays shall not be used}}
+// autosar-warning@189 {{C-style arrays shall not be used}}
+// autosar-warning@190 {{C-style arrays shall not be used}}
+// autosar-warning@119 {{Unused variable 'u2'}}
+// autosar-warning@130 {{Unused variable 's2'}}
+// autosar-warning@227 {{Unused variable 'ptry'}}
+// autosar-warning@230 {{Unused variable 'ptrz'}}
+// autosar-warning@250 {{Unused variable 'b0'}}
+// autosar-warning@251 {{Unused variable 'b1'}}
+// autosar-warning@253 {{Unused variable 'b2'}}
+// autosar-warning@254 {{Unused variable 'b3'}}
+// autosar-warning@256 {{Unused variable 'b4'}}
+// autosar-warning@257 {{Unused variable 'b5'}}
+// autosar-warning@259 {{Unused variable 'b6'}}
+// autosar-warning@260 {{Unused variable 'b7'}}
+// autosar-warning@12 {{Unused function 'test1'}}
+// autosar-warning@19 {{Unused function 'test2'}}
+// autosar-warning@30 {{Unused function 'test3'}}
+// autosar-warning@39 {{Unused function 'test4'}}
+// autosar-warning@48 {{Unused function 'test5'}}
+// autosar-warning@68 {{Unused function 'test6'}}
+// autosar-warning@95 {{Unused function 'test7'}}
+// autosar-warning@104 {{Unused function 'test8'}}
+// autosar-warning@116 {{Unused function 'test9'}}
+// autosar-warning@127 {{Unused function 'test10'}}
+// autosar-warning@142 {{Unused function 'test11'}}
+// autosar-warning@150 {{Unused function 'test12'}}
+// autosar-warning@188 {{Unused function 'test14'}}
+// autosar-warning@203 {{Unused function 'test15'}}
+// autosar-warning@210 {{Unused function 'test16'}}
+// autosar-warning@221 {{Unused function 'test17'}}
+// autosar-warning@233 {{Unused function 'test18'}}
+// autosar-warning@241 {{Unused function 'test19'}}
+// autosar-warning@248 {{Unused function 'test20'}}
+// autosar-warning@105 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@106 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@106 {{C-style strings shall not be used}}
+// autosar-warning@107 {{The unbounded functions of library <cstring> shall not be used}}
+// autosar-warning@110 {{Unions shall not be used}}
+// autosar-warning@4 {{There shall be no unused include directives:}}
+// autosar-note@4 {{But one or more of it's own #include directives is used}}
+// autosar-warning@5 0-1 {{There shall be no unused include directives:}} // stdlibc++ shows this warning, libc++ does not
+// autosar-note@5 0-1 {{But one or more of it's own #include directives is used}} // stdlibc++ shows this warning, libc++ does not
+// autosar-warning@89 {{Member data in non-POD class types shall be private}}
+// autosar-warning@111 {{Member data in non-POD class types shall be private}}
+// autosar-warning@112 {{Member data in non-POD class types shall be private}}
+// autosar-warning@113 {{Member data in non-POD class types shall be private}}
+// autosar-warning@123 {{Member data in non-POD class types shall be private}}
+// autosar-warning@124 {{Member data in non-POD class types shall be private}}
+// autosar-warning@110 {{A non-POD type should be defined as class}}
+// autosar-warning@122 {{A non-POD type should be defined as class}}
+// autosar-warning@65 {{Type 'int64_t' (aka 'long') is "cheap to copy" and should be passed by value}}
+// autosar-warning@99 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@251 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@254 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@257 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@260 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@77 {{An identifier with array type passed as a function argument shall not decay to a pointer: 'std::int64_t[5]' -> 'std::int64_t *'}}
+// autosar-warning@79 {{An identifier with array type passed as a function argument shall not decay to a pointer: 'std::int64_t[5]' -> 'std::int64_t *'}}
+// autosar-warning@107 {{An identifier with array type passed as a function argument shall not decay to a pointer: 'char[6]' -> 'char *'}}
+// autosar-warning@176 {{An identifier with array type passed as a function argument shall not decay to a pointer: 'std::int64_t[5]' -> 'std::int64_t *'}}
+// autosar-warning@198 {{An identifier with array type passed as a function argument shall not decay to a pointer: 'std::int64_t[5]' -> 'std::int64_t *'}}
+// autosar-warning@33 {{A for loop shall contain a single loop-counter which shall not have floating-point type}}
+// autosar-warning@42 {{A for loop shall contain a single loop-counter which shall not have floating-point type}}
+// autosar-warning@107 {{The value returned by a function having a non-void return type that is not an overloaded operator shall be used}}
+// autosar-warning@85 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@161 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@13 {{CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name}}
+// autosar-warning@14 {{CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name}}
+// autosar-warning@32 {{CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name}}
+// autosar-warning@41 {{CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name}}
+// autosar-warning@54 {{CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name}}
+// autosar-warning@205 {{CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name}}
+// autosar-warning@214 {{CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name}}
+// autosar-warning@31 1 {{An identifier declared to be an object or type shall be defined in a block that minimizes its visibility}}
+// autosar-warning@32 1 {{An identifier declared to be an object or type shall be defined in a block that minimizes its visibility}}
+// autosar-warning@40 1 {{An identifier declared to be an object or type shall be defined in a block that minimizes its visibility}}
+// autosar-warning@41 1 {{An identifier declared to be an object or type shall be defined in a block that minimizes its visibility}}
+// autosar-warning@204 {{Braces shall be used to indicate and match the structure in the non-zero initialization of arrays and structures}}
+// autosar-warning@211 {{Braces shall be used to indicate and match the structure in the non-zero initialization of arrays and structures}}
+// autosar-warning@135 {{Unions shall not be used}}

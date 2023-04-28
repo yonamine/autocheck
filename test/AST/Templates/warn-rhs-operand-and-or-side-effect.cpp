@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wrhs-operand-and-or-side-effect %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 namespace {
@@ -99,3 +100,20 @@ void test2() {
 }
 
 } // namespace
+
+// autosar-warning@13 1 {{The increment (++) and decrement (--) operators shall not be mixed with other operators in an expression}}
+// autosar-warning@13 1 {{variable 'a' is uninitialized when used here}}
+// autosar-note@11 1 {{initialize the variable 'a' to silence this warning}}
+// autosar-warning@10 1 {{Unused function 'test'}}
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@23 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@35 1 {{Unused parameter 'i'}}
+// autosar-warning@40 1 {{The increment (++) and decrement (--) operators shall not be mixed with other operators in an expression}}
+// autosar-warning@48 1 {{The increment (++) and decrement (--) operators shall not be mixed with other operators in an expression}}
+// autosar-warning@85 1 {{The increment (++) and decrement (--) operators shall not be mixed with other operators in an expression}}
+// autosar-warning@52 1 {{Unused function 'foo'}}
+// autosar-warning@97 1 {{Unused function 'test2'}}
+// autosar-warning@27 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@84 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@88 1 {{There shall be no implicit floating-integral conversions}}

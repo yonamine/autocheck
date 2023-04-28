@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wrecursion-used %s
+// RUN: autocheck -verify=expected,autosar -Wall -Wrecursion-used %s
 
 namespace {
 void Fn1();

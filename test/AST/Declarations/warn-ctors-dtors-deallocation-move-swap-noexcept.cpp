@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wctors-dtors-deallocation-move-swap-noexcept %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <type_traits>
 
@@ -157,3 +158,35 @@ void Swap2(C1 &a, C1 &b) {
 }
 
 } // namespace
+
+// autosar-warning@4 0-1 {{There shall be no unused include directives:}} // libc++ shows this warning, libstdc++ does not
+// autosar-note@4 0-1 {{But one or more of it's own #include directives is used}} // libc++ shows this warning, libstdc++ does not
+// autosar-warning@125 {{An exception object shall not be a pointer}}
+// autosar-warning@137 {{An exception object shall not be a pointer}}
+// autosar-warning@82 {{Unused function 'Fn'}}
+// autosar-warning@104 {{Unused function 'Swap'}}
+// autosar-warning@150 {{Unused function 'Swap2'}}
+// autosar-warning@74 {{If a function is declared to be noexcept, noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception}}
+// autosar-note@74 {{'~C3' has a non-throwing exception specification but can still throw}}
+// autosar-note@73 {{function declared non-throwing here}}
+// autosar-warning@78 {{If a function is declared to be noexcept, noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception}}
+// autosar-note@78 {{'operator delete' has a non-throwing exception specification but can still throw}}
+// autosar-note@77 {{function declared non-throwing here}}
+// autosar-warning@144 {{If a function is declared to be noexcept, noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception}}
+// autosar-note@144 {{'operator delete' has a non-throwing exception specification but can still throw}}
+// autosar-note@142 {{function declared non-throwing here}}
+// autosar-warning@28 {{User-defined copy and move assignment operators should use user-defined no-throw swap function}}
+// autosar-warning@44 {{User-defined copy and move assignment operators should use user-defined no-throw swap function}}
+// autosar-warning@68 {{User-defined copy and move assignment operators should use user-defined no-throw swap function}}
+// autosar-warning@97 {{User-defined copy and move assignment operators should use user-defined no-throw swap function}}
+// autosar-warning@122 {{User-defined copy and move assignment operators should use user-defined no-throw swap function}}
+// autosar-warning@28 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@27 {{Type '(anonymous namespace)::C1' is "cheap to copy" and should be passed by value}}
+// autosar-warning@65 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@69 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@74 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@78 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@108 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@137 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@144 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+

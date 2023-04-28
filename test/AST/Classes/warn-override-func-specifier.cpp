@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Woverride-func-specifier %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 namespace {
 class Foo1 {
@@ -45,3 +46,8 @@ public:
   }
 };
 } // namespace
+
+// autosar-warning@23 1 {{Virtual function declaration shall contain exactly one of the three specifiers: (1) virtual, (2) override, (3) final}}
+// autosar-warning@27 1 {{Virtual function declaration shall contain exactly one of the three specifiers: (1) virtual, (2) override, (3) final}}
+// autosar-warning@36 1 {{Virtual function declaration shall contain exactly one of the three specifiers: (1) virtual, (2) override, (3) final}}
+// autosar-warning@44 1 {{Virtual function declaration shall contain exactly one of the three specifiers: (1) virtual, (2) override, (3) final}}

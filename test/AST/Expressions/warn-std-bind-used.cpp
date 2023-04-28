@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wstd-bind-used %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include<functional>
 
@@ -15,3 +16,8 @@ namespace {
     my_function(y);
   }
 }
+
+// autosar-warning@7 1 {{Unused parameter 'a'}}
+// autosar-warning@7 1 {{Unused parameter 'b'}}
+// autosar-warning@10 1 {{Unused function 'test1'}}
+// autosar-warning@11 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}

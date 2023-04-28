@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wunused-variable %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 
@@ -29,3 +30,15 @@ void unusedLocalVar(void) {
 }
 
 }
+
+// autosar-warning@4 0-1 {{There shall be no unused include directives:}}
+// autosar-note@4 0-1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@18 1 {{Unused function 'unusedLocalVar'}}
+// autosar-warning@15 2 {{variable 'usedVar' is uninitialized when used here}}
+// autosar-note@14 2 {{initialize the variable 'usedVar' to silence this warning}}
+// autosar-warning@12 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@14 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@19 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@22 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@25 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@20 1 {{CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name}}

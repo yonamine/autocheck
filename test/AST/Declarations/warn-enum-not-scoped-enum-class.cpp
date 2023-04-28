@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wenum-not-scoped-enum-class %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 namespace {
 enum class Enum1 : int {
@@ -63,3 +64,19 @@ int main() {
   const B<int> b{};
   const A<float> c{};
 }
+
+// autosar-warning@5 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@17 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@29 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@41 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@11 1 {{Enumeration underlying base type shall be explicitly defined}}
+// autosar-warning@23 1 {{Enumeration underlying base type shall be explicitly defined}}
+// autosar-warning@35 1 {{Enumeration underlying base type shall be explicitly defined}}
+// autosar-warning@47 1 {{Enumeration underlying base type shall be explicitly defined}}
+// autosar-warning@54 1 {{Enumeration underlying base type shall be explicitly defined}}
+// autosar-warning@58 1 {{Enumeration underlying base type shall be explicitly defined}}
+// autosar-warning@63 1 {{Unused variable 'a'}}
+// autosar-warning@64 1 {{Unused variable 'b'}}
+// autosar-warning@65 1 {{Unused variable 'c'}}
+// autosar-warning@63 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@64 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}

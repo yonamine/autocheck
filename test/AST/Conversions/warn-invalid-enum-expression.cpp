@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Winvalid-enum-expression %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 
@@ -70,3 +71,28 @@ void test2() {
   *enum_result; // expected-warning {{Expressions with type enum or enum class shall not be used as operands to built-in and overloaded operators other than the subscript operator [ ], the assignment operator =, the equality operators == and !=, the unary & operator, and the relational operators <, <=, >, >=}}
 }
 } // namespace
+
+// autosar-warning@29 1 {{Enumerations shall be declared as scoped enum classes}}
+// autosar-warning@54 1 {{Unused parameter 'lhs'}}
+// autosar-warning@54 1 {{Unused parameter 'rhs'}}
+// autosar-warning@57 1 {{Unused parameter 'lhs'}}
+// autosar-warning@57 1 {{Unused parameter 'rhs'}}
+// autosar-warning@60 1 {{The unary & operator shall not be overloaded}}
+// autosar-warning@60 1 {{Unused parameter 't'}}
+// autosar-warning@61 1 {{Unused parameter 't'}}
+// autosar-warning@4 1 {{There shall be no unused include directives: }}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@9 1 {{Unused function 'test1'}}
+// autosar-warning@63 1 {{Unused function 'test2'}}
+// autosar-warning@10 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@11 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@12 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@13 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@14 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@31 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@32 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@33 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@34 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@35 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@7 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@29 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}

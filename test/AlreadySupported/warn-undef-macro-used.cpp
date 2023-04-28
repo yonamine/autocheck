@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wundef-macro-used --extra-arg="-Darg=1" --extra-arg="-DargTwo=0" %s
+// RUN: autocheck -verify=expected,autosar -Wall --extra-arg="-Darg=1" --extra-arg="-DargTwo=0" %s
 
 #if x > 0 // expected-warning 1 {{Undefined macro identifiers shall not be used in #if or #elif pre-processor directives, except as operands to the defined operator}}
     #define y 1

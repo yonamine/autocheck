@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wthrow-in-noexcept-func %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <type_traits>
 
@@ -139,3 +140,24 @@ void test11(double d) noexcept {
 }
 
 }
+
+// autosar-warning@4 0-1 {{There shall be no unused include directives:}} // libc++ shows this warning, libstdc++ does not
+// autosar-warning@97 {{An exception object shall not be a pointer}}
+// autosar-warning@99 {{An exception object shall not be a pointer}}
+// autosar-warning@136 {{An exception object shall not be a pointer}}
+// autosar-warning@22 {{Unused function 'test1'}}
+// autosar-warning@27 {{Unused function 'test2'}}
+// autosar-warning@34 {{Unused function 'test3'}}
+// autosar-warning@50 {{Unused function 'test5'}}
+// autosar-warning@63 {{Unused function 'test7'}}
+// autosar-warning@75 {{Unused function 'test8'}}
+// autosar-warning@90 {{Unused function 'test9'}}
+// autosar-warning@107 {{Unused function 'test10'}}
+// autosar-warning@125 {{Unused function 'test11'}}
+// autosar-warning@96 {{The declaration of objects shall contain no more than two levels of pointer indirection}}
+// autosar-warning@103 {{The declaration of objects shall contain no more than two levels of pointer indirection}}
+// autosar-warning@23 1 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@37 1 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@47 1 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@68 1 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@114 1 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}

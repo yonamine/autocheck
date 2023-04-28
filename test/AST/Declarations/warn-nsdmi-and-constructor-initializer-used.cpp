@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wnsdmi-and-ctor-init-used %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 #include <utility>
@@ -93,3 +94,25 @@ private:
   std::int32_t h3{34};
 };
 } // namespace
+
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@5 1 {{There shall be no unused include directives:}}
+// autosar-note@5 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@65 1 {{A non-POD type should be defined as class}}
+// autosar-warning@68 1 {{Member data in non-POD class types shall be private}}
+// autosar-warning@69 1 {{Member data in non-POD class types shall be private}}
+// autosar-warning@71 1 {{A non-POD type should be defined as class}}
+// autosar-warning@72 1 {{Member data in non-POD class types shall be private}}
+// autosar-warning@73 1 {{Member data in non-POD class types shall be private}}
+// autosar-warning@9 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@19 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@25 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@43 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@54 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@76 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@82 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@65 1 {{A type defined as struct shall: (2) not provide any special member functions or methods}}
+// autosar-warning@71 1 {{A type defined as struct shall: (4) not inherit from another struct or class}}
+// autosar-warning@71 1 {{Destructor of a base class shall be public virtual, public override or protected non-virtual}}
+// autosar-note@65 1 {{class has implicit destructor}}

@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wglobal-namespace-nodes %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 extern "C" {
 void foo1();
@@ -38,3 +39,47 @@ class Foo2 {}; // expected-warning {{The global namespace shall only contain mai
 using namespace NS; // expected-warning {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}
 
 using NS::C; // expected-warning {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}
+
+// autosar-warning@8 1 {{The typedef specifier shall not be used}}
+// autosar-warning@8 1 {{There should be no unused type declarations}}
+// autosar-warning@9 1 {{The typedef specifier shall not be used}}
+// autosar-warning@9 1 {{There should be no unused type declarations}}
+// autosar-warning@10 1 {{The typedef specifier shall not be used}}
+// autosar-warning@10 1 {{There should be no unused type declarations}}
+// autosar-warning@11 1 {{The typedef specifier shall not be used}}
+// autosar-warning@11 1 {{There should be no unused type declarations}}
+// autosar-warning@12 1 {{The typedef specifier shall not be used}}
+// autosar-warning@13 1 {{The typedef specifier shall not be used}}
+// autosar-warning@14 1 {{The typedef specifier shall not be used}}
+// autosar-warning@15 1 {{The typedef specifier shall not be used}}
+// autosar-warning@16 1 {{The typedef specifier shall not be used}}
+// autosar-warning@17 1 {{The typedef specifier shall not be used}}
+// autosar-warning@18 1 {{The typedef specifier shall not be used}}
+// autosar-warning@19 1 {{The typedef specifier shall not be used}}
+// autosar-warning@31 1 {{The typedef specifier shall not be used}}
+// autosar-warning@19 1 {{Type long double shall not be used}}
+// autosar-warning@39 1 {{Using-directives shall not be used}}
+// autosar-warning@8 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@9 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@10 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@11 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@12 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@13 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@14 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@15 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@16 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@31 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@35 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@12 1 {{There should be no unused type declarations}}
+// autosar-warning@13 1 {{There should be no unused type declarations}}
+// autosar-warning@14 1 {{There should be no unused type declarations}}
+// autosar-warning@15 1 {{There should be no unused type declarations}}
+// autosar-warning@16 1 {{There should be no unused type declarations}}
+// autosar-warning@17 1 {{There should be no unused type declarations}}
+// autosar-warning@18 1 {{There should be no unused type declarations}}
+// autosar-warning@19 1 {{There should be no unused type declarations}}
+// autosar-warning@31 1 {{There should be no unused type declarations}}
+// autosar-warning@23 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@37 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@35 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@35 1 {{Static and thread-local objects shall be constant-initialized}}

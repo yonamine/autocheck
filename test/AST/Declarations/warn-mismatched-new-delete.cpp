@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wmismatched-new-delete %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 #include <vector>
@@ -173,3 +174,75 @@ void test13() {
 }
 
 }
+
+// autosar-warning@113 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@113 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@116 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@116 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@119 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@119 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@138 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@138 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@145 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@145 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@152 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@152 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@156 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@156 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@160 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@160 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@167 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@167 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@9 {{Unused function 'test1'}}
+// autosar-warning@27 {{Unused function 'test2'}}
+// autosar-warning@33 {{Unused function 'test3'}}
+// autosar-warning@43 {{Unused function 'test4'}}
+// autosar-warning@60 {{Unused function 'test5'}}
+// autosar-warning@78 {{Unused function 'test6'}}
+// autosar-warning@86 {{Unused function 'test7'}}
+// autosar-warning@95 {{Unused function 'test8'}}
+// autosar-warning@166 {{Unused function 'test13'}}
+// autosar-warning@136 {{Unused private method 'f'}}
+// autosar-warning@119 {{Both NSDMI and a non-static member initializer in a constructor shall not be used in the same type}}
+// autosar-note@112 {{Member already initialized by NSDMI here}}
+// autosar-warning@10 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@11 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@12 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@13 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@15 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@28 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@62 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@66 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@69 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@73 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@87 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@90 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@97 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@167 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@171 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@105 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@4 {{There shall be no unused include directives:}}
+// autosar-note@4 {{But one or more of it's own #include directives is used}}
+// autosar-warning@5 0-1 {{There shall be no unused include directives:}} // libstdcxx shows this warning, libcxx does not
+// autosar-note@5 0-1 {{But one or more of it's own #include directives is used}} // libstdcxx shows this warning, libcxx does not
+// autosar-warning@10 1 {{C-style arrays shall not be used}}
+// autosar-warning@11 1 {{C-style arrays shall not be used}}
+// autosar-warning@36 1 {{C-style arrays shall not be used}}
+// autosar-warning@47 1 {{C-style arrays shall not be used}}
+// autosar-warning@69 1 {{C-style arrays shall not be used}}
+// autosar-warning@73 1 {{C-style arrays shall not be used}}
+// autosar-warning@79 1 {{C-style arrays shall not be used}}
+// autosar-warning@90 1 {{C-style arrays shall not be used}}
+// autosar-warning@97 1 {{C-style arrays shall not be used}}
+// autosar-warning@96 1 {{C-style arrays shall not be used}}
+// autosar-warning@104 1 {{C-style arrays shall not be used}}
+// autosar-warning@113 1 {{C-style arrays shall not be used}}
+// autosar-warning@116 1 {{C-style arrays shall not be used}}
+// autosar-warning@119 1 {{C-style arrays shall not be used}}
+// autosar-warning@138 1 {{C-style arrays shall not be used}}
+// autosar-warning@145 1 {{C-style arrays shall not be used}}
+// autosar-warning@152 1 {{C-style arrays shall not be used}}
+// autosar-warning@156 1 {{C-style arrays shall not be used}}
+// autosar-warning@167 1 {{C-style arrays shall not be used}}
+// autosar-warning@171 1 {{C-style arrays shall not be used}}
+// autosar-warning@160 1 {{C-style arrays shall not be used}}

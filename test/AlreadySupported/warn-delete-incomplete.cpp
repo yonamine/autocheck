@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wdelete-incomplete %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <memory>
 namespace {
@@ -56,3 +57,24 @@ public:
 }
 
 int main() { return 0; }
+
+// autosar-warning@4 0-1 {{There shall be no unused include directives:}} // stdlibc++ show this warning, libc++ does not
+// autosar-note@4 0-1 {{But one or more of it's own #include directives is used}} // stdlibc++ show this warning, libc++ does not
+// autosar-warning@6 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@14 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@21 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@23 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@33 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@39 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@40 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@50 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@47 1 {{Unused function 'g'}}
+// autosar-warning@48 1 {{Unused function 'get_d'}}
+// autosar-warning@11 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@22 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@37 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@44 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@47 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@48 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@51 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@59 {{Each expression statement and identifier declaration shall be placed on a separate line}}

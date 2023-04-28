@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wexception-handler-inversion %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 // Taken from clang/test/SemaCXX/exceptions.cpp, HandlerInversion namespace
 
 namespace HandlerInversion {
@@ -76,3 +77,32 @@ void f8() {
   }
 }
 } // namespace HandlerInversion
+
+// autosar-warning@39 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@7 {{Destructor of a base class shall be public virtual, public override or protected non-virtual}}
+// autosar-note@6 {{class has implicit destructor}}
+// autosar-warning@8 {{Destructor of a base class shall be public virtual, public override or protected non-virtual}}
+// autosar-note@7 {{class has implicit destructor}}
+// autosar-warning@7 {{A type defined as struct shall: (4) not inherit from another struct or class}}
+// autosar-warning@8 {{A type defined as struct shall: (4) not inherit from another struct or class}}
+// autosar-warning@7 {{A non-POD type should be defined as class}}
+// autosar-warning@8 {{A non-POD type should be defined as class}}
+// autosar-warning@12 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@13 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@19 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@20 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@26 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@27 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@33 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@39 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@40 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@46 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@47 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@53 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@54 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@58 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@59 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@66 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@70 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@75 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@76 {{Constexpr or const specifiers shall be used for immutable data declaration}}

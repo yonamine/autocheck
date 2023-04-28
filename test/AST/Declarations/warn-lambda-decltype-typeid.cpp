@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wlambda-decltype-typeid %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include<vector>
 
@@ -85,3 +86,87 @@ void Declaration() {
   std::vector<decltype(mul2)> lambdaVector(lambdaVector1); // expected-warning {{A lambda shall not be an operand to decltype or typeid}}
 }
 } // namespace
+
+// autosar-warning@26 1 {{Unused variable 'BoolValue'}}
+// autosar-warning@34 1 {{Unused variable 'lambdaType'}}
+// autosar-warning@74 1 {{Unused variable 't_data_d'}}
+// autosar-warning@76 1 {{Unused variable 'test1'}}
+// autosar-warning@77 1 {{Unused variable 'test2'}}
+// autosar-warning@78 1 {{Unused variable 'test3'}}
+// autosar-warning@80 1 {{Unused variable 'tmp1'}}
+// autosar-warning@81 1 {{Unused variable 'tmp2'}}
+// autosar-warning@82 1 {{Unused variable 'tmp3'}}
+// autosar-warning@22 1 {{Unused function 'CreateLambdaVectorNonCompliant'}}
+// autosar-warning@60 1 {{Unused function 'Foo'}}
+// autosar-warning@61 1 {{Unused function 'Foo'}}
+// autosar-warning@69 1 {{Unused function 'Declaration'}}
+// autosar-warning@50 1 {{There should be no unused type declarations}}
+// autosar-warning@52 1 {{There should be no unused type declarations}}
+// autosar-warning@51 1 {{There should be no unused type declarations}}
+// autosar-warning@18 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@19 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@23 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@23 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@25 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@28 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@30 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@32 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@35 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@38 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@41 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@47 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@51 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@52 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@55 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@56 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@56 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@57 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@57 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@58 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@58 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@60 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@80 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@8 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@11 1 {{Member data in non-POD class types shall be private}}
+// autosar-warning@12 1 {{Member data in non-POD class types shall be private}}
+// autosar-warning@15 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@15 1 {{All constructors that are callable with a single argument of fundamental type shall be declared explicit}}
+// autosar-warning@19 1 {{Member data in non-POD class types shall be private}}
+// autosar-warning@28 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@29 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@30 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@31 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@32 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@34 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@36 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@39 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@42 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@45 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@48 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@55 1 {{Static and thread-local objects shall be constant-initialized}}
+// autosar-warning@80 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@81 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@82 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@28 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@30 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@32 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@34 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@36 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@39 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@42 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@45 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@48 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@55 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@73 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@74 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@80 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@81 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@23 1 {{Return type of a non-void return type lambda expression should be explicitly specified}}
+// autosar-warning@25 1 {{Return type of a non-void return type lambda expression should be explicitly specified}}
+// autosar-warning@84 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@84 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@85 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@86 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@84 1 {{Return type of a non-void return type lambda expression should be explicitly specified}}
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}

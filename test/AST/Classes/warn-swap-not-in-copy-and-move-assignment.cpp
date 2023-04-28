@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wswap-not-in-copy-and-move-assignment %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 #include <utility>
@@ -72,3 +73,23 @@ private:
 };
 
 }
+
+// autosar-warning@4 {{There shall be no unused include directives:}}
+// autosar-warning@5 {{There shall be no unused include directives:}}
+// autosar-warning@6 0-1 {{There shall be no unused include directives:}} // libstdc++ shows this warning, libc++ does not
+// autosar-note@4 {{But one or more of it's own #include directives is used}}
+// autosar-note@5 {{But one or more of it's own #include directives is used}}
+// autosar-note@6 0-1 {{But one or more of it's own #include directives is used}} // libstdc++ shows this warning, libc++ does not
+// autosar-warning@8 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@10 {{Unused parameter 'oth'}}
+// autosar-warning@11 {{Unused parameter 'oth'}}
+// autosar-warning@57 {{Unused parameter 'oth'}}
+// autosar-warning@58 {{Unused parameter 'oth'}}
+// autosar-warning@13 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@17 {{A copy assignment and a move assignment operators shall handle self-assignment}}
+// autosar-warning@18 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@31 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@55 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@60 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@65 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@64 {{A copy assignment and a move assignment operators shall handle self-assignment}}

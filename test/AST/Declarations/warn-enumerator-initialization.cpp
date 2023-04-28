@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wenumerator-initialization %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 namespace {
@@ -58,3 +59,6 @@ enum class Enum10 : std::int32_t { // expected-warning {{In an enumeration, eith
   THIRD = 3
 };
 } // namespace
+
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}

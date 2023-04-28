@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wchanged-default-arguments %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 #include <string>
@@ -122,3 +123,132 @@ public:
   void f9(int32_t a, std::string b) final {}
 };
 } // namespace
+
+// autosar-note@4 {{But one or more of it's own #include directives is used}}
+// autosar-note@5 {{But one or more of it's own #include directives is used}}
+// autosar-warning@4 {{There shall be no unused include directives}}
+// autosar-warning@5 {{There shall be no unused include directives}}
+// autosar-warning@25 {{Unused parameter 'a'}}
+// autosar-warning@26 {{Unused parameter 'a'}}
+// autosar-warning@27 {{Unused parameter 'a'}}
+// autosar-warning@28 {{Unused parameter 'a'}}
+// autosar-warning@29 {{Unused parameter 'a'}}
+// autosar-warning@30 {{Unused parameter 'a'}}
+// autosar-warning@31 {{Unused parameter 'a'}}
+// autosar-warning@32 {{Unused parameter 'a'}}
+// autosar-warning@33 {{Unused parameter 'a'}}
+// autosar-warning@38 {{Unused parameter 'a'}}
+// autosar-warning@39 {{Unused parameter 'a'}}
+// autosar-warning@41 {{Unused parameter 'a'}}
+// autosar-warning@42 {{Unused parameter 'a'}}
+// autosar-warning@43 {{Unused parameter 'a'}}
+// autosar-warning@44 {{Unused parameter 'a'}}
+// autosar-warning@50 {{Unused parameter 'a'}}
+// autosar-warning@51 {{Unused parameter 'a'}}
+// autosar-warning@52 {{Unused parameter 'a'}}
+// autosar-warning@53 {{Unused parameter 'a'}}
+// autosar-warning@54 {{Unused parameter 'a'}}
+// autosar-warning@55 {{Unused parameter 'a'}}
+// autosar-warning@56 {{Unused parameter 'a'}}
+// autosar-warning@57 {{Unused parameter 'a'}}
+// autosar-warning@58 {{Unused parameter 'a'}}
+// autosar-warning@63 {{Unused parameter 'a'}}
+// autosar-warning@64 {{Unused parameter 'a'}}
+// autosar-warning@65 {{Unused parameter 'a'}}
+// autosar-warning@66 {{Unused parameter 'a'}}
+// autosar-warning@67 {{Unused parameter 'a'}}
+// autosar-warning@68 {{Unused parameter 'a'}}
+// autosar-warning@69 {{Unused parameter 'a'}}
+// autosar-warning@70 {{Unused parameter 'a'}}
+// autosar-warning@71 {{Unused parameter 'a'}}
+// autosar-warning@77 {{Unused parameter 'a'}}
+// autosar-warning@78 {{Unused parameter 'a'}}
+// autosar-warning@79 {{Unused parameter 'a'}}
+// autosar-warning@80 {{Unused parameter 'a'}}
+// autosar-warning@81 {{Unused parameter 'a'}}
+// autosar-warning@82 {{Unused parameter 'a'}}
+// autosar-warning@83 {{Unused parameter 'a'}}
+// autosar-warning@84 {{Unused parameter 'a'}}
+// autosar-warning@85 {{Unused parameter 'a'}}
+// autosar-warning@91 {{Unused parameter 'a'}}
+// autosar-warning@92 {{Unused parameter 'a'}}
+// autosar-warning@94 {{Unused parameter 'a'}}
+// autosar-warning@95 {{Unused parameter 'a'}}
+// autosar-warning@96 {{Unused parameter 'a'}}
+// autosar-warning@97 {{Unused parameter 'a'}}
+// autosar-warning@102 {{Unused parameter 'a'}}
+// autosar-warning@103 {{Unused parameter 'a'}}
+// autosar-warning@104 {{Unused parameter 'a'}}
+// autosar-warning@105 {{Unused parameter 'a'}}
+// autosar-warning@106 {{Unused parameter 'a'}}
+// autosar-warning@107 {{Unused parameter 'a'}}
+// autosar-warning@108 {{Unused parameter 'a'}}
+// autosar-warning@109 {{Unused parameter 'a'}}
+// autosar-warning@110 {{Unused parameter 'a'}}
+// autosar-warning@115 {{Unused parameter 'a'}}
+// autosar-warning@116 {{Unused parameter 'a'}}
+// autosar-warning@117 {{Unused parameter 'a'}}
+// autosar-warning@118 {{Unused parameter 'a'}}
+// autosar-warning@119 {{Unused parameter 'a'}}
+// autosar-warning@120 {{Unused parameter 'a'}}
+// autosar-warning@121 {{Unused parameter 'a'}}
+// autosar-warning@122 {{Unused parameter 'a'}}
+// autosar-warning@123 {{Unused parameter 'a'}}
+// autosar-warning@32 {{Unused parameter 'b'}}
+// autosar-warning@33 {{Unused parameter 'b'}}
+// autosar-warning@44 {{Unused parameter 'b'}}
+// autosar-warning@57 {{Unused parameter 'b'}}
+// autosar-warning@58 {{Unused parameter 'b'}}
+// autosar-warning@70 {{Unused parameter 'b'}}
+// autosar-warning@71 {{Unused parameter 'b'}}
+// autosar-warning@84 {{Unused parameter 'b'}}
+// autosar-warning@85 {{Unused parameter 'b'}}
+// autosar-warning@97 {{Unused parameter 'b'}}
+// autosar-warning@109 {{Unused parameter 'b'}}
+// autosar-warning@110 {{Unused parameter 'b'}}
+// autosar-warning@122 {{Unused parameter 'b'}}
+// autosar-warning@123 {{Unused parameter 'b'}}
+// autosar-warning@30 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@42 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@55 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@68 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@82 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@95 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@107 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@120 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@15 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@26 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@32 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@33 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@39 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@44 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@51 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@57 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@58 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@64 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@70 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@71 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@78 2 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@84 2 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@85 2 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@92 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@97 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@103 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@109 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@110 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@116 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@122 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@123 {{Type 'std::string' (aka 'basic_string<char>') is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@27 {{Type '(anonymous namespace)::A' is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@40 {{Type '(anonymous namespace)::A' is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@65 {{Type '(anonymous namespace)::A' is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@52 {{Type '(anonymous namespace)::A' is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@79 2 {{Type '(anonymous namespace)::A' is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@93 {{Type '(anonymous namespace)::A' is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@117 {{Type '(anonymous namespace)::A' is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@104 {{Type '(anonymous namespace)::A' is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@29 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@54 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@81 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@106 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@15 {{Each expression statement and identifier declaration shall be placed on a separate line}}

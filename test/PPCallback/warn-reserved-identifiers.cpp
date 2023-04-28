@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wreserved-identifiers %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #undef __LINE__ // expected-warning {{Reserved identifiers, macros and functions in the C++ standard library shall not be defined, redefined or undefined}}
 #undef __FILE__ // expected-warning {{Reserved identifiers, macros and functions in the C++ standard library shall not be defined, redefined or undefined}}

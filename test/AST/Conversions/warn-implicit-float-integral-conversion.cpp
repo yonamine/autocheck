@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wimplicit-float-integral-conversion %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 
@@ -17,3 +18,9 @@ namespace {
     a = (float)b;
   }
 }
+
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@7 1 {{Unused function 'test1'}}
+// autosar-warning@17 1 {{Traditional C-style casts shall not be used}}
+// autosar-warning@18 1 {{Traditional C-style casts shall not be used}}

@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wcondition-not-bool %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 #include <memory>
@@ -70,3 +71,42 @@ void test1() {
   } while (a);
 }
 }
+
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@5 0-1 {{There shall be no unused include directives:}} // libstdc++ shows this warning, libc++ does not
+// autosar-note@5 0-1 {{But one or more of it's own #include directives is used}} // libstdc++ shows this note, libc++ does not
+// autosar-warning@16 1 {{Unused function 'test1'}}
+// autosar-warning@23 1 {{Each operand of the ! operator, the logical && or the logical || operators shall have type bool}}
+// autosar-warning@33 1 {{Each operand of the ! operator, the logical && or the logical || operators shall have type bool}}
+// autosar-warning@40 1 {{Each operand of the ! operator, the logical && or the logical || operators shall have type bool}}
+// autosar-warning@47 1 {{Each operand of the ! operator, the logical && or the logical || operators shall have type bool}}
+// autosar-warning@23 1 {{Expressions with type bool shall not be used as operands to built-in operators other than the assignment operator = , the logical operators && , || , ! , the equality operators == and != , the unary & operator, and the conditional operator}}
+// autosar-warning@33 1 {{Expressions with type bool shall not be used as operands to built-in operators other than the assignment operator = , the logical operators && , || , ! , the equality operators == and != , the unary & operator, and the conditional operator}}
+// autosar-warning@40 1 {{Expressions with type bool shall not be used as operands to built-in operators other than the assignment operator = , the logical operators && , || , ! , the equality operators == and != , the unary & operator, and the conditional operator}}
+// autosar-warning@47 1 {{Expressions with type bool shall not be used as operands to built-in operators other than the assignment operator = , the logical operators && , || , ! , the equality operators == and != , the unary & operator, and the conditional operator}}
+// autosar-warning@22 1 {{variable 'b' is uninitialized when used here}}
+// autosar-note@18 1 {{initialize the variable 'b' to silence this warning}}
+// autosar-warning@20 1 {{variable 'a' is uninitialized when used here}}
+// autosar-note@17 1 {{initialize the variable 'a' to silence this warning}}
+// autosar-warning@44 1 {{Do statements should not be used}}
+// autosar-warning@45 1 {{Do statements should not be used}}
+// autosar-warning@46 1 {{Do statements should not be used}}
+// autosar-warning@47 1 {{Do statements should not be used}}
+// autosar-warning@48 1 {{Do statements should not be used}}
+// autosar-warning@68 1 {{Do statements should not be used}}
+// autosar-warning@69 1 {{Do statements should not be used}}
+// autosar-warning@37 1 {{A for loop shall contain a single loop-counter which shall not have floating-point type}}
+// autosar-warning@38 1 {{A for loop shall contain a single loop-counter which shall not have floating-point type}}
+// autosar-warning@39 1 {{A for loop shall contain a single loop-counter which shall not have floating-point type}}
+// autosar-warning@40 1 {{A for loop shall contain a single loop-counter which shall not have floating-point type}}
+// autosar-warning@41 1 {{A for loop shall contain a single loop-counter which shall not have floating-point type}}
+// autosar-warning@42 1 {{A for loop shall contain a single loop-counter which shall not have floating-point type}}
+// autosar-warning@63 1 {{A for loop shall contain a single loop-counter which shall not have floating-point type}}
+// autosar-warning@64 1 {{A for loop shall contain a single loop-counter which shall not have floating-point type}}
+// autosar-warning@17 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@18 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@27 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@25 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@35 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@42 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}

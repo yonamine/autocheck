@@ -1,4 +1,6 @@
 // RUN: autocheck -verify -Wunsigned-literal-suffix %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
+
 #include <cstdint>
 namespace {
 void func_with_unsigned(std::uint32_t) {}
@@ -27,3 +29,23 @@ void test() {
 }
 
 } // namespace
+
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@22 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@9 1 {{Unused function 'test'}}
+// autosar-warning@15 1 {{Traditional C-style casts shall not be used}}
+// autosar-warning@14 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@14 1 {{Casts 'int' to 'uint32_t'}}
+// autosar-warning@20 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@20 1 {{Casts 'int' to 'uint32_t'}}
+// autosar-warning@24 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@24 1 {{Casts 'int' to 'uint32_t'}}
+// autosar-warning@25 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@25 1 {{Casts 'int' to 'uint32_t'}}
+// autosar-warning@27 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@27 1 {{Casts 'int' to 'uint32_t'}}
+// autosar-warning@28 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@28 1 {{Casts 'int' to 'uint32_t'}}
+// autosar-warning@11 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@18 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}

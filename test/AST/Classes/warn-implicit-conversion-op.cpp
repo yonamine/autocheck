@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wimplicit-conversion-op %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 namespace {
@@ -21,3 +22,10 @@ public:
   }
 };
 } // namespace
+
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@12 1 {{User-defined conversion operators should not be used}}
+// autosar-warning@16 1 {{User-defined conversion operators should not be used}}
+// autosar-warning@20 1 {{User-defined conversion operators should not be used}}
+// autosar-warning@6 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}

@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Winvalid-bool-expression %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 
@@ -48,3 +49,15 @@ void test() {
   integer_result = (1 + a); //expected-warning {{Expressions with type bool shall not be used as operands to built-in operators other than the assignment operator = , the logical operators && , || , ! , the equality operators == and != , the unary & operator, and the conditional operator}}
 }
 } // namespace
+
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@36 1 {{Bitwise operators shall only be applied to operands of unsigned underlying type}}
+// autosar-warning@37 1 {{Bitwise operators shall only be applied to operands of unsigned underlying type}}
+// autosar-warning@43 1 {{Bitwise operators shall only be applied to operands of unsigned underlying type}}
+// autosar-warning@7 1 {{Unused function 'test'}}
+// autosar-warning@49 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@49 1 {{Casts 'int' to 'uint32_t'}}
+// autosar-warning@9 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@10 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@11 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}

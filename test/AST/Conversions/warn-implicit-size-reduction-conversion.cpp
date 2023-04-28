@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wimplicit-size-reduction-conversion %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 
@@ -29,4 +30,38 @@ void test() {
 }
 } // namespace
 
-// expected-warning@8 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// expected-warning@9 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@4 1 {{There shall be no unused include directives: }}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@7 1 {{Unused function 'test'}}
+// autosar-warning@9 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@10 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@11 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@21 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@23 1 {{C-style arrays shall not be used}}
+// autosar-warning@23 1 {{Unused variable 'testArray'}}
+// autosar-warning@23 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@23 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@25 1 {{C-style arrays shall not be used}}
+// autosar-warning@25 1 {{Unused variable 'testArray2'}}
+// autosar-warning@25 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@25 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@26 1 {{Traditional C-style casts shall not be used}}
+// autosar-warning@26 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@27 1 {{C-style arrays shall not be used}}
+// autosar-warning@27 1 {{'testArray3'}}
+// autosar-warning@27 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@27 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@28 1 {{Traditional C-style casts shall not be used}}
+// autosar-warning@28 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@24 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@24 1 {{Casts 'int' to 'unsigned char'}}
+// autosar-warning@26 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@26 1 {{Casts 'int' to 'unsigned char'}}
+// autosar-warning@28 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@28 1 {{Casts 'int' to 'unsigned char'}}
+// autosar-warning@11 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@21 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@23 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@25 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@27 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}

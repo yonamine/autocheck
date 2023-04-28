@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wassignment-op-ref-qual %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 namespace {
 class A {
@@ -51,3 +52,7 @@ public:
   }
 };
 } // namespace
+
+// autosar-warning@5 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@15 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@20 1 {{User-defined copy and move assignment operators should use user-defined no-throw swap function}}
