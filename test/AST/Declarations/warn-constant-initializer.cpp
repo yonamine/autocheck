@@ -171,4 +171,13 @@ Foo1& MyThreadLocalFoo() {
   return result;
 }
 
+// Templated variable.
+template<typename T>
+T templateVar; // expected-warning {{Static and thread-local objects shall be constant-initialized}}
+
+void initTemplateVars() {
+  templateVar<int> = 0;
+  templateVar<double> = 0.0;
+}
+
 } // end anonymous namepace

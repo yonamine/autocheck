@@ -138,4 +138,13 @@ void test13() {
   float k{1.0F*2.0F*3.0F*4.0F};
   k++;
 }
+// Custom example
+template<typename T>
+T var; // Compliant. This is considered a single statement even if it contains multiple declarations.
+
+void test14() {
+  var<int> = 0;
+  var<double> = 0.0;
+}
+
 } // namespace

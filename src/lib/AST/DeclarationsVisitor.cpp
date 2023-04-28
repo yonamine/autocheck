@@ -1240,6 +1240,11 @@ bool ConstantInitializer::hasRedeclaration(const clang::VarDecl *VD) {
 }
 
 bool ConstantInitializer::VisitVarDecl(const clang::VarDecl *VD) {
+  // Skip template specializations. Only check the VarDecl in the variable
+  // template declaration.
+  if (llvm::dyn_cast_if_present<clang::VarTemplateSpecializationDecl>(VD))
+    return true;
+
   clang::StorageDuration SD = VD->getStorageDuration();
   if (SD == clang::StorageDuration::SD_Static ||
       SD == clang::StorageDuration::SD_Thread) {
