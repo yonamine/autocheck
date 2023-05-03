@@ -250,6 +250,17 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
   case clang::diag::warn_pp_undef_identifier:
     EmitDiag(AutocheckWarnings::undefMacroUsed, Info.getLocation());
     return;
+  case clang::diag::warn_unused_variable:
+  case clang::diag::warn_unused_const_variable:
+    // Read diagnostic parameters.
+    clang::NamedDecl *Name =
+        reinterpret_cast<clang::NamedDecl *>(Info.getRawArg(0));
+
+    Diags.Clear();
+    AutocheckDiagnostic::reportWarning(
+        Diags, Info.getLocation(), AutocheckWarnings::unusedVariable, Name);
+
+    return;
   }
 
   Client->HandleDiagnostic(DiagLevel, Info);

@@ -127,6 +127,8 @@ getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
       WarningsToEnable.push_back("-Wwritable-strings");
     if (Context.isEnabled(autocheck::AutocheckWarnings::undefMacroUsed))
       WarningsToEnable.push_back("-Wundef");
+    if (Context.isEnabled(autocheck::AutocheckWarnings::unusedVariable))
+      WarningsToEnable.push_back("-Wunused-variable");
 
     if (!WarningsToEnable.empty())
       AdjustedArgs.insert(llvm::find(AdjustedArgs, "--"),
