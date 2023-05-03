@@ -640,6 +640,10 @@ DIAG(unreachableCode, "unreachable-code",
      "A project shall not contain unreachable code", "M0-1-1")
 DIAG(nullDereference, "null-dereference",
      "Null pointers shall not be dereferenced", "A5-3-2")
+DIAG(handlerOfCompatibleType, "handler-of-compatible-type",
+     "Each exception explicitly thrown in the code shall have a handler of a "
+     "compatible type in all call paths that could lead to that point",
+     "M15-3-4")
 
 #undef DIAG
 #undef NOTE

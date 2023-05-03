@@ -13,6 +13,9 @@
 ///            contain side effects.
 // - [A8-4-7]  "in" parameters for "cheap to copy" types shall be passed by
 //             value.
+// - [M15-3-4] Each exception explicitly thrown in the code shall have a handler
+//             of a compatible type in all call paths that could lead to that
+//             point.
 //
 //===----------------------------------------------------------------------===//
 
@@ -55,6 +58,20 @@ public:
   bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
 };
 
+/// [M15-3-4] Each exception explicitly thrown in the code shall have a handler
+/// of a compatible type in all call paths that could lead to that point.
+class ThrowEscapesVisitor : public TemplateVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+  clang::Sema &SemaRef;
+
+public:
+  explicit ThrowEscapesVisitor(clang::DiagnosticsEngine &DE,
+                               clang::Sema &SemaRef);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
+};
+
 /// [M5-14-1] The right hand operand of a logical &&, || operators shall not
 /// contain side effects.
 class RHSOperandSideEffectVisitor : public TemplateVisitorInterface {
@@ -79,8 +96,8 @@ class TemplatesVisitor : public clang::RecursiveASTVisitor<TemplatesVisitor> {
   std::forward_list<std::unique_ptr<TemplateVisitorInterface>> AllVisitors;
 
 public:
-  explicit TemplatesVisitor(clang::DiagnosticsEngine &DE,
-                            clang::ASTContext &AC);
+  explicit TemplatesVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC,
+                            clang::Sema &SemaRef);
   void run(clang::TranslationUnitDecl *TUD);
 
   bool shouldVisitTemplateInstantiations() const { return true; }
