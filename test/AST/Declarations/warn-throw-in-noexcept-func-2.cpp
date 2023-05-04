@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wthrow-in-noexcept-func %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <stdexcept>
 namespace{
@@ -48,3 +49,10 @@ int main() {
   F6<float>(1.0F);
   return 0;
 }
+
+// autosar-warning@49 1 {{The value returned by a function having a non-void return type that is not an overloaded operator shall be used}}
+// autosar-warning@13 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@25 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@7 1 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@19 1 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@29 1 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}

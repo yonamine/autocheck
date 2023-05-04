@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wuninitialized-memory --extra-arg="-fblocks" %s
+// RUN: autocheck -verify=expected,autosar -Wall --extra-arg="-fblocks" %s
 
 #include <iostream>
 #include <cstdint>
@@ -33,7 +34,7 @@ std::ostream operator<<(std::ostream &, Ahic const &);
 int mainhic() {
   int32_t i; // expected-note {{initialize the variable 'i' to silence this warning}}
   Ahic a;
-  std::cout << i << std::endl; // Non-Compliant:  ’i’ has indeterminate value // expected-warning {{variable 'i' is uninitialized when used here}}
+  std::cout << i << std::endl; // Non-Compliant: 'i' has indeterminate value // expected-warning {{variable 'i' is uninitialized when used here}}
   std::cout << a << std::endl; // Compliant:  Initialized by constructor call
 }
 
@@ -192,3 +193,118 @@ void test_init() {
 }
 
 } // namespace
+
+// autosar-warning@44 {{A type defined as struct shall: (2) not provide any special member functions or methods}}
+// autosar-warning@53 {{A type defined as struct shall: (2) not provide any special member functions or methods}}
+// autosar-warning@65 {{A type defined as struct shall: (2) not provide any special member functions or methods}}
+// autosar-warning@71 {{A type defined as struct shall: (2) not provide any special member functions or methods}}
+// autosar-warning@82 {{C-style arrays shall not be used}}
+// autosar-warning@83 {{C-style arrays shall not be used}}
+// autosar-warning@84 {{C-style arrays shall not be used}}
+// autosar-warning@85 {{C-style arrays shall not be used}}
+// autosar-warning@81 {{A type defined as struct shall: (4) not inherit from another struct or class}}
+// autosar-warning@99 {{A type defined as struct shall: (2) not provide any special member functions or methods}}
+// autosar-warning@112 {{An if ( condition ) construct shall be followed by a compound statement. The else keyword shall be followed by either a compound statement, or another if statement}}
+// autosar-warning@120 {{Each operand of the ! operator, the logical && or the logical || operators shall have type bool}}
+// autosar-warning@120 {{The right hand operand of a logical &&, || operators shall not contain side effects}}
+// autosar-warning@118 {{Unused parameter 'k'}}
+// autosar-warning@141 {{The goto statement shall not be used}}
+// autosar-warning@149 {{The goto statement shall not be used}}
+// autosar-warning@149 {{The goto statement shall jump to a label declared later in the same function body}}
+// autosar-warning@182 {{An if ( condition ) construct shall be followed by a compound statement. The else keyword shall be followed by either a compound statement, or another if statement}}
+// autosar-warning@186 {{The goto statement shall not be used}}
+// autosar-warning@186 {{The goto statement shall jump to a label declared later in the same function body}}
+// autosar-warning@185 {{An if ( condition ) construct shall be followed by a compound statement. The else keyword shall be followed by either a compound statement, or another if statement}}
+// autosar-warning@13 {{Unused function 'local'}}
+// autosar-warning@34 {{Unused function 'mainhic'}}
+// autosar-warning@47 {{Unused function 'f1'}}
+// autosar-warning@56 {{Unused function 'f2'}}
+// autosar-warning@89 {{Unused function 'uninit_var'}}
+// autosar-warning@107 {{Unused function 'test_if_true'}}
+// autosar-warning@118 {{Unused function 'test_logical_or_true'}}
+// autosar-warning@126 {{Unused function 'test_while_false'}}
+// autosar-warning@139 {{Unused function 'test_do_while_true'}}
+// autosar-warning@153 {{Unused function 'test_switch_case'}}
+// autosar-warning@168 {{Unused function 'test_loop_uninit'}}
+// autosar-warning@179 {{Unused function 'test_null_pred_succ'}}
+// autosar-warning@189 {{Unused function 'test_init'}}
+// autosar-warning@34 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@66 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@73 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@75 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@76 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@78 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@82 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@83 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@84 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@85 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@89 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@90 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@94 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@101 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@107 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@108 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@117 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@118 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@119 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@126 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@127 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@134 {{Before preprocessing, a null statement shall only occur on a line by itself; it may be followed by a comment, provided that the first character following the null statement is a white-space character}}
+// autosar-warning@139 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@140 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@142 {{Do statements should not be used}}
+// autosar-warning@145 {{Before preprocessing, a null statement shall only occur on a line by itself; it may be followed by a comment, provided that the first character following the null statement is a white-space character}}
+// autosar-warning@153 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@154 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@169 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@170 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@172 {{Do statements should not be used}}
+// autosar-warning@180 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@190 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@191 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@192 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@91 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@141 {{Any label referenced by a goto statement shall be declared in the same block, or in a block enclosing the goto statement}}
+// autosar-warning@149 {{Any label referenced by a goto statement shall be declared in the same block, or in a block enclosing the goto statement}}
+// autosar-warning@186 {{Any label referenced by a goto statement shall be declared in the same block, or in a block enclosing the goto statement}}
+// autosar-warning@28 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@65 {{A non-POD type should be defined as class}}
+// autosar-warning@66 {{Member data in non-POD class types shall be private}}
+// autosar-warning@71 {{All constructors that are callable with a single argument of fundamental type shall be declared explicit}}
+// autosar-warning@71 {{A non-POD type should be defined as class}}
+// autosar-warning@75 {{Member data in non-POD class types shall be private}}
+// autosar-warning@81 {{A non-POD type should be defined as class}}
+// autosar-warning@99 {{A non-POD type should be defined as class}}
+// autosar-warning@101 {{Member data in non-POD class types shall be private}}
+// autosar-warning@10 {{Static and thread-local objects shall be constant-initialized}}
+// autosar-warning@191 {{Static and thread-local objects shall be constant-initialized}}
+// autosar-warning@33 {{Type '(anonymous namespace)::Ahic' is "cheap to copy" and should be passed by value}}
+// autosar-warning@36 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@57 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@90 {{An identifier declared to be an object or type shall be defined in a block that minimizes its visibility}}
+// autosar-warning@169 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@190 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@191 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@192 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@81 {{Destructor of a base class shall be public virtual, public override or protected non-virtual}}
+// autosar-note@71 {{class has implicit destructor}}
+// autosar-warning@10 {{An identifier declared to be an object or type shall be defined in a block that minimizes its visibility}}
+// autosar-warning@10 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@22 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@35 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@36 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@48 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@57 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@90 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@94 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@190 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@191 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@192 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@120 {{Assignment operators shall not be used in sub-expressions}}
+// autosar-warning@130 {{The condition of an if-statement and the condition of an iteration statement shall have type bool}}
+// autosar-warning@182 {{The condition of an if-statement and the condition of an iteration statement shall have type bool}}
+// autosar-warning@185 {{The condition of an if-statement and the condition of an iteration statement shall have type bool}}
+// autosar-warning@169 {{A for-loop that does not use its loop-counter (in a way that prevents the substitution of the loop with a range-based for-loop) shall not be used}}
+// autosar-warning@39 {{All exit paths from a function with non-void return type shall have an explicit return statement with an expression}}
+// autosar-warning@5 {{There shall be no unused include directives:}}
+// autosar-warning@6 {{There shall be no unused include directives:}}

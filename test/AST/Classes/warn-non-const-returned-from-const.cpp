@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wnon-const-returned-from-const %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 #include <memory>
@@ -100,3 +101,34 @@ private:
 int main() {
   return 0;
 }
+
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 {{But one or more of it's own #include directives is used}}
+// autosar-warning@5 0-1 {{There shall be no unused include directives:}} // libstdc++ 5.4.0 shows this warning, libstdc++ 9.0.0 does not
+// autosar-note@5  0-1 {{But one or more of it's own #include directives is used}} // libstdc++ 5.4.0 shows this note, libstdc++ 9.0.0 does not
+// autosar-warning@10 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@13 1 {{Member data in non-POD class types shall be private}}
+// autosar-warning@21 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@21 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@23 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@24 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@25 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@26 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@27 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@28 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@35 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@9 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@13 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@16 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@21 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@79 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@7 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@19 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@70 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@21 1 {{Both NSDMI and a non-static member initializer in a constructor shall not be used in the same type}}
+// autosar-note@92 1 {{Member already initialized by NSDMI here}}
+// autosar-warning@19 1 {{Destructor of a base class shall be public virtual, public override or protected non-virtual}}
+// autosar-note@7 1 {{class has implicit destructor}}
+// autosar-warning@51 {{The declaration of objects shall contain no more than two levels of pointer indirection}}
+// autosar-warning@95 {{The declaration of objects shall contain no more than two levels of pointer indirection}}
+// autosar-warning@21 1 {{C-style arrays shall not be used}}

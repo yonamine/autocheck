@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wgoto-back-jump %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 namespace {
 void test() {
@@ -9,3 +10,7 @@ PING:
 }
 
 } // namespace
+
+// autosar-warning@7 1 {{The goto statement shall not be used}}
+// autosar-warning@9 1 {{The goto statement shall not be used}}
+// autosar-warning@5 1 {{Unused function 'test'}}

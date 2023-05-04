@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wvirtual-func-specifier %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 namespace {
 class Foo1 {
@@ -49,3 +50,8 @@ public:
   }
 };
 } // namespace
+
+// autosar-warning@31 1 {{Each overriding virtual function shall be declared with the override or final specifier}}
+// autosar-warning@35 1 {{Each overriding virtual function shall be declared with the override or final specifier}}
+// autosar-warning@38 1 {{Each overriding virtual function shall be declared with the override or final specifier}}
+// autosar-warning@39 1 {{Each overriding virtual function shall be declared with the override or final specifier}}

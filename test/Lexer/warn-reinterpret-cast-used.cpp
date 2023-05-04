@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wreinterpret-cast-used  %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 namespace {
 char *test1() {
@@ -7,3 +8,10 @@ char *test1() {
   return b;
 }
 } // namespace
+
+// autosar-warning@5 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@6 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@7 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@5 1 {{Unused function 'test1'}}
+// autosar-warning@6 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@7 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}

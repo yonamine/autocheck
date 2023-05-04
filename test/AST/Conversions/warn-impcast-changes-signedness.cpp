@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wimpcast-changes-signedness %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 
@@ -37,3 +38,13 @@ int main() {
 
   return 0;
 }
+
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@7 1 {{Unused variable 'a'}}
+// autosar-warning@7 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@22 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@32 1 {{Unused variable 'd'}}
+// autosar-warning@32 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@32 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@32 1 {{C-style arrays shall not be used}}

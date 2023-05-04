@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wliteral-suffix-lower-case %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 namespace {
 void test() {
@@ -19,3 +20,8 @@ void test() {
   d = 0.0f; // expected-warning 1 {{Literal suffixes shall be upper case}}
 }
 } // namespace
+
+// autosar-warning@6 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@9 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@14 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@5 1 {{Unused function 'test'}}

@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wreturn-stack-address %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 // Taken from MISRA doc
 
 #include <cstdint>
@@ -34,3 +35,16 @@ bar:
 }
 
 } // namespace
+
+// autosar-warning@5 {{There shall be no unused include directives:}}
+// autosar-note@5 {{But one or more of it's own #include directives is used}}
+// autosar-warning@9 {{Unused function 'fn1'}}
+// autosar-warning@14 {{Unused function 'fn2'}}
+// autosar-warning@18 {{Unused function 'fn3'}}
+// autosar-warning@23 {{Unused function 'fn4'}}
+// autosar-warning@27 {{Unused function 'fn5'}}
+// autosar-warning@32 {{Unused function 'fn6'}}
+// autosar-warning@10 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@19 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@28 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@19 {{Constexpr or const specifiers shall be used for immutable data declaration}}

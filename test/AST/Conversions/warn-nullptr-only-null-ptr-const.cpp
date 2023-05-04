@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wnullptr-only-null-ptr-const %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstddef>
 #include <cstdint>
@@ -37,3 +38,15 @@ void test1() {
   parameter_forwarding_via_template(ptr_func, nullptr);
 }
 } // namespace
+
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@5 1 {{There shall be no unused include directives:}}
+// autosar-note@5 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@18 1 {{NULL shall not be used as an integer value}}
+// autosar-warning@21 1 {{Literal zero (0) shall not be used as the null-pointer-constant}}
+// autosar-warning@27 1 {{NULL shall not be used as an integer value}}
+// autosar-warning@31 1 {{Literal zero (0) shall not be used as the null-pointer-constant}}
+// autosar-warning@18 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@27 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@16 1 {{Unused function 'test1'}}

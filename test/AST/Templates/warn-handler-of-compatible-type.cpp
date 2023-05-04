@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Whandler-of-compatible-type %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 namespace {
@@ -55,3 +56,15 @@ void Fn4() {
   }
 }
 
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@9 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@12 1 {{Unused function 'Fn1'}}
+// autosar-warning@23 1 {{Unused function 'Fn2'}}
+// autosar-warning@33 1 {{Unused function 'Fn3'}}
+// autosar-warning@41 1 {{Unused function 'Fn4'}}
+// autosar-warning@48 1 {{Unused function 'Fn5'}}
+// autosar-warning@54 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@54 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@10 1 {{Destructor of a base class shall be public virtual, public override or protected non-virtual}}
+// autosar-note@9 1 {{class has implicit destructor}}

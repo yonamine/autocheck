@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wcomment %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 namespace {
     /* some comment, end comment marker accidentally omitted
@@ -23,7 +24,7 @@ namespace {
     /*/*/
 } // namespace
 
-// expected-warning@6 1 {{The character sequence /* shall not be used within a C-style comment}}
-// expected-warning@13 1 {{The character sequence /* shall not be used within a C-style comment}}
-// expected-warning@16 1 {{The character sequence /* shall not be used within a C-style comment}}
-// expected-warning@21 1 {{The character sequence /* shall not be used within a C-style comment}}
+// expected-warning@7 1 {{The character sequence /* shall not be used within a C-style comment}}
+// expected-warning@14 1 {{The character sequence /* shall not be used within a C-style comment}}
+// expected-warning@17 1 {{The character sequence /* shall not be used within a C-style comment}}
+// expected-warning@22 1 {{The character sequence /* shall not be used within a C-style comment}}

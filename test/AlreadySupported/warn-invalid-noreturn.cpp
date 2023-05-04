@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Winvalid-noreturn  %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 #include <exception>
@@ -121,3 +122,32 @@ void test17() {
   }
 } // expected-warning {{Functions declared with the [[noreturn]] attribute shall not return}}
 } // namespace
+
+// autosar-warning@62 1 {{Enumeration underlying base type shall be explicitly defined}}
+// autosar-warning@62 1 {{Enumerations shall be declared as scoped enum classes}}
+// autosar-warning@105 1 {{An if ( condition ) construct shall be followed by a compound statement. The else keyword shall be followed by either a compound statement, or another if statement}}
+// autosar-warning@103 1 {{An if ( condition ) construct shall be followed by a compound statement. The else keyword shall be followed by either a compound statement, or another if statement}}
+// autosar-warning@42 1 {{The library functions abort, exit, getenv and system from library <cstdlib> shall not be used}}
+// autosar-warning@45 1 {{All if ... else if constructs shall be terminated with an else clause}}
+// autosar-warning@52 1 {{All if ... else if constructs shall be terminated with an else clause}}
+// autosar-warning@103 1 {{All if ... else if constructs shall be terminated with an else clause}}
+// autosar-warning@11 1 {{The condition of an if-statement and the condition of an iteration statement shall have type bool}}
+// autosar-warning@15 1 {{The condition of an if-statement and the condition of an iteration statement shall have type bool}}
+// autosar-warning@120 1 {{The condition of an if-statement and the condition of an iteration statement shall have type bool}}
+// autosar-warning@51 1 {{Unused function 'test9'}}
+// autosar-warning@67 1 {{Unused function 'test10'}}
+// autosar-warning@77 1 {{Unused function 'test11'}}
+// autosar-warning@87 1 {{Unused function 'test12'}}
+// autosar-warning@90 1 {{Unused function 'test13'}}
+// autosar-warning@94 1 {{Unused function 'test14'}}
+// autosar-warning@108 1 {{Unused function 'test17'}}
+// autosar-warning@111 1 {{Unused function 'test18'}}
+// autosar-warning@117 1 {{Unused function 'false_positive'}}
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@6 0-1 {{There shall be no unused include directives:}} // libstdc++ shows this warning, libc++ does not
+// autosar-note@6 0-1 {{But one or more of it's own #include directives is used}} // libstdc++ shows this note, libc++ does not
+// autosar-warning@40 1 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@99 1 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@113 1 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@40 1 {{An exception object shall not be a pointer}}

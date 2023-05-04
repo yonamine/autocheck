@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wbit-field-unsigned-integral %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 namespace {
 enum class Enum1 : unsigned int {
@@ -45,3 +46,16 @@ public:
   Enum5 j : 2;
 };
 } // namespace
+
+// autosar-warning@5 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@11 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@29 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@37 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@38 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@40 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@17 1 {{Enumeration underlying base type shall be explicitly defined}}
+// autosar-warning@23 1 {{Enumeration underlying base type shall be explicitly defined}}
+// autosar-warning@23 1 {{Enumerations shall be declared as scoped enum classes}}
+// autosar-warning@29 1 {{Enumerations shall be declared as scoped enum classes}}
+// autosar-warning@35 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@41 1 {{Type wchar_t shall not be used}}

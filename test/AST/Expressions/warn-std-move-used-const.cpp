@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wstd-move-used-const %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <utility>
 #include <cstdint>
@@ -23,3 +24,19 @@ void F3() {
   std::move(a5); //expected-warning {{The std::move shall not be used on objects declared const or const&}}
 }
 }
+
+// autosar-warning@12 1 {{Unused variable 'a2'}}
+// autosar-warning@13 1 {{Unused variable 'a3'}}
+// autosar-warning@4 1 {{There shall be no unused include directives: }}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@5 1 {{There shall be no unused include directives: }}
+// autosar-note@5 0-1 {{But one or more of it's own #include directives is used}} // libstdc++ shows this note, libc++ does not
+// autosar-warning@10 1 {{Unused function 'F1'}}
+// autosar-warning@16 1 {{Unused function 'F2'}}
+// autosar-warning@21 1 {{Unused function 'F3'}}
+// autosar-warning@18 1 {{The value returned by a function having a non-void return type that is not an overloaded operator shall be used}}
+// autosar-warning@24 1 {{The value returned by a function having a non-void return type that is not an overloaded operator shall be used}}
+// autosar-warning@8 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@12 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@13 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@17 1 {{CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name}}

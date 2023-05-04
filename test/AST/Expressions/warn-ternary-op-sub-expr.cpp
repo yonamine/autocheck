@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wternary-op-sub-expr %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 namespace {
@@ -29,3 +30,14 @@ std::int32_t test2(std::int32_t a) {
   return (a < 0) ? 0 : 1;
 }
 } // namespace
+
+// autosar-warning@13 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@11 1 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@19 1 {{Traditional C-style casts shall not be used}}
+// autosar-warning@10 1 {{Unused function 'test1'}}
+// autosar-warning@29 1 {{Unused function 'test2'}}
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@11 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@12 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@11 1 {{variable 'a' is uninitialized when used within its own initialization}}

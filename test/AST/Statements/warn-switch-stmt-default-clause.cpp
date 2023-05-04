@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wswitch-stmt-default-clause %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 namespace {
@@ -233,3 +234,13 @@ void test() {
   }
 }
 } // namespace
+
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@132 1 {{variable 'enums' is uninitialized when used here}}
+// autosar-note@130 1 {{variable 'enums' is declared here}}
+// autosar-warning@9 1 {{variable 'condition' is uninitialized when used here}}
+// autosar-note@7 1 {{initialize the variable 'condition' to silence this warning}}
+// autosar-warning@6 1 {{Unused function 'test'}}
+// autosar-warning@7 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@130 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}

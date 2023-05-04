@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wfixed-width-integer-types %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <cstdint>
 #include <type_traits>
@@ -148,3 +149,64 @@ int main() {
   int a {7}, b{89}, c{50}, d{83}, e{55}; // expected-warning {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
   return a + b + c + d + e;
 }
+
+// autosar-warning@17 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@18 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@81 1 {{C-style arrays shall not be used}}
+// autosar-warning@82 1 {{C-style arrays shall not be used}}
+// autosar-warning@83 1 {{C-style arrays shall not be used}}
+// autosar-warning@83 1 {{Unused parameter 'f10'}}
+// autosar-warning@90 1 {{Volatile keyword shall not be used}}
+// autosar-warning@91 1 {{Volatile keyword shall not be used}}
+// autosar-warning@92 1 {{Volatile keyword shall not be used}}
+// autosar-warning@93 1 {{Volatile keyword shall not be used}}
+// autosar-warning@126 1 {{Enumerations shall be declared as scoped enum classes}}
+// autosar-warning@126 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@127 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@132 1 {{Traditional C-style casts shall not be used}}
+// autosar-warning@137 1 {{The typedef specifier shall not be used}}
+// autosar-warning@143 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@149 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@4 1 {{There shall be no unused include directives: }}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@87 1 {{Member data in non-POD class types shall be private}}
+// autosar-warning@88 1 {{Member data in non-POD class types shall be private}}
+// autosar-warning@90 1 {{Member data in non-POD class types shall be private}}
+// autosar-warning@91 1 {{Member data in non-POD class types shall be private}}
+// autosar-warning@92 1 {{Member data in non-POD class types shall be private}}
+// autosar-warning@86 1 {{A non-POD type should be defined as class}}
+// autosar-warning@9 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@17 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@148 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@89 1 {{Unused variable 'g3'}}
+// autosar-warning@93 1 {{Unused variable 'g7'}}
+// autosar-warning@15 1 {{Unused private method 'b2'}}
+// autosar-warning@17 1 {{Unused private method 'b4'}}
+// autosar-warning@18 1 {{Unused private method 'b5'}}
+// autosar-warning@117 1 {{There should be no unused type declarations}}
+// autosar-warning@137 1 {{There should be no unused type declarations}}
+// autosar-warning@78 1 {{Unused private method 'f3'}}
+// autosar-warning@79 1 {{Unused private method 'f5'}}
+// autosar-warning@83 1 {{Unused private method 'f9'}}
+// autosar-warning@120 1 {{Unused private method 'j1'}}
+// autosar-warning@129 1 {{Unused private method 'j4'}}
+// autosar-warning@122 1 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@122 1 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@148 1 {{The value returned by a function having a non-void return type that is not an overloaded operator shall be used}}
+// autosar-warning@147 1 {{The value returned by a function having a non-void return type that is not an overloaded operator shall be used}}
+// autosar-warning@13 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@25 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@37 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@75 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@106 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@119 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@9 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@89 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@130 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@149 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@121 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@97 1 {{A type defined as struct shall: (2) not provide any special member functions or methods}}
+// autosar-warning@102 1 {{A type defined as struct shall: (2) not provide any special member functions or methods}}
+// autosar-warning@89 1 {{Static and thread-local objects shall be constant-initialized}}
+// autosar-warning@93 1 {{Static and thread-local objects shall be constant-initialized}}
+// autosar-warning@122 1 {{C-style arrays shall not be used}}

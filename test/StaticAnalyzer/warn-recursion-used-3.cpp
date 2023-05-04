@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wrecursion-used %s
+// RUN: autocheck -verify=expected,autosar -Wall -Wrecursion-used %s
 
 #include <cstdint>
 
@@ -43,3 +44,13 @@ x = x * Fn3 ( x - 1 );
 }
 return ( x );
 }
+
+// autosar-warning@4 1 {{There shall be no unused include directives:}}
+// autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@6 1 {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}
+// autosar-warning@8 1 {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}
+// autosar-warning@14 1 {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}
+// autosar-warning@20 1 {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}
+// autosar-warning@25 1 {{The increment (++) and decrement (--) operators shall not be mixed with other operators in an expression}}
+// autosar-warning@30 1 {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}
+// autosar-warning@39 1 {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}

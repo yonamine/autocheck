@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wconstant-initializer %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <limits>
 #include <iostream>
@@ -181,3 +182,156 @@ void initTemplateVars() {
 }
 
 } // end anonymous namepace
+
+// autosar-warning@21 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@21 {{Casts 'int' to 'uint8_t'}}
+// autosar-warning@24 {{Only those characters specified in the C++ Language Standard basic source character set shall be used in the source code}}
+// autosar-warning@45 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@45 {{Casts 'int' to 'std::basic_string<char, std::char_traits<char>, std::allocator<char>>::size_type'}}
+// autosar-warning@44 {{Unused variable 'counter'}}
+// autosar-warning@54 {{Assignment operators should be declared with the ref-qualifier &}}
+// autosar-warning@55 {{Assignment operators should be declared with the ref-qualifier &}}
+// autosar-warning@64 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@64 {{Casts 'int' to 'unsigned int'}}
+// autosar-warning@87 {{C-style arrays shall not be used}}
+// autosar-warning@93 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@93 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@107 {{C-style arrays shall not be used}}
+// autosar-warning@108 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@108 {{Casts 'int' to 'unsigned long'}}
+// autosar-warning@123 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@124 {{C-style arrays shall not be used}}
+// autosar-warning@127 {{C-style arrays shall not be used}}
+// autosar-warning@127 {{Unused variable 'kMessages'}}
+// autosar-warning@130 {{An implicit integral conversion shall not change the signedness of the underlying type}}
+// autosar-note@130 {{Casts 'int' to 'std::size_t'}}
+// autosar-warning@151 {{A type defined as struct shall: (2) not provide any special member functions or methods}}
+// autosar-warning@151 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@155 {{C-style arrays shall not be used}}
+// autosar-warning@160 {{A type defined as struct shall: (2) not provide any special member functions or methods}}
+// autosar-warning@160 {{Each expression statement and identifier declaration shall be placed on a separate line}}
+// autosar-warning@21 {{Unused variable 'instanceId'}}
+// autosar-warning@22 {{Unused variable 'pi'}}
+// autosar-warning@34 {{Unused variable 'maxInt32'}}
+// autosar-warning@38 {{Unused variable 'c'}}
+// autosar-warning@41 {{Unused function 'Fn'}}
+// autosar-warning@61 {{Unused variable 'instance'}}
+// autosar-warning@64 {{Unused variable 'F'}}
+// autosar-warning@65 {{Unused variable 'G'}}
+// autosar-warning@81 {{function 'fact' is not needed and will not be emitted}}
+// autosar-warning@100 {{function 'fact_good' is not needed and will not be emitted}}
+// autosar-warning@121 {{Unused variable 'kNum'}}
+// autosar-warning@124 {{Unused variable 'kX'}}
+// autosar-warning@126 {{Unused function 'foo1'}}
+// autosar-warning@130 {{Unused variable 'kArray'}}
+// autosar-warning@135 {{Unused function 'bar'}}
+// autosar-warning@142 {{Unused variable 'n'}}
+// autosar-warning@146 {{Unused variable 'x'}}
+// autosar-warning@153 {{Unused variable 'n1'}}
+// autosar-warning@154 {{Unused variable 'x1'}}
+// autosar-warning@155 {{Unused variable 'a'}}
+// autosar-warning@170 {{Unused function 'MyThreadLocalFoo'}}
+// autosar-warning@179 {{Unused function 'initTemplateVars'}}
+// autosar-warning@21 {{A "U" suffix shall be applied to all octal or hexadecimal integer literals of unsigned type}}
+// autosar-warning@63 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@64 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@65 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@70 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@74 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@81 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@87 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@93 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@100 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@107 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@108 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@121 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@123 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@127 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@130 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@132 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@139 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@142 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@143 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@144 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@180 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@147 {{Different identifiers shall be typographically unambiguous}}
+// autosar-warning@151 {{Different identifiers shall be typographically unambiguous}}
+// autosar-warning@151 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@153 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@159 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@167 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@11 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@26 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@48 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@67 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@67 {{All constructors that are callable with a single argument of fundamental type shall be declared explicit}}
+// autosar-warning@145 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@147 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
+// autosar-warning@151 {{All constructors that are callable with a single argument of fundamental type shall be declared explicit}}
+// autosar-warning@151 {{A non-POD type should be defined as class}}
+// autosar-warning@160 {{A non-POD type should be defined as class}}
+// autosar-warning@21 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@22 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@34 {{CV-qualifiers shall be placed on the right hand side of the type that is a typedef or a using name}}
+// autosar-warning@34 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@54 {{Type '(anonymous namespace)::D' is "cheap to copy" and should be passed by value}}
+// autosar-warning@61 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@64 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@65 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@77 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@87 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@121 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@124 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@127 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@130 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@133 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@142 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@144 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@146 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@149 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@153 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@154 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@155 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@163 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@164 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@165 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@167 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@171 {{Braced-initialization {}, without equals sign, shall be used for variable initialization}}
+// autosar-warning@14 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@21 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@37 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@43 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@44 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@45 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@59 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@61 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@63 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@64 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@65 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@77 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@139 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@142 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@144 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@146 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@149 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@153 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@154 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@155 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@163 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@164 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@165 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@167 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@171 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@177 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@21 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@22 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@133 {{The value returned by a function having a non-void return type that is not an overloaded operator shall be used}}
+// autosar-note@135 {{previous definition is here}}
+// autosar-note@126 {{previous definition is here}}
+// autosar-warning@5 {{There shall be no unused include directives}}
+// autosar-warning@6 0-1 {{There shall be no unused include directives}} // stdlibc++ shows this warning, libc++ does not
+// autosar-note@5 {{But one or more of it's own #include directives is used}}
+// autosar-note@6 0-1 {{But one or more of it's own #include directives is used}} // stdlibc++ shows this warning, libc++ does not
+// autosar-warning@84 1 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@103 1 {{Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point}}
+// autosar-warning@133 3 {{String literals shall not be assigned to non-constant pointers}}

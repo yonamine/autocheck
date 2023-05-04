@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wexpansion-to-defined %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #if defined(Y)
 #endif

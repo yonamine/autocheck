@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wnon-iso-escape-sequence %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 #include <string>
 
@@ -44,3 +45,10 @@ void test3() {
 int main() {
     return 0;
 }
+
+// autosar-warning@4 0-1 {{There shall be no unused include directives:}} // libstdc++ shows this warning, libc++ does not
+// autosar-note@4 0-1 {{But one or more of it's own #include directives is used}} // libstdc++ shows this note, libc++ does not
+// autosar-warning@38 1 {{Octal constants (other than zero) and octal escape sequences (other than "\0") shall not be used}}
+// autosar-warning@6 1 {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}
+// autosar-warning@15 1 {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}
+// autosar-warning@22 1 {{The global namespace shall only contain main, namespace declarations and extern "C" declarations}}

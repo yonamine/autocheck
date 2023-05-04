@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Wasm-declaration-used %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 namespace {
 void test() {
@@ -6,3 +7,5 @@ void test() {
       "popq %%rax");
 }
 } // namespace
+
+// autosar-warning@5 1 {{Unused function 'test'}}

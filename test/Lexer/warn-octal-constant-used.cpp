@@ -1,4 +1,5 @@
 // RUN: autocheck -verify -Woctal-constant-used %s
+// RUN: autocheck -verify=expected,autosar -Wall %s
 
 namespace{
 void test() {
@@ -13,3 +14,6 @@ void test() {
   a = '\100'; // expected-warning 1 {{Octal constants (other than zero) and octal escape sequences (other than "\0") shall not be used}}
 }
 }
+
+// autosar-warning@6 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
+// autosar-warning@5 1 {{Unused function 'test'}}
