@@ -32,7 +32,7 @@ static bool isMethodOrClassFinal(const clang::Decl *D) {
   return false;
 }
 
-/* ClassesVisitorInterface */
+/* Implementation of ClassesVisitorInterface */
 
 ClassesVisitorInterface::~ClassesVisitorInterface() {}
 
@@ -76,7 +76,7 @@ bool DerivedFromVirtualVisitor::VisitCXXRecordDecl(
   return true;
 }
 
-/* VirtualFuncSpecifierVisitor */
+/* Implementation of VirtualFuncSpecifierVisitor */
 
 VirtualFuncSpecifierVisitor::VirtualFuncSpecifierVisitor(
     clang::DiagnosticsEngine &DE)
@@ -108,7 +108,7 @@ bool VirtualFuncSpecifierVisitor::VisitCXXMethodDecl(
   return true;
 }
 
-/* OverrideFuncSpecifierVisitor */
+/* Implementation of OverrideFuncSpecifierVisitor */
 
 OverrideFuncSpecifierVisitor::OverrideFuncSpecifierVisitor(
     clang::DiagnosticsEngine &DE)
@@ -139,7 +139,7 @@ bool OverrideFuncSpecifierVisitor::VisitCXXMethodDecl(
   return true;
 }
 
-/* VirtualMethodFinalClassVisitor */
+/* Implementation of VirtualMethodFinalClassVisitor */
 
 VirtualMethodFinalClassVisitor::VirtualMethodFinalClassVisitor(
     clang::DiagnosticsEngine &DE)
@@ -167,7 +167,7 @@ bool VirtualMethodFinalClassVisitor::VisitCXXRecordDecl(
   return true;
 }
 
-/* PureFuncOverrideVisitor */
+/* Implementation of PureFuncOverrideVisitor */
 
 PureFuncOverrideVisitor::PureFuncOverrideVisitor(clang::DiagnosticsEngine &DE)
     : DE(DE) {}
@@ -189,7 +189,7 @@ bool PureFuncOverrideVisitor::VisitCXXMethodDecl(
   return true;
 }
 
-/* MemberDataPrivateVisitor */
+/* Implementation of MemberDataPrivateVisitor */
 
 MemberDataPrivateVisitor::MemberDataPrivateVisitor(clang::DiagnosticsEngine &DE)
     : DE(DE) {}
@@ -216,7 +216,7 @@ bool MemberDataPrivateVisitor::VisitCXXRecordDecl(
   return true;
 }
 
-/* NonPODAsClassVisitor */
+/* Implementation of NonPODAsClassVisitor */
 
 NonPODAsClassVisitor::NonPODAsClassVisitor(clang::DiagnosticsEngine &DE)
     : DE(DE) {}
@@ -237,7 +237,7 @@ bool NonPODAsClassVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) {
   return true;
 }
 
-/* ExplicitCtorsVisitor */
+/* Implementation of ExplicitCtorsVisitor */
 
 ExplicitCtorsVisitor::ExplicitCtorsVisitor(clang::DiagnosticsEngine &DE)
     : DE(DE) {}
@@ -268,7 +268,7 @@ bool ExplicitCtorsVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) {
   return true;
 }
 
-/* FinalClassDestructorVisitor */
+/* Implementation of FinalClassDestructorVisitor */
 
 FinalClassDestructorVisitor::FinalClassDestructorVisitor(
     clang::DiagnosticsEngine &DE)
@@ -310,7 +310,7 @@ bool FinalClassDestructorVisitor::VisitCXXRecordDecl(
   return true;
 }
 
-/* RelOpBoolValueVisitor */
+/* Implementation of RelOpBoolValueVisitor */
 
 RelOpBoolValueVisitor::RelOpBoolValueVisitor(clang::DiagnosticsEngine &DE)
     : DE(DE) {}
@@ -342,7 +342,7 @@ bool RelOpBoolValueVisitor::VisitCXXMethodDecl(
   return true;
 }
 
-/* ImplicitConversionOpVisitor */
+/* Implementation of ImplicitConversionOpVisitor */
 
 ImplicitConversionOpVisitor::ImplicitConversionOpVisitor(
     clang::DiagnosticsEngine &DE)
@@ -363,7 +363,7 @@ bool ImplicitConversionOpVisitor::VisitCXXConversionDecl(
   return true;
 }
 
-/* ConverionOpUsedVisitor */
+/* Implementation of ConverionOpUsedVisitor */
 
 ConverionOpUsedVisitor::ConverionOpUsedVisitor(clang::DiagnosticsEngine &DE)
     : DE(DE) {}
@@ -379,7 +379,7 @@ bool ConverionOpUsedVisitor::VisitCXXConversionDecl(
               .limitReached();
 }
 
-/* SubscriptOperatorOverloadVisitor */
+/* Implementation of SubscriptOperatorOverloadVisitor */
 
 SubscriptOperatorOverloadVisitor::SubscriptOperatorOverloadVisitor(
     clang::DiagnosticsEngine &DE)
@@ -410,7 +410,7 @@ bool SubscriptOperatorOverloadVisitor::VisitCXXRecordDecl(
   return true;
 }
 
-/* UnusedPrivateMethodVisitor */
+/* Implementation of UnusedPrivateMethodVisitor */
 
 UnusedPrivateMethodVisitor::UnusedPrivateMethodVisitor(
     clang::DiagnosticsEngine &DE)
@@ -450,7 +450,7 @@ bool UnusedPrivateMethodVisitor::VisitCXXMemberCallExpr(
   return true;
 }
 
-/* NonConstReturnedFromConst */
+/* Implementation of NonConstReturnedFromConst */
 
 bool isStandardSmartPointer(const clang::Type *TheType) {
   if (!TheType)
@@ -554,7 +554,7 @@ bool NonConstReturnedFromConst::VisitCXXRecordDecl(
   return true;
 }
 
-/* CopyAndMoveAssignmentNoSwapVisitor */
+/* Implementation of CopyAndMoveAssignmentNoSwapVisitor */
 
 static bool hasNoexceptSpecifier(const clang::FunctionDecl *FD) {
   const clang::FunctionProtoType *Type =
@@ -639,7 +639,7 @@ bool CopyAndMoveAssignmentNoSwapVisitor::VisitCXXMethodDecl(
   return true;
 }
 
-/* UnionsUsedVisitor */
+/* Implementation of UnionsUsedVisitor */
 
 UnionsUsedVisitor::UnionsUsedVisitor(clang::DiagnosticsEngine &DE,
                                      clang::ASTContext &AC)
@@ -699,7 +699,7 @@ bool UnionsUsedVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *D) {
   return true;
 }
 
-/* ChangedDefaultArgumentsVisitor */
+/* Implementation of ChangedDefaultArgumentsVisitor */
 
 bool ChangedDefaultArgumentsVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -1099,7 +1099,7 @@ bool BaseDestructorVisitor::VisitCXXRecordDecl(
   return true;
 }
 
-/* ClassesVisitor */
+/* Implementation of ClassesVisitor */
 
 ClassesVisitor::ClassesVisitor(clang::DiagnosticsEngine &DE,
                                clang::ASTContext &ASTCtx)

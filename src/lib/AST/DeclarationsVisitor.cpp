@@ -27,39 +27,39 @@ DeclarationsVisitorInterface::~DeclarationsVisitorInterface() {}
 
 using DVI = DeclarationsVisitorInterface;
 void DVI::PostWork() {}
-bool DVI::PreTraverseDecl(clang::Decl *S) { return true; }
-bool DVI::PostTraverseDecl(clang::Decl *S) { return true; }
-bool DVI::PreTraverseStmt(clang::Stmt *S) { return true; }
-bool DVI::PostTraverseStmt(clang::Stmt *S) { return true; }
+bool DVI::PreTraverseDecl(clang::Decl *) { return true; }
+bool DVI::PostTraverseDecl(clang::Decl *) { return true; }
+bool DVI::PreTraverseStmt(clang::Stmt *) { return true; }
+bool DVI::PostTraverseStmt(clang::Stmt *) { return true; }
 bool DVI::VisitGCCAsmStmt(const clang::GCCAsmStmt *) { return true; }
 bool DVI::VisitVarDecl(const clang::VarDecl *) { return true; }
 bool DVI::VisitFunctionDecl(const clang::FunctionDecl *) { return true; }
 bool DVI::VisitTypedefNameDecl(const clang::TypedefNameDecl *) { return true; }
-bool DVI::VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) { return true; }
-bool DVI::VisitUnaryOperator(const clang::UnaryOperator *UO) { return true; }
-bool DVI::VisitBinaryOperator(const clang::BinaryOperator *BO) { return true; }
-bool DVI::VisitCallExpr(const clang::CallExpr *CE) { return true; }
-bool DVI::VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) { return true; }
-bool DVI::VisitFieldDecl(const clang::FieldDecl *FD) { return true; }
+bool DVI::VisitCXXMethodDecl(const clang::CXXMethodDecl *) { return true; }
+bool DVI::VisitUnaryOperator(const clang::UnaryOperator *) { return true; }
+bool DVI::VisitBinaryOperator(const clang::BinaryOperator *) { return true; }
+bool DVI::VisitCallExpr(const clang::CallExpr *) { return true; }
+bool DVI::VisitCXXRecordDecl(const clang::CXXRecordDecl *) { return true; }
+bool DVI::VisitFieldDecl(const clang::FieldDecl *) { return true; }
 bool DVI::VisitDeclRefExpr(const clang::DeclRefExpr *) { return true; }
-bool DVI::VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE) {
+bool DVI::VisitCXXConstructExpr(const clang::CXXConstructExpr *) {
   return true;
 }
-bool DVI::VisitCXXThrowExpr(const clang::CXXThrowExpr *CTE) { return true; }
-bool DVI::VisitCXXDeleteExpr(const clang::CXXDeleteExpr *CDE) { return true; }
-bool DVI::VisitTypeAliasDecl(const clang::TypeAliasDecl *TAD) { return true; }
-bool DVI::VisitTypedefDecl(const clang::TypedefDecl *TD) { return true; }
-bool DVI::VisitFriendDecl(const clang::FriendDecl *FD) { return true; }
-bool DVI::VisitEnumDecl(const clang::EnumDecl *ED) { return true; }
-bool DVI::VisitNamespaceDecl(const clang::NamespaceDecl *ND) { return true; }
-bool DVI::VisitUsingDirectiveDecl(const clang::UsingDirectiveDecl *UDD) {
+bool DVI::VisitCXXThrowExpr(const clang::CXXThrowExpr *) { return true; }
+bool DVI::VisitCXXDeleteExpr(const clang::CXXDeleteExpr *) { return true; }
+bool DVI::VisitTypeAliasDecl(const clang::TypeAliasDecl *) { return true; }
+bool DVI::VisitTypedefDecl(const clang::TypedefDecl *) { return true; }
+bool DVI::VisitFriendDecl(const clang::FriendDecl *) { return true; }
+bool DVI::VisitEnumDecl(const clang::EnumDecl *) { return true; }
+bool DVI::VisitNamespaceDecl(const clang::NamespaceDecl *) { return true; }
+bool DVI::VisitUsingDirectiveDecl(const clang::UsingDirectiveDecl *) {
   return true;
 }
-bool DVI::VisitTranslationUnitDecl(const clang::TranslationUnitDecl *TUD) {
+bool DVI::VisitTranslationUnitDecl(const clang::TranslationUnitDecl *) {
   return true;
 }
 
-/* ASMDeclarationUsedVisitor */
+/* Implementation of ASMDeclarationUsedVisitor */
 
 ASMDeclarationUsedVisitor::ASMDeclarationUsedVisitor(
     clang::DiagnosticsEngine &DE)
@@ -78,7 +78,7 @@ bool ASMDeclarationUsedVisitor::VisitGCCAsmStmt(const clang::GCCAsmStmt *GAS) {
   return true;
 }
 
-/* UnusedGlobalTypedef */
+/* Implementation of UnusedGlobalTypedef */
 
 UnusedGlobalTypedef::UnusedGlobalTypedef(clang::DiagnosticsEngine &DE)
     : DE(DE) {}
@@ -108,7 +108,7 @@ bool UnusedGlobalTypedef::VisitTypedefNameDecl(
   return true;
 }
 
-/* VariadicFunctionUsedVisitor */
+/* Implementation of VariadicFunctionUsedVisitor */
 
 VariadicFunctionUsedVisitor::VariadicFunctionUsedVisitor(
     clang::DiagnosticsEngine &DE)
@@ -129,7 +129,7 @@ bool VariadicFunctionUsedVisitor::VisitFunctionDecl(
   return true;
 }
 
-/* FunctionRedeclParamsVisitor */
+/* Implementation of FunctionRedeclParamsVisitor */
 
 FunctionRedeclParamsVisitor::FunctionRedeclParamsVisitor(
     clang::DiagnosticsEngine &DE)
@@ -166,7 +166,7 @@ bool FunctionRedeclParamsVisitor::VisitFunctionDecl(
   return true;
 }
 
-/* AutoVarBracedInitVisitor */
+/* Implementation of AutoVarBracedInitVisitor */
 
 AutoVarBracedInitVisitor::AutoVarBracedInitVisitor(clang::DiagnosticsEngine &DE,
                                                    clang::Sema &SemaRef)
@@ -207,7 +207,7 @@ bool AutoVarBracedInitVisitor::VisitVarDecl(const clang::VarDecl *VD) {
   return true;
 }
 
-/* VarBracedInitVisitor */
+/* Implementation of VarBracedInitVisitor */
 
 VarBracedInitVisitor::VarBracedInitVisitor(clang::DiagnosticsEngine &DE,
                                            clang::ASTContext &AC,
@@ -273,7 +273,12 @@ bool VarBracedInitVisitor::VisitVarDecl(const clang::VarDecl *VD) {
   return true;
 }
 
-/* CVQualifiersPlacedLeftVisitor */
+/* Implementation of CVQualifiersPlacedLeftVisitor */
+
+CVQualifiersPlacedLeftVisitor::CVQualifiersPlacedLeftVisitor(
+    clang::SourceManager &SM, clang::DiagnosticsEngine &DE,
+    clang::Sema &SemaRef)
+    : SM(SM), DE(DE), SemaRef(SemaRef) {}
 
 bool CVQualifiersPlacedLeftVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -323,14 +328,17 @@ bool CVQualifiersPlacedLeftVisitor::VisitVarDecl(const clang::VarDecl *VD) {
   return true;
 }
 
-/* AssignmentOperatorReturn */
+/* Implementation of AssignmentOperatorReturn */
+
+AssignmentOperatorReturn::AssignmentOperatorReturn(clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
 
 bool AssignmentOperatorReturn::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::assignmentOperatorReturnType);
 }
 
 bool AssignmentOperatorReturn::isWrongDeclarationReturnType(
-    const clang::CXXMethodDecl *CMD) {
+    const clang::CXXMethodDecl *CMD) const {
   const clang::QualType ThisObjectType = CMD->getThisObjectType();
   const clang::QualType ReturnType = CMD->getDeclaredReturnType();
 
@@ -353,7 +361,7 @@ bool AssignmentOperatorReturn::isWrongDeclarationReturnType(
 }
 
 bool AssignmentOperatorReturn::isWrongReturnStmt(
-    const clang::CXXMethodDecl *CMD) {
+    const clang::CXXMethodDecl *CMD) const {
   clang::Stmt *MethodDefinition = CMD->getDefinition()->getBody();
 
   if (!MethodDefinition)
@@ -410,7 +418,7 @@ bool AssignmentOperatorReturn::VisitCXXMethodDecl(
   return true;
 }
 
-/* ConstUnusedForImmutableData */
+/* Implementation of ConstUnusedForImmutableData */
 
 // This rule is applied to varables of the following types:
 // - Primitive data types (integer, character, boolean, floating point, double
@@ -694,7 +702,11 @@ bool ConstUnusedForImmutableData::VisitCallExpr(const clang::CallExpr *CE) {
   return CheckFunctionArguments(CE);
 }
 
-/* NSDMIAndConsutructorInitUsed */
+/* Implementation of NSDMIAndConsutructorInitUsed */
+
+NSDMIAndConsutructorInitUsed::NSDMIAndConsutructorInitUsed(
+    clang::DiagnosticsEngine &DE)
+    : DE(DE) {}
 
 bool NSDMIAndConsutructorInitUsed::isFlagPresent(
     const AutocheckContext &Context) {
@@ -730,7 +742,7 @@ bool NSDMIAndConsutructorInitUsed::VisitCXXRecordDecl(
   return true;
 }
 
-/* RandomEngineDefaultInitialized */
+/* Implementation of RandomEngineDefaultInitialized */
 
 RandomEngineDefaultInitialized::RandomEngineDefaultInitialized(
     clang::DiagnosticsEngine &DE)
@@ -803,7 +815,15 @@ bool RandomEngineDefaultInitialized::VisitCXXConstructExpr(
   return true;
 }
 
-/* BroadScopeIdentifierVisitor */
+bool RandomEngineDefaultInitialized::isAcceptableEngine(
+    const std::string &Name) const {
+  if (std::find(engines.cbegin(), engines.cend(), Name) != engines.cend()) {
+    return true;
+  }
+  return false;
+}
+
+/* Implementation of BroadScopeIdentifierVisitor */
 
 BroadScopeIdentifierVisitor::BroadScopeIdentifierVisitor(
     clang::DiagnosticsEngine &DE, clang::ASTContext &ASTCtx)
@@ -990,7 +1010,16 @@ bool BroadScopeIdentifierVisitor::isNewScope(const clang::Stmt *S) {
   return isScope;
 }
 
-/*MissingBracesOrEltsVisitor*/
+/* Implementation of MissingBracesOrEltsVisitor */
+
+MissingBracesOrEltsVisitor::MissingBracesOrEltsVisitor(
+    clang::DiagnosticsEngine &DE, clang::Sema &SemaRef)
+    : DE(DE), SM(DE.getSourceManager()), SemaRef(SemaRef) {}
+
+bool MissingBracesOrEltsVisitor::isFlagPresent(
+    const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::missingBracesOrElements);
+}
 
 bool MissingBracesOrEltsVisitor::hasBraces(const clang::InitListExpr *ILE) {
   return *SM.getCharacterData(ILE->getLBraceLoc()) == '{';
@@ -1082,14 +1111,6 @@ bool MissingBracesOrEltsVisitor::isSubExprEmpty(
   } else if (const clang::InitListExpr *InitList =
                  llvm::dyn_cast_if_present<clang::InitListExpr>(SubStatement)) {
     return !hasBraces(InitList) && isEmpty(InitList);
-  }
-  return false;
-}
-
-bool RandomEngineDefaultInitialized::isAcceptableEngine(
-    const std::string &Name) {
-  if (std::find(engines.cbegin(), engines.cend(), Name) != engines.cend()) {
-    return true;
   }
   return false;
 }
@@ -1225,18 +1246,15 @@ bool MissingBracesOrEltsVisitor::VisitVarDecl(const clang::VarDecl *VD) {
   return true;
 }
 
-bool MissingBracesOrEltsVisitor::isFlagPresent(
-    const AutocheckContext &Context) {
-  return Context.isEnabled(AutocheckWarnings::missingBracesOrElements);
-}
+/* Implementation of ConstantInitializer */
 
-/* ConstantInitializer */
+ConstantInitializer::ConstantInitializer(clang::DiagnosticsEngine &DE,
+                                         clang::ASTContext &AC,
+                                         clang::Sema &SemaRef)
+    : DE(DE), AC(AC), SemaRef(SemaRef) {}
 
-bool ConstantInitializer::hasRedeclaration(const clang::VarDecl *VD) {
-  auto Redecl = VD->redecls_begin();
-  while (*Redecl != VD)
-    std::next(Redecl);
-  return std::next(Redecl) != VD->redecls_end();
+bool ConstantInitializer::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::constantInitializer);
 }
 
 bool ConstantInitializer::VisitVarDecl(const clang::VarDecl *VD) {
@@ -1269,11 +1287,14 @@ bool ConstantInitializer::VisitVarDecl(const clang::VarDecl *VD) {
   return true;
 }
 
-bool ConstantInitializer::isFlagPresent(const AutocheckContext &Context) {
-  return Context.isEnabled(AutocheckWarnings::constantInitializer);
+bool ConstantInitializer::hasRedeclaration(const clang::VarDecl *VD) const {
+  auto Redecl = VD->redecls_begin();
+  while (*Redecl != VD)
+    std::next(Redecl);
+  return std::next(Redecl) != VD->redecls_end();
 }
 
-/* MoreThanTwoLevelsOfPointerIndirection */
+/* Implementation of MoreThanTwoLevelsOfPointerIndirection */
 
 MoreThanTwoLevelsOfPointerIndirection::MoreThanTwoLevelsOfPointerIndirection(
     clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
@@ -1386,7 +1407,7 @@ bool MoreThanTwoLevelsOfPointerIndirection::VisitFunctionDecl(
   return checkType(QT, FD->getBeginLoc());
 }
 
-/* NoExceptionVisitor */
+/* Implementation of NoExceptionVisitor */
 
 /// Fills SmallSet with all base classes in inheritance chain of given Record.
 void getInheritedRecords(
@@ -1584,7 +1605,7 @@ bool NoExceptionVisitor::PostTraverseStmt(clang::Stmt *S) {
   return true;
 }
 
-/* ExitedWithExceptionVisitor */
+/* Implementation of ExitedWithExceptionVisitor */
 
 ExitedWithExceptionVisitor::ExitedWithExceptionVisitor(
     clang::DiagnosticsEngine &DE)
@@ -1676,7 +1697,7 @@ bool ExitedWithExceptionVisitor::VisitCXXThrowExpr(
   return true;
 }
 
-/* MismatchedNewDeleteVisitor */
+/* Implementation of MismatchedNewDeleteVisitor */
 
 MismatchedNewDeleteVisitor::MismatchedNewDeleteVisitor(
     clang::DiagnosticsEngine &DE)
@@ -1875,7 +1896,11 @@ bool MismatchedNewDeleteVisitor::reportWarning(const clang::CXXNewExpr *Prev,
   return !LimitReached;
 }
 
-/* CStyleStringUsed */
+/* Implementation of CStyleStringUsed */
+
+CStyleStringUsed::CStyleStringUsed(clang::DiagnosticsEngine &DE,
+                                   clang::ASTContext &AC)
+    : DE(DE), AC(AC) {}
 
 bool CStyleStringUsed::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::cStyleStringUsed);
@@ -1903,7 +1928,7 @@ bool CStyleStringUsed::VisitDeclRefExpr(const clang::DeclRefExpr *DRE) {
   return true;
 }
 
-bool CStyleStringUsed::isCharPtrOrArray(const clang::QualType &T) {
+bool CStyleStringUsed::isCharPtrOrArray(const clang::QualType &T) const {
   return (T->isPointerType() && T->getPointeeType()->isCharType()) ||
          (T->isArrayType() &&
           T->getAsArrayTypeUnsafe()->getElementType()->isCharType());
@@ -2003,7 +2028,7 @@ bool CStyleStringUsed::VisitCallExpr(const clang::CallExpr *CE) {
   return true;
 }
 
-/* DecltypeTypeidVisitor */
+/* Implementation of DecltypeTypeidVisitor */
 
 DecltypeTypeidVisitor::DecltypeTypeidVisitor(clang::DiagnosticsEngine &DE,
                                              clang::ASTContext &AC)

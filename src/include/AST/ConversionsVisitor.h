@@ -86,11 +86,11 @@ public:
   explicit InvalidBoolExpressionVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitBinaryOperator(const clang::BinaryOperator *BO);
-  bool VisitUnaryOperator(const clang::UnaryOperator *UO);
+  bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
+  bool VisitUnaryOperator(const clang::UnaryOperator *UO) override;
 
 private:
-  bool isExprBooleanType(const clang::Expr *E);
+  bool isExprBooleanType(const clang::Expr *E) const;
 };
 
 /// [A4-5-1] Expressions with type enum or enum class shall not be used as
@@ -107,12 +107,12 @@ public:
   explicit InvalidEnumExpressionVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitBinaryOperator(const clang::BinaryOperator *BO);
-  bool VisitUnaryOperator(const clang::UnaryOperator *UO);
-  bool VisitCXXOperatorCallExpr(const clang::CXXOperatorCallExpr *E);
+  bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
+  bool VisitUnaryOperator(const clang::UnaryOperator *UO) override;
+  bool VisitCXXOperatorCallExpr(const clang::CXXOperatorCallExpr *E) override;
 
 private:
-  bool isExprEnumerationType(const clang::Expr *E);
+  bool isExprEnumerationType(const clang::Expr *E) const;
 };
 
 /// [M4-5-3] Expressions with type (plain) char and wchar_t shall not be used as
@@ -128,8 +128,8 @@ public:
   explicit InvalidCharExpressionVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitBinaryOperator(const clang::BinaryOperator *BO);
-  bool VisitUnaryOperator(const clang::UnaryOperator *UO);
+  bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
+  bool VisitUnaryOperator(const clang::UnaryOperator *UO) override;
 
 private:
   bool isExprCharType(const clang::Expr *E) const;
@@ -147,7 +147,7 @@ public:
   explicit ImplicitFloatIntegralConversionVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *E);
+  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE) override;
 };
 
 /// [M5-0-6] An implicit integral or floating-point conversion shall not reduce
@@ -162,11 +162,11 @@ public:
                                                   clang::ASTContext &ASTCtx);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *E);
+  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE) override;
 
 private:
   clang::SourceLocation sl;
-  bool isReducedSizeFromSubExpr(const clang::ImplicitCastExpr *E) const;
+  bool isReducedSizeFromSubExpr(const clang::ImplicitCastExpr *ICE) const;
 };
 
 /// [M5-0-10] If the bitwise operators ~and << are applied to an operand with an
@@ -182,8 +182,8 @@ public:
                                                   clang::ASTContext &ASTCtx);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitUnaryOperator(const clang::UnaryOperator *UO);
-  bool VisitBinaryOperator(const clang::BinaryOperator *BO);
+  bool VisitUnaryOperator(const clang::UnaryOperator *UO) override;
+  bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
 
 private:
   bool isUnsignedCharOrShort(const clang::QualType &Type) const;
@@ -202,27 +202,18 @@ public:
                                        clang::ASTContext &ASTCtx);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  /// Handles normal function calls, methods, overloaded operator calls.
-  bool VisitCallExpr(const clang::CallExpr *CE);
-
-  /// Handles constructor calls.
-  bool VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE);
-
-  /// Handles array subscrip operations.
-  bool VisitArraySubscriptExpr(const clang::ArraySubscriptExpr *ASE);
-
-  /// Handles implicit casts.
-  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *E);
-
-  /// Handles declarations.
-  bool VisitVarDecl(const clang::VarDecl *VD);
+  bool VisitCallExpr(const clang::CallExpr *CE) override;
+  bool VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE) override;
+  bool VisitArraySubscriptExpr(const clang::ArraySubscriptExpr *ASE) override;
+  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE) override;
+  bool VisitVarDecl(const clang::VarDecl *VD) override;
 
 private:
   /// Check if function argument contains ArrayToPointerDecay node.
-  bool checkArgument(const clang::Expr *Arg);
+  bool checkArgument(const clang::Expr *Arg) const;
 
   /// Check if array decays to a base class pointer.
-  bool checkDecayToBaseClassPtr(const clang::ImplicitCastExpr *E);
+  bool checkDecayToBaseClassPtr(const clang::ImplicitCastExpr *ICE) const;
 };
 
 /// [M4-10-1] NULL shall not be used as an integer value.
@@ -233,7 +224,7 @@ public:
   explicit NullToIntegerValueVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitCastExpr(const clang::CastExpr *E);
+  bool VisitCastExpr(const clang::CastExpr *CE) override;
 };
 
 /// [M4-10-2] Literal zero (0) shall not be used as the null-pointer-constant.
@@ -244,7 +235,7 @@ public:
   explicit ZeroToNullPointerVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitCastExpr(const clang::CastExpr *E);
+  bool VisitCastExpr(const clang::CastExpr *CE) override;
 };
 
 /// [A4-10-1] Only nullptr literal shall be used as the null-pointer-constant.
@@ -255,7 +246,7 @@ public:
   explicit NullptrOnlyNullPtrConstVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitCastExpr(const clang::CastExpr *E);
+  bool VisitCastExpr(const clang::CastExpr *CE) override;
 };
 
 /// [M5-2-9] A cast shall not convert a pointer type to an integral type.
@@ -266,7 +257,7 @@ public:
   explicit CastPtrToIntegralVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitCastExpr(const clang::CastExpr *E) override;
+  bool VisitCastExpr(const clang::CastExpr *CE) override;
 };
 
 /// [A5-2-3] A cast shall not remove any const or volatile qualification from
@@ -278,7 +269,7 @@ public:
   explicit CVDiscardCastVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitCXXConstCastExpr(const clang::CXXConstCastExpr *CE) override;
+  bool VisitCXXConstCastExpr(const clang::CXXConstCastExpr *CCCE) override;
 };
 
 /// [M5-0-4] An implicit integral conversion shall not change the signedness of
@@ -293,7 +284,7 @@ public:
                                            const clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool PreTraverseInitListExpr(const clang::InitListExpr *ILE) override ;
+  bool PreTraverseInitListExpr(const clang::InitListExpr *ILE) override;
   bool PostTraverseInitListExpr(const clang::InitListExpr *ILE) override;
   bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE) override;
 };
@@ -309,7 +300,7 @@ class ConversionsVisitor
 
 public:
   explicit ConversionsVisitor(clang::DiagnosticsEngine &DE,
-                              clang::ASTContext &ASTCtx);
+                              clang::ASTContext &AC);
   void run(clang::TranslationUnitDecl *TUD);
   bool TraverseDecl(clang::Decl *D);
   bool TraverseInitListExpr(clang::InitListExpr *ILE);
@@ -317,13 +308,13 @@ public:
   bool VisitCastExpr(const clang::CastExpr *E);
   bool VisitBinaryOperator(const clang::BinaryOperator *BO);
   bool VisitUnaryOperator(const clang::UnaryOperator *UO);
-  bool VisitCXXOperatorCallExpr(const clang::CXXOperatorCallExpr *E);
-  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *E);
+  bool VisitCXXOperatorCallExpr(const clang::CXXOperatorCallExpr *COCE);
+  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE);
   bool VisitCallExpr(const clang::CallExpr *CE);
   bool VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE);
   bool VisitArraySubscriptExpr(const clang::ArraySubscriptExpr *ASE);
   bool VisitVarDecl(const clang::VarDecl *VD);
-  bool VisitCXXConstCastExpr(const clang::CXXConstCastExpr *CE);
+  bool VisitCXXConstCastExpr(const clang::CXXConstCastExpr *CCCE);
 };
 
 } // namespace autocheck

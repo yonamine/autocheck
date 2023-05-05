@@ -35,19 +35,20 @@ bool TVI::VisitCXXNewExpr(const clang::CXXNewExpr *) { return true; }
 /* Implementation of CharStorageVisitor */
 
 CharStorageVisitor::CharStorageVisitor(clang::DiagnosticsEngine &DE,
-                                       clang::ASTContext &ASTCtx)
-    : DE(DE), ASTCtx(ASTCtx) {}
+                                       clang::ASTContext &AC)
+    : DE(DE), AC(AC) {}
 
 bool CharStorageVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::charStorage);
 }
 
 bool CharStorageVisitor::VisitImplicitCastExpr(
-    const clang::ImplicitCastExpr *E) {
-  if (E->getCastKind() == clang::CK_IntegralCast && isPlainChar(E->getType())) {
-    return !AutocheckDiagnostic::reportWarning(DE, E->getBeginLoc(),
+    const clang::ImplicitCastExpr *ICE) {
+  if (ICE->getCastKind() == clang::CK_IntegralCast &&
+      isPlainChar(ICE->getType())) {
+    return !AutocheckDiagnostic::reportWarning(DE, ICE->getBeginLoc(),
                                                AutocheckWarnings::charStorage,
-                                               E->getSourceRange())
+                                               ICE->getSourceRange())
                 .limitReached();
   }
   return true;
@@ -55,14 +56,14 @@ bool CharStorageVisitor::VisitImplicitCastExpr(
 
 bool CharStorageVisitor::isPlainChar(const clang::QualType &Type) const {
   return (Type->isCharType() &&
-          Type.getDesugaredType(ASTCtx).getAsString() == "char");
+          Type.getDesugaredType(AC).getAsString() == "char");
 }
 
 /* Implementation of SignCharStorageVisitor */
 
 SignCharStorageVisitor::SignCharStorageVisitor(clang::DiagnosticsEngine &DE,
-                                               clang::ASTContext &ASTCtx)
-    : DE(DE), ASTCtx(ASTCtx) {}
+                                               clang::ASTContext &AC)
+    : DE(DE), AC(AC) {}
 
 bool SignCharStorageVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::signCharStorage);
@@ -84,13 +85,13 @@ bool SignCharStorageVisitor::VisitImplicitCastExpr(
 
 bool SignCharStorageVisitor::isPlainChar(const clang::QualType &Type) const {
   return (Type->isCharType() &&
-          Type.getDesugaredType(ASTCtx).getAsString() == "char");
+          Type.getDesugaredType(AC).getAsString() == "char");
 }
 
 bool SignCharStorageVisitor::isUnsignedOrSignedChar(
-    const clang::QualType &Type) {
+    const clang::QualType &Type) const {
   if (Type->isCharType()) {
-    const std::string TypeName = Type.getDesugaredType(ASTCtx).getAsString();
+    const std::string TypeName = Type.getDesugaredType(AC).getAsString();
     return (TypeName == "unsigned char" || TypeName == "signed char");
   }
   return false;

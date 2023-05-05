@@ -200,7 +200,7 @@ public:
   explicit RelOpBoolValueVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD);
+  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
 };
 
 /// [A13-5-2] All user-defined conversion operators shall be defined explicit.
@@ -211,7 +211,7 @@ public:
   explicit ImplicitConversionOpVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitCXXConversionDecl(const clang::CXXConversionDecl *CMD) override;
+  bool VisitCXXConversionDecl(const clang::CXXConversionDecl *CCD) override;
 };
 
 /// [A13-5-3] User-defined conversion operators should not be used.
@@ -222,7 +222,7 @@ public:
   explicit ConverionOpUsedVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitCXXConversionDecl(const clang::CXXConversionDecl *CMD) override;
+  bool VisitCXXConversionDecl(const clang::CXXConversionDecl *CCD) override;
 };
 
 /// [A13-5-1] If "operator[]" is to be overloaded with a non-const version,
@@ -288,7 +288,7 @@ public:
                              clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *D) override;
+  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
 };
 
 class ChangedDefaultArgumentsVisitor : public ClassesVisitorInterface {
@@ -330,7 +330,7 @@ public:
                                           clang::ASTContext &ASTCtx)
       : DE(DE), ASTCtx(ASTCtx) {}
   static bool isFlagPresent(const AutocheckContext &Context);
-  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CRD) override;
+  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
 };
 
 /// [M5-2-11] The comma operator, && operator and the || operator shall not be

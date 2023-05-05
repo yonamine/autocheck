@@ -25,12 +25,8 @@ namespace autocheck {
 ConversionsVisitorInterface::~ConversionsVisitorInterface() {}
 
 using CVI = ConversionsVisitorInterface;
-bool CVI::PreTraverseInitListExpr(const clang::InitListExpr *ILE) {
-  return true;
-}
-bool CVI::PostTraverseInitListExpr(const clang::InitListExpr *ILE) {
-  return true;
-}
+bool CVI::PreTraverseInitListExpr(const clang::InitListExpr *) { return true; }
+bool CVI::PostTraverseInitListExpr(const clang::InitListExpr *) { return true; }
 bool CVI::VisitCastExpr(const clang::CastExpr *) { return true; }
 bool CVI::VisitBinaryOperator(const clang::BinaryOperator *) { return true; }
 bool CVI::VisitUnaryOperator(const clang::UnaryOperator *) { return true; }
@@ -48,7 +44,7 @@ bool CVI::VisitArraySubscriptExpr(const clang::ArraySubscriptExpr *) {
   return true;
 }
 bool CVI::VisitVarDecl(const clang::VarDecl *) { return true; }
-bool CVI::VisitCXXConstCastExpr(const clang::CXXConstCastExpr *CE) {
+bool CVI::VisitCXXConstCastExpr(const clang::CXXConstCastExpr *) {
   return true;
 }
 
@@ -98,7 +94,8 @@ bool InvalidBoolExpressionVisitor::VisitUnaryOperator(
   return true;
 }
 
-bool InvalidBoolExpressionVisitor::isExprBooleanType(const clang::Expr *E) {
+bool InvalidBoolExpressionVisitor::isExprBooleanType(
+    const clang::Expr *E) const {
   const clang::QualType &ExprType = E->IgnoreImpCasts()->getType();
   return ExprType->isBooleanType();
 }
@@ -176,7 +173,8 @@ bool InvalidEnumExpressionVisitor::VisitCXXOperatorCallExpr(
   return true;
 }
 
-bool InvalidEnumExpressionVisitor::isExprEnumerationType(const clang::Expr *E) {
+bool InvalidEnumExpressionVisitor::isExprEnumerationType(
+    const clang::Expr *E) const {
   return E->IgnoreImpCasts()->getType()->isEnumeralType();
 }
 
@@ -298,17 +296,17 @@ bool ImplicitFloatIntegralConversionVisitor::isFlagPresent(
 }
 
 bool ImplicitFloatIntegralConversionVisitor::VisitImplicitCastExpr(
-    const clang::ImplicitCastExpr *E) {
+    const clang::ImplicitCastExpr *ICE) {
   // Skip explicit casts.
-  if (!E->isPartOfExplicitCast() &&
-      !llvm::dyn_cast_if_present<clang::ExplicitCastExpr>(E->getSubExpr())) {
-    const clang::CastKind &Kind = E->getCastKind();
+  if (!ICE->isPartOfExplicitCast() &&
+      !llvm::dyn_cast_if_present<clang::ExplicitCastExpr>(ICE->getSubExpr())) {
+    const clang::CastKind &Kind = ICE->getCastKind();
     if (Kind == clang::CK_FloatingToIntegral ||
         Kind == clang::CK_IntegralToFloating) {
       return !AutocheckDiagnostic::reportWarning(
-                  DE, E->getBeginLoc(),
+                  DE, ICE->getBeginLoc(),
                   AutocheckWarnings::implicitFloatIntegralConversion,
-                  E->getSourceRange())
+                  ICE->getSourceRange())
                   .limitReached();
     }
   }
@@ -327,18 +325,18 @@ bool ImplicitSizeReductionConversionVisitor::isFlagPresent(
 }
 
 bool ImplicitSizeReductionConversionVisitor::VisitImplicitCastExpr(
-    const clang::ImplicitCastExpr *E) {
+    const clang::ImplicitCastExpr *ICE) {
   // Skip explicit casts.
-  if (!E->isPartOfExplicitCast() &&
-      !llvm::dyn_cast_if_present<clang::ExplicitCastExpr>(E->getSubExpr())) {
+  if (!ICE->isPartOfExplicitCast() &&
+      !llvm::dyn_cast_if_present<clang::ExplicitCastExpr>(ICE->getSubExpr())) {
 
-    const clang::CastKind Kind = E->getCastKind();
+    const clang::CastKind Kind = ICE->getCastKind();
     if (Kind == clang::CK_IntegralCast || Kind == clang::CK_FloatingCast) {
-      if (isReducedSizeFromSubExpr(E)) {
+      if (isReducedSizeFromSubExpr(ICE)) {
         return !AutocheckDiagnostic::reportWarning(
-                    DE, E->getBeginLoc(),
+                    DE, ICE->getBeginLoc(),
                     AutocheckWarnings::implicitSizeReductionConversion,
-                    E->getSourceRange())
+                    ICE->getSourceRange())
                     .limitReached();
       }
     }
@@ -347,9 +345,9 @@ bool ImplicitSizeReductionConversionVisitor::VisitImplicitCastExpr(
 }
 
 bool ImplicitSizeReductionConversionVisitor::isReducedSizeFromSubExpr(
-    const clang::ImplicitCastExpr *E) const {
-  return (ASTCtx.getTypeSize(E->getType()) <
-          ASTCtx.getTypeSize(E->getSubExpr()->getType()));
+    const clang::ImplicitCastExpr *ICE) const {
+  return (ASTCtx.getTypeSize(ICE->getType()) <
+          ASTCtx.getTypeSize(ICE->getSubExpr()->getType()));
 }
 
 /* Implementation of ImplicitBitwiseResultConversionVisitor */
@@ -451,7 +449,7 @@ bool ArrayDecaysToPointerVisitor::VisitCXXConstructExpr(
   return true;
 }
 
-bool ArrayDecaysToPointerVisitor::checkArgument(const clang::Expr *Arg) {
+bool ArrayDecaysToPointerVisitor::checkArgument(const clang::Expr *Arg) const {
   const clang::ImplicitCastExpr *PICE =
       llvm::dyn_cast_if_present<const clang::ImplicitCastExpr>(Arg);
   if (!PICE)
@@ -511,8 +509,8 @@ bool ArrayDecaysToPointerVisitor::VisitArraySubscriptExpr(
 }
 
 bool ArrayDecaysToPointerVisitor::VisitImplicitCastExpr(
-    const clang::ImplicitCastExpr *E) {
-  const auto &Parents = ASTCtx.getParents(*E);
+    const clang::ImplicitCastExpr *ICE) {
+  const auto &Parents = ASTCtx.getParents(*ICE);
   if (Parents.size() != 1)
     return true;
   const clang::InitListExpr *ILE = Parents[0].get<clang::InitListExpr>();
@@ -520,7 +518,7 @@ bool ArrayDecaysToPointerVisitor::VisitImplicitCastExpr(
     // Handled by VisitVarDecl.
     return true;
 
-  return checkDecayToBaseClassPtr(E);
+  return checkDecayToBaseClassPtr(ICE);
 }
 
 bool ArrayDecaysToPointerVisitor::VisitVarDecl(const clang::VarDecl *VD) {
@@ -545,19 +543,20 @@ bool ArrayDecaysToPointerVisitor::VisitVarDecl(const clang::VarDecl *VD) {
 }
 
 bool ArrayDecaysToPointerVisitor::checkDecayToBaseClassPtr(
-    const clang::ImplicitCastExpr *E) {
-  if (E->getCastKind() != clang::CastKind::CK_DerivedToBase)
+    const clang::ImplicitCastExpr *ICE) const {
+  if (ICE->getCastKind() != clang::CastKind::CK_DerivedToBase)
     return true;
   const clang::ImplicitCastExpr *SE =
-      llvm::dyn_cast_if_present<const clang::ImplicitCastExpr>(E->getSubExpr());
+      llvm::dyn_cast_if_present<const clang::ImplicitCastExpr>(
+          ICE->getSubExpr());
   if (!SE)
     return true;
   if (SE->getCastKind() != clang::CastKind::CK_ArrayToPointerDecay)
     return true;
   return !AutocheckDiagnostic::reportWarning(
-              DE, E->getBeginLoc(), AutocheckWarnings::arrayDecaysToPointer, 2,
-              SE->getSubExpr()->getType().getAsString(),
-              E->getType().getAsString())
+              DE, ICE->getBeginLoc(), AutocheckWarnings::arrayDecaysToPointer,
+              2, SE->getSubExpr()->getType().getAsString(),
+              ICE->getType().getAsString())
               .limitReached();
 }
 
@@ -571,12 +570,12 @@ bool NullToIntegerValueVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::nullToIntegerValue);
 }
 
-bool NullToIntegerValueVisitor::VisitCastExpr(const clang::CastExpr *E) {
-  const clang::SourceLocation &Loc = E->getBeginLoc();
-  const clang::Expr *SE = E->getSubExpr();
+bool NullToIntegerValueVisitor::VisitCastExpr(const clang::CastExpr *CE) {
+  const clang::SourceLocation &Loc = CE->getBeginLoc();
+  const clang::Expr *SE = CE->getSubExpr();
   if (!SE)
     return true;
-  if (E->getCastKind() == clang::CK_IntegralCast)
+  if (CE->getCastKind() == clang::CK_IntegralCast)
     if (llvm::dyn_cast_if_present<clang::GNUNullExpr>(SE)) {
       return !AutocheckDiagnostic::reportWarning(
                   DE, Loc, AutocheckWarnings::nullToIntegerValue)
@@ -594,12 +593,12 @@ bool ZeroToNullPointerVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::zeroToNullPointer);
 }
 
-bool ZeroToNullPointerVisitor::VisitCastExpr(const clang::CastExpr *E) {
-  const clang::SourceLocation &Loc = E->getBeginLoc();
-  const clang::Expr *SE = E->getSubExpr();
+bool ZeroToNullPointerVisitor::VisitCastExpr(const clang::CastExpr *CE) {
+  const clang::SourceLocation &Loc = CE->getBeginLoc();
+  const clang::Expr *SE = CE->getSubExpr();
   if (!SE)
     return true;
-  if (E->getCastKind() == clang::CK_NullToPointer)
+  if (CE->getCastKind() == clang::CK_NullToPointer)
     if (llvm::dyn_cast_if_present<clang::IntegerLiteral>(SE)) {
       return !AutocheckDiagnostic::reportWarning(
                   DE, Loc, AutocheckWarnings::zeroToNullPointer)
@@ -619,12 +618,12 @@ bool NullptrOnlyNullPtrConstVisitor::isFlagPresent(
   return Context.isEnabled(AutocheckWarnings::nullptrOnlyNullPtrConst);
 }
 
-bool NullptrOnlyNullPtrConstVisitor::VisitCastExpr(const clang::CastExpr *E) {
-  const clang::SourceLocation &Loc = E->getBeginLoc();
-  const clang::Expr *SE = E->getSubExpr();
+bool NullptrOnlyNullPtrConstVisitor::VisitCastExpr(const clang::CastExpr *CE) {
+  const clang::SourceLocation &Loc = CE->getBeginLoc();
+  const clang::Expr *SE = CE->getSubExpr();
   if (!SE)
     return true;
-  if (E->getCastKind() == clang::CK_NullToPointer)
+  if (CE->getCastKind() == clang::CK_NullToPointer)
     if (!llvm::dyn_cast_if_present<clang::CXXNullPtrLiteralExpr>(SE)) {
       return !AutocheckDiagnostic::reportWarning(
                   DE, Loc, AutocheckWarnings::nullptrOnlyNullPtrConst)
@@ -642,10 +641,10 @@ bool CastPtrToIntegralVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::castPtrToIntegralType);
 }
 
-bool CastPtrToIntegralVisitor::VisitCastExpr(const clang::CastExpr *E) {
-  if (E->getCastKind() == clang::CK_PointerToIntegral) {
+bool CastPtrToIntegralVisitor::VisitCastExpr(const clang::CastExpr *CE) {
+  if (CE->getCastKind() == clang::CK_PointerToIntegral) {
     return !AutocheckDiagnostic::reportWarning(
-                DE, E->getBeginLoc(), AutocheckWarnings::castPtrToIntegralType)
+                DE, CE->getBeginLoc(), AutocheckWarnings::castPtrToIntegralType)
                 .limitReached();
   }
   return true;
@@ -661,11 +660,11 @@ bool CVDiscardCastVisitor::isFlagPresent(const AutocheckContext &Context) {
 }
 
 bool CVDiscardCastVisitor::VisitCXXConstCastExpr(
-    const clang::CXXConstCastExpr *CE) {
+    const clang::CXXConstCastExpr *CCCE) {
   // This only handles const casts. Other CV discarding casts are handled by
   // -Wcast-qual in AutocheckDiagnosticConsumer.
-  clang::QualType FromType = CE->getSubExpr()->getType();
-  clang::QualType ToType = CE->getType();
+  clang::QualType FromType = CCCE->getSubExpr()->getType();
+  clang::QualType ToType = CCCE->getType();
   if (FromType->isPointerType()) {
     FromType = FromType->getPointeeType();
     ToType = ToType->getPointeeType();
@@ -697,13 +696,13 @@ bool CVDiscardCastVisitor::VisitCXXConstCastExpr(
 
   if (Qualifiers != -1) {
     bool stopVisitor =
-        AutocheckDiagnostic::reportWarning(DE, CE->getBeginLoc(),
+        AutocheckDiagnostic::reportWarning(DE, CCCE->getBeginLoc(),
                                            AutocheckWarnings::castRemovesQual)
             .limitReached();
 
     AutocheckDiagnostic::reportWarning(
-        DE, CE->getBeginLoc(), AutocheckWarnings::noteCastRemovesQual, 0,
-        CE->getSubExpr()->getType(), CE->getType(), Qualifiers);
+        DE, CCCE->getBeginLoc(), AutocheckWarnings::noteCastRemovesQual, 0,
+        CCCE->getSubExpr()->getType(), CCCE->getType(), Qualifiers);
 
     return !stopVisitor;
   }
@@ -775,7 +774,7 @@ bool ImpcastChangesSignednessVisitor::VisitImplicitCastExpr(
 /* Implementation of ConversionsVisitor */
 
 ConversionsVisitor::ConversionsVisitor(clang::DiagnosticsEngine &DE,
-                                       clang::ASTContext &ASTCtx)
+                                       clang::ASTContext &AC)
     : DE(DE) {
   const AutocheckContext &Context = AutocheckContext::Get();
   if (InvalidBoolExpressionVisitor::isFlagPresent(Context))
@@ -789,13 +788,13 @@ ConversionsVisitor::ConversionsVisitor(clang::DiagnosticsEngine &DE,
         std::make_unique<ImplicitFloatIntegralConversionVisitor>(DE));
   if (ImplicitSizeReductionConversionVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ImplicitSizeReductionConversionVisitor>(DE, ASTCtx));
+        std::make_unique<ImplicitSizeReductionConversionVisitor>(DE, AC));
   if (ImplicitBitwiseResultConversionVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ImplicitBitwiseResultConversionVisitor>(DE, ASTCtx));
+        std::make_unique<ImplicitBitwiseResultConversionVisitor>(DE, AC));
   if (ArrayDecaysToPointerVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ArrayDecaysToPointerVisitor>(DE, ASTCtx));
+        std::make_unique<ArrayDecaysToPointerVisitor>(DE, AC));
   if (NullToIntegerValueVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<NullToIntegerValueVisitor>(DE));
   if (ZeroToNullPointerVisitor::isFlagPresent(Context))
@@ -809,7 +808,7 @@ ConversionsVisitor::ConversionsVisitor(clang::DiagnosticsEngine &DE,
     AllVisitors.push_front(std::make_unique<CVDiscardCastVisitor>(DE));
   if (ImpcastChangesSignednessVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ImpcastChangesSignednessVisitor>(DE, ASTCtx));
+        std::make_unique<ImpcastChangesSignednessVisitor>(DE, AC));
 }
 
 void ConversionsVisitor::run(clang::TranslationUnitDecl *TUD) {

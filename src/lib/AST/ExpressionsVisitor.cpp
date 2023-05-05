@@ -90,7 +90,8 @@ bool IncDecOpMixedVisitor::VisitUnaryOperator(const clang::UnaryOperator *UO) {
   return true;
 }
 
-bool IncDecOpMixedVisitor::getIncrementDecrementOpParent(const clang::Expr *E) {
+bool IncDecOpMixedVisitor::getIncrementDecrementOpParent(
+    const clang::Expr *E) const {
   const auto &Parents = ASTCtx.getParents(*E);
   assert((Parents.size() > 0) && "At least one parent node expected.");
 
@@ -126,7 +127,7 @@ bool TernaryOpSubExprVisitor::VisitConditionalOperator(
 }
 
 const clang::Stmt *
-TernaryOpSubExprVisitor::getTernaryOpParent(const clang::Stmt *S) {
+TernaryOpSubExprVisitor::getTernaryOpParent(const clang::Stmt *S) const {
   const auto &Parents = ASTCtx.getParents(*S);
   assert((Parents.size() > 0) && "At least one parent node expected.");
 

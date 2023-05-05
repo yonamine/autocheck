@@ -116,18 +116,18 @@ bool HeadersUnusedVisitor::VisitTranslationUnitDecl(
   return !IncludeData.Includes.empty();
 }
 
-bool HeadersUnusedVisitor::VisitDeclRefExpr(const clang::DeclRefExpr *Expr) {
-  if (DE.getSourceManager().isInMainFile(Expr->getLocation())) {
-    const clang::NamedDecl *ND = Expr->getFoundDecl();
+bool HeadersUnusedVisitor::VisitDeclRefExpr(const clang::DeclRefExpr *DRE) {
+  if (DE.getSourceManager().isInMainFile(DRE->getLocation())) {
+    const clang::NamedDecl *ND = DRE->getFoundDecl();
     return removeFromIncludes(ND->getBeginLoc());
   }
   return true;
 }
 
 bool HeadersUnusedVisitor::VisitCXXConstructExpr(
-    const clang::CXXConstructExpr *Exp) {
-  if (DE.getSourceManager().isInMainFile(Exp->getLocation())) {
-    const clang::CXXConstructorDecl *CD = Exp->getConstructor();
+    const clang::CXXConstructExpr *CCE) {
+  if (DE.getSourceManager().isInMainFile(CCE->getLocation())) {
+    const clang::CXXConstructorDecl *CD = CCE->getConstructor();
     return removeFromIncludes(CD->getLocation());
   }
   return true;
@@ -143,22 +143,22 @@ bool HeadersUnusedVisitor::VisitCallExpr(const clang::CallExpr *CE) {
   return true;
 }
 
-bool HeadersUnusedVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *D) {
-  const clang::SourceLocation SL = D->getBeginLoc();
+bool HeadersUnusedVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) {
+  const clang::SourceLocation SL = CRD->getBeginLoc();
   if (!DE.getSourceManager().isInMainFile(SL))
-    CXXRecords.insert(std::make_pair(D->getIdentifier(), SL));
+    CXXRecords.insert(std::make_pair(CRD->getIdentifier(), SL));
   else {
-    const IdentifierMap::iterator It = CXXRecords.find(D->getIdentifier());
+    const IdentifierMap::iterator It = CXXRecords.find(CRD->getIdentifier());
     if (It != CXXRecords.end())
       return removeFromIncludes(It->second);
   }
   return true;
 }
 
-bool HeadersUnusedVisitor::VisitTypedefDecl(const clang::TypedefDecl *D) {
-  const clang::SourceLocation SL = D->getBeginLoc();
+bool HeadersUnusedVisitor::VisitTypedefDecl(const clang::TypedefDecl *TD) {
+  const clang::SourceLocation SL = TD->getBeginLoc();
   if (!DE.getSourceManager().isInMainFile(SL))
-    Typedefs.insert(std::make_pair(D->getQualifiedNameAsString(), SL));
+    Typedefs.insert(std::make_pair(TD->getQualifiedNameAsString(), SL));
   return true;
 }
 
@@ -180,17 +180,17 @@ bool HeadersUnusedVisitor::VisitVarDecl(const clang::VarDecl *VD) {
 }
 
 bool HeadersUnusedVisitor::VisitUsingDirectiveDecl(
-    const clang::UsingDirectiveDecl *UD) {
-  if (DE.getSourceManager().isInMainFile(UD->getUsingLoc()))
-    if (const clang::NamespaceDecl *ND = UD->getNominatedNamespace())
+    const clang::UsingDirectiveDecl *UDD) {
+  if (DE.getSourceManager().isInMainFile(UDD->getUsingLoc()))
+    if (const clang::NamespaceDecl *ND = UDD->getNominatedNamespace())
       return removeFromIncludes(ND->getLocation());
   return true;
 }
 
-bool HeadersUnusedVisitor::VisitGNUNullExpr(const clang::GNUNullExpr *GN) {
+bool HeadersUnusedVisitor::VisitGNUNullExpr(const clang::GNUNullExpr *GNE) {
   const clang::SourceManager &SM = DE.getSourceManager();
-  if (SM.isInMainFile(GN->getBeginLoc()))
-    return removeFromIncludes(SM.getSpellingLoc(GN->getTokenLocation()));
+  if (SM.isInMainFile(GNE->getBeginLoc()))
+    return removeFromIncludes(SM.getSpellingLoc(GNE->getTokenLocation()));
   return true;
 }
 
@@ -280,7 +280,7 @@ void HeadersUnusedVisitor::removeKeywords(std::string &TypeName) {
 }
 
 inline bool HeadersUnusedVisitor::startsWith(const std::string &Str,
-                                             const std::string &Start) {
+                                             const std::string &Start) const {
   if (Start.size() > Str.size())
     return false;
   return std::equal(Start.begin(), Start.end(), Str.begin());
@@ -334,9 +334,9 @@ bool HeadersVisitor::VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE) {
   return true;
 }
 
-bool HeadersVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *D) {
-  AllVisitors.remove_if([D](std::unique_ptr<HeadersVisitorInterface> &V) {
-    return !V->VisitCXXRecordDecl(D);
+bool HeadersVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) {
+  AllVisitors.remove_if([CRD](std::unique_ptr<HeadersVisitorInterface> &V) {
+    return !V->VisitCXXRecordDecl(CRD);
   });
   return true;
 }
@@ -355,9 +355,9 @@ bool HeadersVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
   return true;
 }
 
-bool HeadersVisitor::VisitGNUNullExpr(const clang::GNUNullExpr *GN) {
-  AllVisitors.remove_if([GN](std::unique_ptr<HeadersVisitorInterface> &V) {
-    return !V->VisitGNUNullExpr(GN);
+bool HeadersVisitor::VisitGNUNullExpr(const clang::GNUNullExpr *GNE) {
+  AllVisitors.remove_if([GNE](std::unique_ptr<HeadersVisitorInterface> &V) {
+    return !V->VisitGNUNullExpr(GNE);
   });
   return true;
 }
@@ -370,9 +370,9 @@ bool HeadersVisitor::VisitTranslationUnitDecl(
   return true;
 }
 
-bool HeadersVisitor::VisitTypedefDecl(const clang::TypedefDecl *D) {
-  AllVisitors.remove_if([D](std::unique_ptr<HeadersVisitorInterface> &V) {
-    return !V->VisitTypedefDecl(D);
+bool HeadersVisitor::VisitTypedefDecl(const clang::TypedefDecl *TD) {
+  AllVisitors.remove_if([TD](std::unique_ptr<HeadersVisitorInterface> &V) {
+    return !V->VisitTypedefDecl(TD);
   });
   return true;
 }

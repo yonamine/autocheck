@@ -108,7 +108,8 @@ public:
 
   bool VisitUnaryOperator(const clang::UnaryOperator *UO) override;
 
-  bool getIncrementDecrementOpParent(const clang::Expr *E);
+private:
+  bool getIncrementDecrementOpParent(const clang::Expr *E) const;
 };
 
 /// [A5-16-1] The ternary conditional operator shall not be used as a
@@ -125,7 +126,7 @@ public:
   bool VisitConditionalOperator(const clang::ConditionalOperator *CO) override;
 
 private:
-  const clang::Stmt *getTernaryOpParent(const clang::Stmt *S);
+  const clang::Stmt *getTernaryOpParent(const clang::Stmt *S) const;
 };
 
 /// [M6-2-1] Assignment operators shall not be used in sub-expressions.
@@ -242,7 +243,7 @@ public:
                                                  clang::ASTContext &ASTCtx);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitBinaryOperator(const clang::BinaryOperator *BO);
+  bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
 };
 
 /// [M5-3-4] Evaluation of the operand to the sizeof operator shall not contain
@@ -256,8 +257,8 @@ public:
                                    clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool
-  VisitUnaryExprOrTypeTraitExpr(const clang::UnaryExprOrTypeTraitExpr *UOTTE);
+  bool VisitUnaryExprOrTypeTraitExpr(
+      const clang::UnaryExprOrTypeTraitExpr *UOTTE) override;
 };
 
 /// [M5-0-14] The first operand of a conditional-operator shall have type bool.
