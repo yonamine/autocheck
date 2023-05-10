@@ -5,6 +5,7 @@
 | M0-1-1 | A project shall not contain unreachable code. | unreachable-code |
 | A0-1-2 | The value returned by a function having a non-void return type that is not an overloaded operator shall be used. | unused-return-value |
 | A0-1-3 | Every function defined in an anonymous namespace, or static function with internal linkage, or private member function shall be used. | unused-function-or-method |
+| M0-1-3 | A project shall not contain unused variables. | unused-variable |
 | A0-1-4 | There shall be no unused named parameters in non-virtual functions. | unused-parameter |
 | A0-1-6 | There should be no unused type declarations. | unused-typedef |
 | M0-1-10 | Every defined function should be called at least once. | unused-function |
@@ -116,7 +117,7 @@
 | A8-4-1 | Functions shall not be defined using the ellipsis notation. | variadic-function-used |
 | A8-4-2 | All exit paths from a function with non-void return type shall have an explicit return statement with an expression. | return-nonvoid-function  |
 | M8-4-2 | The identifiers used for the parameters in a re-declaration of a function shall be identical to those in the declaration. | function-redecl-params |
-| A8-4-7 | "in" parameters for "cheap to copy" types shall be passed by value. | in-parm-passed-by-value |
+| A8-4-7 | "in" parameters for "cheap to copy" types shall be passed by value. | in-param-passed-by-value |
 | A8-5-0 | All memory shall be initialized before it is read. | uninitialized-memory |
 | A8-5-2 | Braced-initialization {}, without equals sign, shall be used for variable initialization. | non-braced-init-used |
 | M8-5-2 | Braces shall be used to indicate and match the structure in the non-zero initialization of arrays and structures. | missing-braces-or-elements |
@@ -149,6 +150,7 @@
 | A13-6-1 | Digit sequences separators ’ shall only be used as follows: (1) for decimal, every 3 digits, (2) for hexadecimal, every 2 digits, (3) for binary, every 4 digits. | digit-sequence-separator |
 | A15-1-2 | An exception object shall not be a pointer. | exception-object-is-pointer |
 | M15-1-2 | NULL shall not be thrown explicitly. | null-thrown-explicitly |
+| M15-3-4 | Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point. | handler-of-compatible-type |
 | M15-3-6 | Where multiple handlers are provided in a single try-catch statement or function-try-block for a derived class and some or all of its bases, the handlers shall be ordered most-derived to base class. | exception-handler-inversion |
 | A15-4-1 | Dynamic exception-specification shall not be used. | deprecated-dynamic-exception-spec |
 | A15-4-2 | If a function is declared to be noexcept, noexcept(true) or noexcept(\<true condition\>), then it shall not exit with an exception. | throw-in-noexcept-func |

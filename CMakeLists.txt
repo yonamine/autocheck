@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13.4)
 
 project(autocheck 
-  VERSION 0.1.4
+  VERSION 0.2.0
   DESCRIPTION "AUTOSAR C++ Guidelines compliance checker"
 )
 

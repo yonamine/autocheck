@@ -9,16 +9,17 @@ Its main purpose is to check code against AUTOSAR guidelines for the use of the 
 
 ## Supported Operating Systems
 
-- Ubuntu 22.04 or newer
+- Ubuntu 20.04 or newer
+- Debian 11 or newer
 
 ## Runtime dependencies
 
-- glibc 2.34 or newer
-- libstdc++11 development package
+- glibc version 2.31 or newer
+- libstdc++ development package version 10 or newer
 
 ## Install package
 
-### Ubuntu
+### Ubuntu, Debian
 
 To install the DEB package, run the following command:
 ```console
