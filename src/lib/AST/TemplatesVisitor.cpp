@@ -241,11 +241,6 @@ bool ThrowEscapesVisitor::VisitFunctionDecl(const clang::FunctionDecl *FD) {
   // explosion for destructors that can result and the compile time hit.
   AC.getCFGBuildOptions().PruneTriviallyFalseEdges = true;
   AC.getCFGBuildOptions().AddEHEdges = false;
-  AC.getCFGBuildOptions().AddInitializers = true;
-  AC.getCFGBuildOptions().AddImplicitDtors = true;
-  AC.getCFGBuildOptions().AddTemporaryDtors = true;
-  AC.getCFGBuildOptions().AddCXXNewAllocator = false;
-  AC.getCFGBuildOptions().AddCXXDefaultInitExprInCtors = true;
   AC.getCFGBuildOptions().setAllAlwaysAdd();
 
   clang::CFG *BodyCFG = AC.getCFG();
