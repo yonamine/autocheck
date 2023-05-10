@@ -49,6 +49,7 @@ bool CVI::VisitCXXMemberCallExpr(const clang::CXXMemberCallExpr *) {
   return true;
 }
 bool CVI::VisitFunctionDecl(const clang::FunctionDecl *) { return true; }
+bool CVI::VisitDeclRefExpr(const clang::DeclRefExpr *) { return true; }
 
 /* DerivedFromVirtualVisitor */
 
@@ -414,11 +415,27 @@ bool SubscriptOperatorOverloadVisitor::VisitCXXRecordDecl(
 
 UnusedPrivateMethodVisitor::UnusedPrivateMethodVisitor(
     clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    : DE(DE), CurrentMethod(nullptr) {}
 
 bool UnusedPrivateMethodVisitor::isFlagPresent(
     const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::unusedFunctionOrMethod);
+}
+
+bool UnusedPrivateMethodVisitor::PreTraverseDecl(clang::Decl *D) {
+  if (const clang::CXXMethodDecl *CMD =
+          llvm::dyn_cast_if_present<clang::CXXMethodDecl>(D)) {
+    CurrentMethod = CMD;
+  }
+  return true;
+}
+
+bool UnusedPrivateMethodVisitor::PostTraverseDecl(clang::Decl *D) {
+  if (const clang::CXXMethodDecl *CMD =
+          llvm::dyn_cast_if_present<clang::CXXMethodDecl>(D)) {
+    CurrentMethod = nullptr;
+  }
+  return true;
 }
 
 void UnusedPrivateMethodVisitor::PostWork() {
@@ -447,6 +464,17 @@ bool UnusedPrivateMethodVisitor::VisitCXXMemberCallExpr(
     return true;
   if (CMD->getAccess() == clang::AccessSpecifier::AS_private)
     PrivateMethods.erase(CMD);
+  return true;
+}
+
+bool UnusedPrivateMethodVisitor::VisitDeclRefExpr(
+    const clang::DeclRefExpr *DRE) {
+  if (const clang::CXXMethodDecl *CMD =
+          llvm::dyn_cast_if_present<clang::CXXMethodDecl>(DRE->getDecl())) {
+    if (CMD->getAccess() == clang::AccessSpecifier::AS_private &&
+        CMD != CurrentMethod)
+      PrivateMethods.erase(CMD);
+  }
   return true;
 }
 
@@ -1220,6 +1248,13 @@ bool ClassesVisitor::VisitCXXMemberCallExpr(
 bool ClassesVisitor::VisitFunctionDecl(const clang::FunctionDecl *FD) {
   AllVisitors.remove_if([FD](std::unique_ptr<ClassesVisitorInterface> &V) {
     return !V->VisitFunctionDecl(FD);
+  });
+  return true;
+}
+
+bool ClassesVisitor::VisitDeclRefExpr(const clang::DeclRefExpr *DRE) {
+  AllVisitors.remove_if([DRE](std::unique_ptr<ClassesVisitorInterface> &V) {
+    return !V->VisitDeclRefExpr(DRE);
   });
   return true;
 }

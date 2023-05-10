@@ -55,7 +55,7 @@ void test1() {
 // autosar-warning@35 1 {{Assignment operators shall not be used in sub-expressions}}
 // autosar-warning@36 1 {{Assignment operators shall not be used in sub-expressions}}
 // autosar-warning@21 1 {{Unused function 'f'}}
-// autosar-warning@25 1 {{function 'f2' is not needed and will not be emitted}}
+// autosar-warning@25 1 {{Unused function 'f2'}}
 // autosar-warning@28 1 {{Unused function 'test1'}}
 // autosar-warning@31 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
 // autosar-warning@38 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}

@@ -82,6 +82,27 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
     }
     return;
   }
+  case clang::diag::warn_unneeded_internal_decl: {
+    // Ignore unused variable.
+    if (Info.getArgSInt(0) != 0)
+      return;
+
+    // Read diagnostic parameters.
+    clang::NamedDecl *Name =
+        reinterpret_cast<clang::NamedDecl *>(Info.getRawArg(1));
+
+    // Emit only one of unusedFunctionOrMethod or unusedFunction.
+    if (AutocheckContext::Get().isEnabled(
+            AutocheckWarnings::unusedFunctionOrMethod)) {
+      Diags.Clear();
+      AutocheckDiagnostic::reportWarning(
+          Diags, Info.getLocation(), AutocheckWarnings::unusedFunctionOrMethod,
+          0, Name);
+    } else {
+      EmitDiag(AutocheckWarnings::unusedFunction, Info.getLocation());
+    }
+    return;
+  }
   case clang::diag::warn_unused_local_typedef:
     EmitDiag(AutocheckWarnings::unusedTypedef, Info.getLocation());
     return;
@@ -257,8 +278,8 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
         reinterpret_cast<clang::NamedDecl *>(Info.getRawArg(0));
 
     Diags.Clear();
-    AutocheckDiagnostic::reportWarning(
-        Diags, Info.getLocation(), AutocheckWarnings::unusedVariable, Name);
+    AutocheckDiagnostic::reportWarning(Diags, Info.getLocation(),
+                                       AutocheckWarnings::unusedVariable, Name);
 
     return;
   }

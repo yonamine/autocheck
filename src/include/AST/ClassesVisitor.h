@@ -86,6 +86,7 @@ public:
   virtual bool VisitCXXConversionDecl(const clang::CXXConversionDecl *CCD);
   virtual bool VisitCXXMemberCallExpr(const clang::CXXMemberCallExpr *CMCE);
   virtual bool VisitFunctionDecl(const clang::FunctionDecl *FD);
+  virtual bool VisitDeclRefExpr(const clang::DeclRefExpr *DRE);
 };
 
 /// [M10-1-1] Classes should not be derived from virtual bases.
@@ -242,16 +243,28 @@ public:
 class UnusedPrivateMethodVisitor : public ClassesVisitorInterface {
   clang::DiagnosticsEngine &DE;
   std::set<const clang::CXXMethodDecl *> PrivateMethods;
+  const clang::CXXMethodDecl *CurrentMethod;
 
 public:
   explicit UnusedPrivateMethodVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
+
+  /// Track when entering a method declaration.
+  ///
+  /// This is used to check for self recursion.
+  bool PreTraverseDecl(clang::Decl *D) override;
+
+  /// Track when exiting a method declaration.
+  ///
+  /// This is used to check for self recursion.
+  bool PostTraverseDecl(clang::Decl *D) override;
 
   /// Emits warnings for all unused private methods. Should be called after the
   /// traversal is done.
   void PostWork() override;
   bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
   bool VisitCXXMemberCallExpr(const clang::CXXMemberCallExpr *CMCE) override;
+  bool VisitDeclRefExpr(const clang::DeclRefExpr *DRE) override;
 };
 
 /// [M9-3-1] Const member functions shall not return non-const pointers or
@@ -419,6 +432,7 @@ public:
   bool VisitCXXConversionDecl(const clang::CXXConversionDecl *CCD);
   bool VisitCXXMemberCallExpr(const clang::CXXMemberCallExpr *CMCE);
   bool VisitFunctionDecl(const clang::FunctionDecl *FD);
+  bool VisitDeclRefExpr(const clang::DeclRefExpr *DRE);
 };
 } // namespace autocheck
 
