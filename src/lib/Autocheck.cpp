@@ -29,9 +29,6 @@ static cl::OptionCategory AutocheckCategory("Autocheck options");
 
 static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
 
-// TODO Write help text
-static cl::extrahelp MoreHelp("\nMore help text...\n");
-
 static cl::list<std::string> Warnings("W",
                                       cl::desc("Enable the specified warning"),
                                       cl::value_desc("warning"), cl::ZeroOrMore,
@@ -43,7 +40,7 @@ static cl::opt<std::string> Verify(
     cl::desc("Verify diagnostic output using comment directives that start "
              "with prefixes in the comma-separated sequence <prefixes>"),
     cl::value_desc("prefixes"), cl::ValueOptional, cl::init("expected"),
-    cl::cat(AutocheckCategory));
+    cl::ReallyHidden, cl::cat(AutocheckCategory));
 
 static cl::opt<unsigned> WarningLimit(
     "warning-limit",
@@ -150,8 +147,7 @@ ArgumentsAdjuster getVerifyModeAdjuster(const std::string &Verify) {
 ArgumentsAdjuster getResourceDirAdjuster(const char *ExecPath) {
   // Find the absolute path to the directory of the executable.
   static int Symbol;
-  std::string ExecutablePath =
-      sys::fs::getMainExecutable(ExecPath, &Symbol);
+  std::string ExecutablePath = sys::fs::getMainExecutable(ExecPath, &Symbol);
   StringRef ExecutableDir = sys::path::parent_path(ExecutablePath);
 
   // Resource dir should be in ../lib/autocheck relative to the executable
@@ -168,11 +164,10 @@ ArgumentsAdjuster getResourceDirAdjuster(const char *ExecPath) {
 int main(int argc, const char **argv) {
   outs() << "=== Autocheck - Modern and Free Autosar checker\n";
 
-  if (argc >= 2 && (strcmp(argv[1], "--version") == 0)) {
-    llvm::outs() << "Autocheck version " << AUTOCHECK_VERSION << "\n"
-                 << "Based on Clang " << CLANG_VERSION_STRING << "\n";
-    return 0;
-  }
+  cl::SetVersionPrinter([](llvm::raw_ostream &os) {
+    os << "Autocheck version " << AUTOCHECK_VERSION << "\n"
+       << "Based on Clang " << CLANG_VERSION_STRING << "\n";
+  });
 
   auto ExpectedParser =
       CommonOptionsParser::create(argc, argv, AutocheckCategory);
