@@ -7,6 +7,11 @@ project(autocheck
 
 set(AUTOCHECK_ROOT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
+# Set C++ standard.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 # Find clang.
 if (NOT CLANG_DIR)
   message(FATAL_ERROR "CLANG_DIR must be specified in order to find AddClang")
