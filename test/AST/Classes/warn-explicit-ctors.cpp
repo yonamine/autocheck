@@ -84,7 +84,6 @@ public:
 // autosar-warning@65 1 {{If a public destructor of a class is non-virtual, then the class should be declared final}}
 // autosar-warning@67 1 {{Member data in non-POD class types shall be private}}
 // autosar-warning@68 1 {{Member data in non-POD class types shall be private}}
-// autosar-warning@69 1 {{Type '(anonymous namespace)::MemSpacePtr' (aka 'shared_ptr<int>') is not "cheap to copy" and should be passed by const reference}}
 // autosar-warning@10 1 {{Both NSDMI and a non-static member initializer in a constructor shall not be used in the same type}}
 // autosar-note@13 1 {{Member already initialized by NSDMI here}}
 // autosar-warning@19 1 {{Both NSDMI and a non-static member initializer in a constructor shall not be used in the same type}}
