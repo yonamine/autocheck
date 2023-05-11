@@ -91,9 +91,15 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
     }
     return;
   }
-  case clang::diag::warn_unused_local_typedef:
-    EmitDiag(AutocheckWarnings::unusedTypedef, Info.getLocation());
+  case clang::diag::warn_unused_local_typedef: {
+    // Read diagnostic parameters.
+    int Type = Info.getArgSInt(0);
+    clang::DeclarationName Name =
+        clang::DeclarationName::getFromOpaqueInteger(Info.getRawArg(1));
+
+    EmitDiag(AutocheckWarnings::unusedTypedef, Info.getLocation(), Type, Name);
     return;
+  }
   case clang::diag::warn_exception_spec_deprecated:
   case clang::diag::ext_dynamic_exception_spec:
     EmitDiag(AutocheckWarnings::deprecatedDynamicExceptionSpec,

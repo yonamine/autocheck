@@ -92,7 +92,7 @@ void UnusedGlobalTypedef::PostWork() {
     if (!it->isReferenced()) {
       if (AutocheckDiagnostic::reportWarning(DE, it->getLocation(),
                                              AutocheckWarnings::unusedTypedef,
-                                             it->getNameAsString())
+                                             0, it->getDeclName())
               .limitReached())
         break;
     }

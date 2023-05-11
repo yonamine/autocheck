@@ -160,10 +160,10 @@ void test14() {
 // autosar-note@67 1 {{initialize the variable 'i' to silence this warning}}
 // autosar-note@68 1 {{initialize the variable 'j' to silence this warning}}
 // autosar-warning@9 1 {{The typedef specifier shall not be used}}
-// autosar-warning@9 1 {{There should be no unused type declarations}}
+// autosar-warning@9 1 {{Unused typedef 'ptr'}}
 // autosar-warning@10 1 {{The typedef specifier shall not be used}}
-// autosar-warning@10 1 {{There should be no unused type declarations}}
-// autosar-warning@10 1 {{There should be no unused type declarations}}
+// autosar-warning@10 1 {{Unused typedef 'pointer'}}
+// autosar-warning@10 1 {{Unused typedef 'value'}}
 // autosar-warning@12 1 {{Unused function 'test1'}}
 // autosar-warning@13 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
 // autosar-warning@14 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}

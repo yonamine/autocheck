@@ -227,7 +227,7 @@ DIAG(nonBracedInit, "non-braced-init-used",
      "variable initialization",
      "A8-5-2")
 DIAG(unusedTypedef, "unused-typedef",
-     "There should be no unused type declarations", "A0-1-6")
+     "Unused %select{typedef|type alias}0 %1", "A0-1-6")
 DIAG(cvQualifiersPlacedLeft, "cv-qualifiers-placed-left",
      "CV-qualifiers shall be placed on the right hand side of the type that is "
      "a typedef or a using name",

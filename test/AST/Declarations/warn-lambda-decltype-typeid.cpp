@@ -49,7 +49,7 @@ void CreateLambdaVectorNonCompliant() {
 
   using lambda_t = decltype(add2); // expected-warning {{A lambda shall not be an operand to decltype or typeid}}
   using lambda_t1 = decltype(x);   // Compliant
-  using lmbdaTmp = Tmp<int, decltype(add2)>; // expected-warning {{A lambda shall not be an operand to decltype or typeid}}
+  using lambdaTmp = Tmp<int, decltype(add2)>; // expected-warning {{A lambda shall not be an operand to decltype or typeid}}
 }
 
 int x;
@@ -100,9 +100,9 @@ void Declaration() {
 // autosar-warning@60 1 {{Unused function 'Foo'}}
 // autosar-warning@61 1 {{Unused function 'Foo'}}
 // autosar-warning@69 1 {{Unused function 'Declaration'}}
-// autosar-warning@50 1 {{There should be no unused type declarations}}
-// autosar-warning@52 1 {{There should be no unused type declarations}}
-// autosar-warning@51 1 {{There should be no unused type declarations}}
+// autosar-warning@50 1 {{Unused type alias 'lambda_t'}}
+// autosar-warning@51 1 {{Unused type alias 'lambda_t1'}}
+// autosar-warning@52 1 {{Unused type alias 'lambdaTmp'}}
 // autosar-warning@18 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
 // autosar-warning@19 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
 // autosar-warning@23 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}

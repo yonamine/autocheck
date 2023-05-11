@@ -183,8 +183,8 @@ int main() {
 // autosar-warning@15 1 {{Unused private method 'b2'}}
 // autosar-warning@17 1 {{Unused private method 'b4'}}
 // autosar-warning@18 1 {{Unused private method 'b5'}}
-// autosar-warning@117 1 {{There should be no unused type declarations}}
-// autosar-warning@137 1 {{There should be no unused type declarations}}
+// autosar-warning@117 1 {{Unused typedef 'i1'}}
+// autosar-warning@137 1 {{Unused typedef 'test13'}}
 // autosar-warning@78 1 {{Unused private method 'f3'}}
 // autosar-warning@79 1 {{Unused private method 'f5'}}
 // autosar-warning@83 1 {{Unused private method 'f9'}}
