@@ -12,7 +12,6 @@
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
 
 #include "AutocheckContext.h"
-#include "Diagnostics/AutocheckDiagnostic.h"
 #include "clang/AST/Type.h"
 #include "clang/Basic/DiagnosticLex.h"
 #include "clang/Basic/DiagnosticParse.h"
@@ -39,12 +38,6 @@ void AutocheckDiagnosticConsumer::EndSourceFile() {
   NumWarnings = Client->getNumWarnings();
 }
 
-void AutocheckDiagnosticConsumer::EmitDiag(AutocheckWarnings Warning,
-                                           const clang::SourceLocation &Loc) {
-  Diags.Clear();
-  AutocheckDiagnostic::reportWarning(Diags, Loc, Warning);
-}
-
 void AutocheckDiagnosticConsumer::HandleDiagnostic(
     clang::DiagnosticsEngine::Level DiagLevel, const clang::Diagnostic &Info) {
   // Convert built-in warnings to autocheck warnings.
@@ -54,7 +47,6 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
     return;
   case clang::diag::trigraph_ignored:
   case clang::diag::trigraph_converted:
-    Diags.Clear();
     EmitDiag(AutocheckWarnings::trigraphsUsed, Info.getLocation());
     return;
   case clang::diag::warn_nested_block_comment:
@@ -73,10 +65,8 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
     // Emit only one of unusedFunctionOrMethod or unusedFunction.
     if (AutocheckContext::Get().isEnabled(
             AutocheckWarnings::unusedFunctionOrMethod)) {
-      Diags.Clear();
-      AutocheckDiagnostic::reportWarning(
-          Diags, Info.getLocation(), AutocheckWarnings::unusedFunctionOrMethod,
-          0, Name);
+      EmitDiag(AutocheckWarnings::unusedFunctionOrMethod, Info.getLocation(), 0,
+               Name);
     } else {
       EmitDiag(AutocheckWarnings::unusedFunction, Info.getLocation());
     }
@@ -94,10 +84,8 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
     // Emit only one of unusedFunctionOrMethod or unusedFunction.
     if (AutocheckContext::Get().isEnabled(
             AutocheckWarnings::unusedFunctionOrMethod)) {
-      Diags.Clear();
-      AutocheckDiagnostic::reportWarning(
-          Diags, Info.getLocation(), AutocheckWarnings::unusedFunctionOrMethod,
-          0, Name);
+      EmitDiag(AutocheckWarnings::unusedFunctionOrMethod, Info.getLocation(), 0,
+               Name);
     } else {
       EmitDiag(AutocheckWarnings::unusedFunction, Info.getLocation());
     }
@@ -126,10 +114,8 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
 
     EmitDiag(AutocheckWarnings::castRemovesQual, Info.getLocation());
 
-    Diags.Clear();
-    AutocheckDiagnostic::reportWarning(Diags, Info.getLocation(),
-                                       AutocheckWarnings::noteCastRemovesQual,
-                                       0, FromType, ToType, Qualifiers);
+    EmitDiag(AutocheckWarnings::noteCastRemovesQual, Info.getLocation(), 0,
+             FromType, ToType, Qualifiers);
 
     return;
   }
@@ -141,10 +127,8 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
     clang::QualType ToType =
         clang::QualType::getFromOpaquePtr((void *)Info.getRawArg(1));
 
-    Diags.Clear();
-    AutocheckDiagnostic::reportWarning(Diags, Info.getLocation(),
-                                       AutocheckWarnings::noteCastRemovesQual,
-                                       1, E.get()->getType(), ToType);
+    EmitDiag(AutocheckWarnings::noteCastRemovesQual, Info.getLocation(), 1,
+             E.get()->getType(), ToType);
 
     return;
   }
@@ -153,9 +137,7 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
     clang::DeclarationName Name =
         clang::DeclarationName::getFromOpaqueInteger(Info.getRawArg(0));
 
-    Diags.Clear();
-    AutocheckDiagnostic::reportWarning(
-        Diags, Info.getLocation(), AutocheckWarnings::unusedParameter, Name);
+    EmitDiag(AutocheckWarnings::unusedParameter, Info.getLocation(), Name);
 
     return;
   }
@@ -230,20 +212,14 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
 
     EmitDiag(AutocheckWarnings::arrayBounds, Info.getLocation());
 
-    Diags.Clear();
-    AutocheckDiagnostic::reportWarning(Diags, Info.getLocation(),
-                                       AutocheckWarnings::reemitNote,
-                                       Message.data());
+    EmitDiag(AutocheckWarnings::reemitNote, Info.getLocation(), Message.data());
 
     return;
   }
   case clang::diag::note_array_declared_here: {
     llvm::SmallVector<char> Message;
     Info.FormatDiagnostic(Message);
-    Diags.Clear();
-    AutocheckDiagnostic::reportWarning(Diags, Info.getLocation(),
-                                       AutocheckWarnings::reemitNote,
-                                       Message.data());
+    EmitDiag(AutocheckWarnings::reemitNote, Info.getLocation(), Message.data());
     return;
   }
   case clang::diag::warn_noreturn_function_has_return_expr:
@@ -277,9 +253,7 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
     clang::NamedDecl *Name =
         reinterpret_cast<clang::NamedDecl *>(Info.getRawArg(0));
 
-    Diags.Clear();
-    AutocheckDiagnostic::reportWarning(Diags, Info.getLocation(),
-                                       AutocheckWarnings::unusedVariable, Name);
+    EmitDiag(AutocheckWarnings::unusedVariable, Info.getLocation(), Name);
 
     return;
   }
