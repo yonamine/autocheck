@@ -120,12 +120,14 @@ private:
 /// equality operators == and ! =, and the unary & operator.
 class InvalidCharExpressionVisitor : public ConversionsVisitorInterface {
   clang::DiagnosticsEngine &DE;
+  clang::ASTContext &AC;
   llvm::SmallSet<clang::UnaryOperator::Opcode, 1> AllowedUnaryOps;
   llvm::SmallSet<clang::BinaryOperator::Opcode, 3> AllowedBinaryOps;
   llvm::SmallSet<clang::BinaryOperator::Opcode, 4> ExceptionOps;
 
 public:
-  explicit InvalidCharExpressionVisitor(clang::DiagnosticsEngine &DE);
+  explicit InvalidCharExpressionVisitor(clang::DiagnosticsEngine &DE,
+                                        clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
