@@ -17,6 +17,7 @@
 //             character values.
 // - [M5-0-12] Signed char and unsigned char type shall only be used for the
 //             storage and use of numeric values.
+// - [A5-1-7]  A lambda shall not be an operand to decltype or typeid.
 // - [A18-1-1] C-style arrays shall not be used.
 // - [A18-1-2] The std::vector<bool> specialization shall not be used.
 // - [A18-1-3] The std::auto_ptr type shall not be used.
@@ -48,6 +49,7 @@ public:
   virtual bool VisitTypeLoc(const clang::TypeLoc &TL);
   virtual bool VisitVarDecl(const clang::VarDecl *VD);
   virtual bool VisitCXXNewExpr(const clang::CXXNewExpr *NE);
+  virtual bool VisitCXXTypeidExpr(const clang::CXXTypeidExpr *CTE);
 };
 
 /// [M5-0-11] The plain char type shall only be used for the storage and use of
@@ -176,6 +178,25 @@ public:
   bool VisitTypeLoc(const clang::TypeLoc &TL) override;
 };
 
+/// [A5-1-7] A lambda shall not be an operand to decltype or typeid.
+class DecltypeTypeidVisitor : public TypesVisitorInterface {
+  clang::DiagnosticsEngine &DE;
+  clang::ASTContext &AC;
+
+public:
+  explicit DecltypeTypeidVisitor(clang::DiagnosticsEngine &DE,
+                                 clang::ASTContext &AC);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitTypeLoc(const clang::TypeLoc &TL) override;
+  bool VisitCXXTypeidExpr(const clang::CXXTypeidExpr *CTE) override;
+
+private:
+  bool IsLambda(const clang::VarDecl *VD) const;
+  const clang::DeclRefExpr *GetDRE(const clang::Expr *E) const;
+  const clang::VarDecl *GetVarDecl(const clang::DeclRefExpr *DRE) const;
+};
+
 /// Main visitor for type related checks. Makes an instance of every class that
 /// implement a TypesVisitorInterface if appropriate flag is found. Runs all
 /// Type Visitors with one AST traversal.
@@ -198,6 +219,7 @@ public:
   bool VisitTypeLoc(const clang::TypeLoc &TL);
   bool VisitVarDecl(const clang::VarDecl *VD);
   bool VisitCXXNewExpr(const clang::CXXNewExpr *NE);
+  bool VisitCXXTypeidExpr(const clang::CXXTypeidExpr *CTE);
 };
 
 } // namespace autocheck

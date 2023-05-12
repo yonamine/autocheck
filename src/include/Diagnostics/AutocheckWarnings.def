@@ -288,7 +288,7 @@ NOTE(noteMismatchedNewDelete,
 DIAG(cStyleStringUsed, "c-style-string-used",
      "C-style strings shall not be used", "A17-0-4")
 DIAG(lambdaDecltypeTypeid, "lambda-decltype-typeid",
-     "A lambda shall not be an operand to decltype or typeid", "A5-7-1")
+     "A lambda shall not be an operand to decltype or typeid", "A5-1-7")
 DIAG(implicitlyCapturedVar, "implicitly-captured-var",
      "Variables shall not be implicitly captured in a lambda expression",
      "A5-1-2")

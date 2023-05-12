@@ -20,7 +20,6 @@
 //             in a block that minimizes its visibility.
 // - [A5-0-3]  The declaration of objects shall contain no more than two levels
 //             of pointer indirection.
-// - [A5-7-1]  A lambda shall not be an operand to decltype or typeid.
 // - [A7-1-1]  Constexpr or const specifiers shall be used for immutable data
 //             declaration.
 // - [A7-1-3]  CV-qualifiers shall be placed on the right hand side of the type
@@ -118,7 +117,6 @@ public:
   virtual bool VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE);
   virtual bool VisitCXXThrowExpr(const clang::CXXThrowExpr *CTE);
   virtual bool VisitCXXDeleteExpr(const clang::CXXDeleteExpr *CDE);
-  virtual bool VisitTypeAliasDecl(const clang::TypeAliasDecl *TAD);
   virtual bool VisitTypedefDecl(const clang::TypedefDecl *TD);
   virtual bool VisitFriendDecl(const clang::FriendDecl *TD);
   virtual bool VisitEnumDecl(const clang::EnumDecl *ED);
@@ -595,26 +593,6 @@ private:
   bool isCharPtrOrArray(const clang::QualType &T) const;
 };
 
-/// [A5-1-7] A lambda shall not be an operandto decltype or typeid.
-class DecltypeTypeidVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
-  clang::ASTContext &AC;
-
-public:
-  explicit DecltypeTypeidVisitor(clang::DiagnosticsEngine &DE,
-                                 clang::ASTContext &AC);
-  static bool isFlagPresent(const AutocheckContext &Context);
-
-  bool VisitTypeAliasDecl(const clang::TypeAliasDecl *TAD) override;
-  bool VisitVarDecl(const clang::VarDecl *VD) override;
-
-private:
-  bool CheckType(const clang::QualType &QT) const;
-  bool IsLambda(const clang::VarDecl *VD) const;
-  const clang::DeclRefExpr *GetDRE(const clang::Expr *E) const;
-  const clang::VarDecl *GetVarD(const clang::DeclRefExpr *DRE) const;
-};
-
 /// [A3-1-4] When an array with external linkage is declared, its size shall be
 /// stated explicitly.
 class ExternArrayImplicitSizeVisitor : public DeclarationsVisitorInterface {
@@ -800,7 +778,6 @@ public:
   bool VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE);
   bool VisitCXXThrowExpr(const clang::CXXThrowExpr *CTE);
   bool VisitCXXDeleteExpr(const clang::CXXDeleteExpr *CDE);
-  bool VisitTypeAliasDecl(const clang::TypeAliasDecl *TAD);
   bool VisitTypedefDecl(const clang::TypedefDecl *TD);
   bool VisitFriendDecl(const clang::FriendDecl *FD);
   bool VisitEnumDecl(const clang::EnumDecl *ED);

@@ -71,7 +71,7 @@
 | M5-3-3 | The unary & operator shall not be overloaded. | unary-amp-op-overloaded |
 | M5-3-4 | Evaluation of the operand to the sizeof operator shall not contain side effects. | sizeof-side-effect |
 | A5-6-1 | The right hand operand of the integer division or remainder operators shall not be equal to zero. | div-by-zero |
-| A5-7-1 | A lambda shall not be an operand to decltype or typeid. | lambda-decltype-typeid |
+| A5-1-7 | A lambda shall not be an operand to decltype or typeid. | lambda-decltype-typeid |
 | M5-14-1 | The right hand operand of a logical &&, \|\| operators shall not contain side effects. | rhs-operand-and-or-side-effect |
 | A5-16-1 | The ternary conditional operator shall not be used as a sub-expression. | ternary-op-sub-expr |
 | M5-18-1 | The comma operator shall not be used. | comma-operator-used |

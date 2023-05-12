@@ -47,7 +47,6 @@ bool DVI::VisitCXXConstructExpr(const clang::CXXConstructExpr *) {
 }
 bool DVI::VisitCXXThrowExpr(const clang::CXXThrowExpr *) { return true; }
 bool DVI::VisitCXXDeleteExpr(const clang::CXXDeleteExpr *) { return true; }
-bool DVI::VisitTypeAliasDecl(const clang::TypeAliasDecl *) { return true; }
 bool DVI::VisitTypedefDecl(const clang::TypedefDecl *) { return true; }
 bool DVI::VisitFriendDecl(const clang::FriendDecl *) { return true; }
 bool DVI::VisitEnumDecl(const clang::EnumDecl *) { return true; }
@@ -2028,104 +2027,6 @@ bool CStyleStringUsed::VisitCallExpr(const clang::CallExpr *CE) {
   return true;
 }
 
-/* Implementation of DecltypeTypeidVisitor */
-
-DecltypeTypeidVisitor::DecltypeTypeidVisitor(clang::DiagnosticsEngine &DE,
-                                             clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
-
-bool DecltypeTypeidVisitor::IsLambda(const clang::VarDecl *VD) const {
-  if (VD == nullptr)
-    return false;
-
-  if (VD->hasInit())
-    if (llvm::dyn_cast_if_present<clang::LambdaExpr>(VD->getInit()))
-      return true;
-
-  return false;
-}
-
-const clang::DeclRefExpr *
-DecltypeTypeidVisitor::GetDRE(const clang::Expr *E) const {
-  if (const clang::DeclRefExpr *DRE =
-          llvm::dyn_cast_if_present<clang::DeclRefExpr>(E))
-    return DRE;
-
-  if (const clang::ImplicitCastExpr *ICE =
-          llvm::dyn_cast_if_present<clang::ImplicitCastExpr>(E))
-    if (const clang::DeclRefExpr *DRE =
-            llvm::dyn_cast_if_present<clang::DeclRefExpr>(ICE->getSubExpr()))
-      return DRE;
-
-  if (const clang::CXXConstructExpr *CCE =
-          llvm::dyn_cast_if_present<clang::CXXConstructExpr>(E))
-    if (CCE->getNumArgs() == 1)
-      if (const clang::ImplicitCastExpr *ICE =
-              llvm::dyn_cast_if_present<clang::ImplicitCastExpr>(
-                  CCE->getArg(0)))
-        if (const clang::DeclRefExpr *DRE =
-                llvm::dyn_cast_if_present<clang::DeclRefExpr>(
-                    ICE->getSubExpr()))
-          return DRE;
-
-  return nullptr;
-}
-
-const clang::VarDecl *
-DecltypeTypeidVisitor::GetVarD(const clang::DeclRefExpr *DRE) const {
-  if (DRE == nullptr)
-    return nullptr;
-
-  if (const clang::VarDecl *VarD =
-          llvm::dyn_cast_if_present<clang::VarDecl>(DRE->getDecl()))
-    return VarD;
-
-  return nullptr;
-}
-
-bool DecltypeTypeidVisitor::CheckType(const clang::QualType &QT) const {
-  if (const clang::TemplateSpecializationType *TST =
-          QT->getAs<clang::TemplateSpecializationType>())
-    for (const clang::TemplateArgument &TA : TST->template_arguments()) {
-      if (TA.getKind() != clang::TemplateArgument::ArgKind::Type)
-        continue;
-      if (const clang::DecltypeType *DTT =
-              llvm::dyn_cast_if_present<clang::DecltypeType>(
-                  TA.getAsType().getTypePtr()))
-        if (IsLambda(GetVarD(GetDRE(DTT->getUnderlyingExpr())))) {
-          if (AutocheckDiagnostic::reportWarning(
-                  DE, DTT->getUnderlyingExpr()->getBeginLoc(),
-                  AutocheckWarnings::lambdaDecltypeTypeid)
-                  .limitReached())
-            return false;
-          return true; // Do not report more than one warning
-        }
-    }
-
-  if (const clang::DecltypeType *DTT =
-          llvm::dyn_cast_if_present<clang::DecltypeType>(QT.getTypePtr()))
-    if (IsLambda(GetVarD(GetDRE(DTT->getUnderlyingExpr()))))
-      if (AutocheckDiagnostic::reportWarning(
-              DE, DTT->getUnderlyingExpr()->getBeginLoc(),
-              AutocheckWarnings::lambdaDecltypeTypeid)
-              .limitReached())
-        return false;
-  return true;
-}
-
-bool DecltypeTypeidVisitor::VisitTypeAliasDecl(
-    const clang::TypeAliasDecl *TAD) {
-  return CheckType(TAD->getTypeSourceInfo()->getType());
-}
-
-bool DecltypeTypeidVisitor::VisitVarDecl(const clang::VarDecl *VD) {
-  return CheckType(VD->getTypeSourceInfo()->getType());
-}
-
-bool DecltypeTypeidVisitor::isFlagPresent(const AutocheckContext &Context) {
-  return Context.isEnabled(AutocheckWarnings::lambdaDecltypeTypeid);
-}
-
 /* Implementation of ExternArrayImplicitSizeVisitor */
 
 ExternArrayImplicitSizeVisitor::ExternArrayImplicitSizeVisitor(
@@ -2574,8 +2475,6 @@ DeclarationsVisitor::DeclarationsVisitor(clang::DiagnosticsEngine &DE,
     AllVisitors.push_front(std::make_unique<MismatchedNewDeleteVisitor>(DE));
   if (CStyleStringUsed::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<CStyleStringUsed>(DE, AC));
-  if (DecltypeTypeidVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<DecltypeTypeidVisitor>(DE, AC));
   if (ExternArrayImplicitSizeVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
         std::make_unique<ExternArrayImplicitSizeVisitor>(DE, AC));
@@ -2755,14 +2654,6 @@ bool DeclarationsVisitor::VisitCXXDeleteExpr(const clang::CXXDeleteExpr *CDE) {
   AllVisitors.remove_if(
       [CDE](std::unique_ptr<DeclarationsVisitorInterface> &V) {
         return !V->VisitCXXDeleteExpr(CDE);
-      });
-  return true;
-}
-
-bool DeclarationsVisitor::VisitTypeAliasDecl(const clang::TypeAliasDecl *TAD) {
-  AllVisitors.remove_if(
-      [TAD](std::unique_ptr<DeclarationsVisitorInterface> &V) {
-        return !V->VisitTypeAliasDecl(TAD);
       });
   return true;
 }

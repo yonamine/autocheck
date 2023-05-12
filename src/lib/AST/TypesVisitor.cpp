@@ -31,6 +31,7 @@ bool TVI::VisitDoStmt(clang::DoStmt *) { return true; }
 bool TVI::VisitTypeLoc(const clang::TypeLoc &) { return true; }
 bool TVI::VisitVarDecl(const clang::VarDecl *) { return true; }
 bool TVI::VisitCXXNewExpr(const clang::CXXNewExpr *) { return true; }
+bool TVI::VisitCXXTypeidExpr(const clang::CXXTypeidExpr *) { return true; }
 
 /* Implementation of CharStorageVisitor */
 
@@ -339,6 +340,78 @@ bool AutoPtrVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
   return true;
 }
 
+/* Implementation of DecltypeTypeidVisitor */
+
+DecltypeTypeidVisitor::DecltypeTypeidVisitor(clang::DiagnosticsEngine &DE,
+                                             clang::ASTContext &AC)
+    : DE(DE), AC(AC) {}
+
+bool DecltypeTypeidVisitor::isFlagPresent(const AutocheckContext &Context) {
+  return Context.isEnabled(AutocheckWarnings::lambdaDecltypeTypeid);
+}
+
+bool DecltypeTypeidVisitor::IsLambda(const clang::VarDecl *VD) const {
+  if (VD == nullptr)
+    return false;
+
+  if (VD->hasInit())
+    if (llvm::dyn_cast_if_present<clang::LambdaExpr>(VD->getInit()))
+      return true;
+
+  return false;
+}
+
+const clang::DeclRefExpr *
+DecltypeTypeidVisitor::GetDRE(const clang::Expr *E) const {
+  if (const clang::DeclRefExpr *DRE =
+          llvm::dyn_cast_if_present<clang::DeclRefExpr>(E))
+    return DRE;
+
+  if (const clang::ImplicitCastExpr *ICE =
+          llvm::dyn_cast_if_present<clang::ImplicitCastExpr>(E))
+    if (const clang::DeclRefExpr *DRE =
+            llvm::dyn_cast_if_present<clang::DeclRefExpr>(ICE->getSubExpr()))
+      return DRE;
+
+  return nullptr;
+}
+
+const clang::VarDecl *
+DecltypeTypeidVisitor::GetVarDecl(const clang::DeclRefExpr *DRE) const {
+  if (DRE == nullptr)
+    return nullptr;
+
+  if (const clang::VarDecl *VarD =
+          llvm::dyn_cast_if_present<clang::VarDecl>(DRE->getDecl()))
+    return VarD;
+
+  return nullptr;
+}
+
+bool DecltypeTypeidVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
+  if (const clang::DecltypeType *DTT =
+          llvm::dyn_cast_if_present<clang::DecltypeType>(TL.getTypePtr()))
+    if (IsLambda(GetVarDecl(GetDRE(DTT->getUnderlyingExpr()))))
+      if (AutocheckDiagnostic::reportWarning(
+              DE, DTT->getUnderlyingExpr()->getBeginLoc(),
+              AutocheckWarnings::lambdaDecltypeTypeid)
+              .limitReached())
+        return false;
+  return true;
+}
+
+bool DecltypeTypeidVisitor::VisitCXXTypeidExpr(
+    const clang::CXXTypeidExpr *CTE) {
+  if (IsLambda(GetVarDecl(GetDRE(CTE->getExprOperand())))) {
+    if (AutocheckDiagnostic::reportWarning(
+            DE, CTE->getExprOperand()->getBeginLoc(),
+            AutocheckWarnings::lambdaDecltypeTypeid)
+            .limitReached())
+      return false;
+  }
+  return true;
+}
+
 /* Implementation of TypesVisitor */
 
 TypesVisitor::TypesVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
@@ -360,6 +433,8 @@ TypesVisitor::TypesVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
     AllVisitors.push_front(std::make_unique<TypeLongDoubleVisitor>(DE, AC));
   if (AutoPtrVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<AutoPtrVisitor>(DE, AC));
+  if (DecltypeTypeidVisitor::isFlagPresent(Context))
+    AllVisitors.push_front(std::make_unique<DecltypeTypeidVisitor>(DE, AC));
 }
 
 void TypesVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -431,6 +506,13 @@ bool TypesVisitor::VisitVarDecl(const clang::VarDecl *VD) {
 bool TypesVisitor::VisitCXXNewExpr(const clang::CXXNewExpr *NE) {
   AllVisitors.remove_if([NE](std::unique_ptr<TypesVisitorInterface> &V) {
     return !V->VisitCXXNewExpr(NE);
+  });
+  return true;
+}
+
+bool TypesVisitor::VisitCXXTypeidExpr(const clang::CXXTypeidExpr *CTE) {
+  AllVisitors.remove_if([CTE](std::unique_ptr<TypesVisitorInterface> &V) {
+    return !V->VisitCXXTypeidExpr(CTE);
   });
   return true;
 }
