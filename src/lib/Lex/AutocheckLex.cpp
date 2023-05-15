@@ -174,7 +174,7 @@ static void HandleToken(const AutocheckContext &Context,
     }
   }
 
-  // [A13-6-1] Digit sequences separators ’ shall only be used as follows: (1)
+  // [A13-6-1] Digit sequences separators ' shall only be used as follows: (1)
   // for decimal, every 3 digits, (2) for hexadecimal, every 2 digits, (3) for
   // binary, every 4 digits.
   if (Context.isEnabled(AutocheckWarnings::digitSequenceSeparator) &&
