@@ -943,7 +943,6 @@ void ForLoopVisitor::checkIsCounterIllModified(clang::ForStmt *FS) {
 // the loop-counter shall only be used as an operand to <=, <, > or >=.
 void ForLoopVisitor::checkIsCounterIncorrectlyUsed(clang::ForStmt *FS) {
   VarDeclPtrMap IncDecModifiedVariables;
-  VarDeclPtrMap IncDecModifiedCounters;
   VarDeclPtrMap NonIncDecModifiedCounters;
 
   IncDecModifiedVars(IncDecModifiedVariables).TraverseStmt(FS->getInit());
@@ -961,21 +960,16 @@ void ForLoopVisitor::checkIsCounterIncorrectlyUsed(clang::ForStmt *FS) {
       IncDecModifiedVariables[VD] = ModVars[VD];
   }
 
-  findVarDeclSetIntersection(CounterVariables, IncDecModifiedVariables,
-                             IncDecModifiedCounters);
-  findVarDeclSetDifference(CounterVariables, IncDecModifiedCounters,
+  findVarDeclSetDifference(CounterVariables, IncDecModifiedVariables,
                            NonIncDecModifiedCounters);
 
   if (NonIncDecModifiedCounters.size()) {
     VarDeclPtrMap RelOpComparedVariables;
-    VarDeclPtrMap RelOpComparedCounters;
     VarDeclPtrMap NonRelOpComparedCounters;
 
     RelOpVarExtractor(RelOpComparedVariables).TraverseStmt(FS->getCond());
 
-    findVarDeclSetIntersection(CounterVariables, RelOpComparedVariables,
-                               RelOpComparedCounters);
-    findVarDeclSetDifference(CounterVariables, RelOpComparedCounters,
+    findVarDeclSetDifference(CounterVariables, RelOpComparedVariables,
                              NonRelOpComparedCounters);
 
     for (VarDeclPtrUsage NonIncDecModifiedCounter : NonIncDecModifiedCounters) {
