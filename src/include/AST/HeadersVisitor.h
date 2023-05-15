@@ -91,11 +91,11 @@ public:
 
   /// Finds used variables in main file of compilation unit and removes
   /// associated include file from the set of includes.
-  bool VisitDeclRefExpr(const clang::DeclRefExpr *Expr) override;
+  bool VisitDeclRefExpr(const clang::DeclRefExpr *DRE) override;
 
   /// Finds used classes, structs and unions in main file of compilation unit
   /// and removes associated include file from the set of includes.
-  bool VisitCXXConstructExpr(const clang::CXXConstructExpr *Exp) override;
+  bool VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE) override;
 
   /// Finds used functions in main file of compilation unit and removes
   /// associated include file from the set of includes.
@@ -105,11 +105,11 @@ public:
   /// are not in main file of compilation unit. Also checks if there is a
   /// definition of a forward declaration form a header file and removes
   /// associated include file from the set of includes.
-  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *D) override;
+  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
 
   /// Keeps track of all defined typedefs that are not in main file of
   /// compilation unit.
-  bool VisitTypedefDecl(const clang::TypedefDecl *D) override;
+  bool VisitTypedefDecl(const clang::TypedefDecl *TD) override;
 
   /// Finds used typedefs or CXXRecordDecls (classes, structs, unions) and
   /// remove associated includes from the set of includes.
@@ -117,12 +117,12 @@ public:
 
   /// Finds used using directives that refer to namespace and removes associated
   /// include file from the set of includes.
-  bool VisitUsingDirectiveDecl(const clang::UsingDirectiveDecl *UD) override;
+  bool VisitUsingDirectiveDecl(const clang::UsingDirectiveDecl *UDD) override;
 
   /// NULL is treated as a special node not a macro by AST so it will not be
   /// caught with other macros in AutosarPPCallback. When such a node is found
   /// remove associated include file (<cstddef>) from the set of includes.
-  bool VisitGNUNullExpr(const clang::GNUNullExpr *GN) override;
+  bool VisitGNUNullExpr(const clang::GNUNullExpr *GNE) override;
 
   /// Checks type of enum decl if it is a typedef declared in a header and
   /// removes associated includes from the set of includes.
@@ -146,7 +146,7 @@ private:
   void removeKeywords(std::string &TypeName);
 
   /// Checks if string Str starts with string Start.
-  inline bool startsWith(const std::string &Str, const std::string &Start);
+  inline bool startsWith(const std::string &Str, const std::string &Start) const;
 };
 
 /// Main visitor for header related checks. Makes an instance of every class
@@ -164,12 +164,12 @@ public:
 
   bool VisitCallExpr(const clang::CallExpr *CE);
   bool VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE);
-  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *D);
+  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD);
   bool VisitDeclRefExpr(const clang::DeclRefExpr *DRE);
   bool VisitEnumDecl(const clang::EnumDecl *ED);
-  bool VisitGNUNullExpr(const clang::GNUNullExpr *GN);
+  bool VisitGNUNullExpr(const clang::GNUNullExpr *GNE);
   bool VisitTranslationUnitDecl(const clang::TranslationUnitDecl *TUD);
-  bool VisitTypedefDecl(const clang::TypedefDecl *D);
+  bool VisitTypedefDecl(const clang::TypedefDecl *TD);
   bool VisitTypeLoc(const clang::TypeLoc &TL);
   bool VisitUsingDirectiveDecl(const clang::UsingDirectiveDecl *UDD);
   bool VisitVarDecl(const clang::VarDecl *VD);

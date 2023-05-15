@@ -9,12 +9,12 @@ SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_DEBIAN_PACKAGE_RELEASE 1)
 set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>=2.34), libstdc++-11-dev (>=11)")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>=2.31), libstdc++-12-dev | libstdc++-11-dev | libstdc++-10-dev")
 
 # RPM package specific options.
 set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
 set(CPACK_RPM_PACKAGE_RELEASE 1)
 set(CPACK_RPM_PACKAGE_ARCHITECTURE "amd64")
-set(CPACK_RPM_PACKAGE_DEPENDS "glibc (>=2.34), libstdc++-devel (>=11)")
+set(CPACK_RPM_PACKAGE_DEPENDS "glibc (>=2.31), libstdc++-devel (>=10)")
 
 include(CPack)

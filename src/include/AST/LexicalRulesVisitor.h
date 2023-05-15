@@ -57,21 +57,21 @@ public:
   virtual bool PostTraverseDecl(clang::Decl *D);
 
   virtual bool VisitIntegerLiteral(const clang::IntegerLiteral *IL);
-  virtual bool VisitCXXRecordDecl(const clang::CXXRecordDecl *D);
-  virtual bool VisitTypedefDecl(const clang::TypedefDecl *D);
-  virtual bool VisitNamespaceDecl(const clang::NamespaceDecl *D);
+  virtual bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD);
+  virtual bool VisitTypedefDecl(const clang::TypedefDecl *TD);
+  virtual bool VisitNamespaceDecl(const clang::NamespaceDecl *ND);
   virtual bool VisitVarDecl(const clang::VarDecl *VD);
   virtual bool VisitFunctionDecl(const clang::FunctionDecl *FD);
-  virtual bool VisitFieldDecl(const clang::FieldDecl *D);
-  virtual bool VisitCXXMethodDecl(const clang::CXXMethodDecl *D);
-  virtual bool VisitEnumDecl(const clang::EnumDecl *D);
-  virtual bool VisitEnumConstantDecl(const clang::EnumConstantDecl *D);
-  virtual bool VisitCompoundStmt(const clang::CompoundStmt *S);
-  virtual bool VisitForStmt(const clang::ForStmt *S);
-  virtual bool VisitWhileStmt(const clang::WhileStmt *S);
-  virtual bool VisitDoStmt(const clang::DoStmt *S);
-  virtual bool VisitIfStmt(const clang::IfStmt *S);
-  virtual bool VisitLambdaExpr(const clang::LambdaExpr *S);
+  virtual bool VisitFieldDecl(const clang::FieldDecl *FD);
+  virtual bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD);
+  virtual bool VisitEnumDecl(const clang::EnumDecl *ED);
+  virtual bool VisitEnumConstantDecl(const clang::EnumConstantDecl *ECD);
+  virtual bool VisitCompoundStmt(const clang::CompoundStmt *CS);
+  virtual bool VisitForStmt(const clang::ForStmt *FS);
+  virtual bool VisitWhileStmt(const clang::WhileStmt *WS);
+  virtual bool VisitDoStmt(const clang::DoStmt *DS);
+  virtual bool VisitIfStmt(const clang::IfStmt *IS);
+  virtual bool VisitLambdaExpr(const clang::LambdaExpr *LE);
   virtual bool VisitNullStmt(const clang::NullStmt *NS);
   virtual bool VisitTypeLoc(const clang::TypeLoc &TL);
   virtual bool VisitTranslationUnitDecl(const clang::TranslationUnitDecl *TUD);
@@ -88,13 +88,12 @@ public:
 class UnsignedLiterals : public LexicalRulesVisitorInterface {
   clang::DiagnosticsEngine &DE;
   const AutocheckContext &Context;
-  clang::ASTContext &ASTCtx;
+  clang::ASTContext &AC;
 
 public:
   explicit UnsignedLiterals(clang::DiagnosticsEngine &DE,
                             const AutocheckContext &Context,
-                            clang::ASTContext &ASTCtx);
-
+                            clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitIntegerLiteral(const clang::IntegerLiteral *IL) override;
@@ -196,14 +195,14 @@ public:
   /// Because of possibility of nested CXXRecords we need to handle their
   /// scopes properly. Scope changes are handled upon entering new record by
   /// checking current SourceLocation against previous CXXRecord's SourceRange.
-  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *D) override;
+  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
 
   /// Upon finding new FieldDecl we first need to update IdScopes stack
   /// in case we exited a nested CXXRecord. Afterward we check FieldDecl's
   /// name against list of current and above scopes before adding that name
   /// to identifiers defined in current scope. Also we need to check if any
   /// subclass has similar filed or method.
-  bool VisitFieldDecl(const clang::FieldDecl *D) override;
+  bool VisitFieldDecl(const clang::FieldDecl *FD) override;
 
   /// Upon finding new MethodDecl we first need to update IdScopes stack
   /// in case we exited a nested CXXRecord. We need to check if this method
@@ -212,54 +211,54 @@ public:
   /// against list of current and above scopes before adding that name to
   /// identifiers defined in current scope. Finaly we check if similar name was
   /// used in any subclasses if they exist unless it is an overriding method.
-  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *D) override;
+  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
 
   /// Upon finding new MethodDecl or FieldDecl we first need to update
   /// IdScopes stack in case we exited a nested CXXRecord. Afterward we
   /// check Decl's name against list of current and above scopes before adding
   /// that name to identifiers defined in current scope.
-  bool VisitCXXMethodOrFieldDecl(const clang::DeclaratorDecl *D);
+  bool VisitCXXMethodOrFieldDecl(const clang::DeclaratorDecl *DD);
 
   /// Found new EnumDecl, check all scopes if it contains similar identifier.
   /// If this is scoped enum then we make a new scope.
-  bool VisitEnumDecl(const clang::EnumDecl *D) override;
+  bool VisitEnumDecl(const clang::EnumDecl *ED) override;
 
   /// Checks new EnumConstantDecl against previously declared identifiers.
-  bool VisitEnumConstantDecl(const clang::EnumConstantDecl *D) override;
+  bool VisitEnumConstantDecl(const clang::EnumConstantDecl *ECD) override;
 
   /// Variables declared inside typedef are not visible to outside scopes.
-  bool VisitTypedefDecl(const clang::TypedefDecl *D) override;
+  bool VisitTypedefDecl(const clang::TypedefDecl *TD) override;
 
   /// Each namespace definition is a seperate scope for itself. Checks the name
   /// of the namespace against previously declared namespace identifiers.
-  bool VisitNamespaceDecl(const clang::NamespaceDecl *D) override;
+  bool VisitNamespaceDecl(const clang::NamespaceDecl *ND) override;
 
   /// Check if variable is local or global, check against previous declarations
   /// and add new Decl to appropriate list.
   bool VisitVarDecl(const clang::VarDecl *VD) override;
 
   /// Compound statements represent a block of code.
-  bool VisitCompoundStmt(const clang::CompoundStmt *S) override;
+  bool VisitCompoundStmt(const clang::CompoundStmt *CS) override;
 
   /// Variables declared inside initialization of for statements are not
   /// visible to outside scopes.
-  bool VisitForStmt(const clang::ForStmt *S) override;
+  bool VisitForStmt(const clang::ForStmt *FS) override;
 
   /// Variables declared inside while statements are not visible to outside
   /// scopes.
-  bool VisitWhileStmt(const clang::WhileStmt *S) override;
+  bool VisitWhileStmt(const clang::WhileStmt *WS) override;
 
   /// Variables declared inside do-while statements are not visible to outside
   /// scopes.
-  bool VisitDoStmt(const clang::DoStmt *S) override;
+  bool VisitDoStmt(const clang::DoStmt *DS) override;
 
   /// Variables declared inside if statements are not visible to outside
   /// scopes.
-  bool VisitIfStmt(const clang::IfStmt *S) override;
+  bool VisitIfStmt(const clang::IfStmt *IS) override;
 
   /// Variables declared inside lambda expression are not visiable to outside
   /// scopes.
-  bool VisitLambdaExpr(const clang::LambdaExpr *S) override;
+  bool VisitLambdaExpr(const clang::LambdaExpr *LE) override;
 
 private:
   /// Each block of code represents new range.
@@ -291,7 +290,7 @@ private:
   inline bool isMethodMarkedOverrideOrFinal(const clang::Decl *D);
 
   /// Checks given name against all methods and fields for all subclasses.
-  bool checkSubClassIndentifiers(const clang::CXXRecordDecl *RD,
+  bool checkSubClassIndentifiers(const clang::CXXRecordDecl *CRD,
                                  const std::string &Name,
                                  const clang::SourceLocation &Loc);
 
@@ -341,7 +340,7 @@ private:
   /// Compare current name against all prevous ones and report a warning if the
   /// same one is found.
   bool checkIfNameIsHidden(const clang::NamedDecl *ND,
-                           const TrackingSet &NameSet);
+                           const TrackingSet &NameSet) const;
 
   /// Add current name to the set of identifiers.
   void addToSet(const clang::NamedDecl *ND, TrackingSet &NameSet);
@@ -405,11 +404,11 @@ public:
                                     const AutocheckContext &Context);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool PreTraverseDecl(clang::Decl *D);
-  bool PostTraverseDecl(clang::Decl *D);
+  bool PreTraverseDecl(clang::Decl *D) override;
+  bool PostTraverseDecl(clang::Decl *D) override;
 
-  bool VisitUsingDirectiveDecl(const clang::UsingDirectiveDecl *UDD);
-  bool VisitUsingDecl(const clang::UsingDecl *UD);
+  bool VisitUsingDirectiveDecl(const clang::UsingDirectiveDecl *UDD) override;
+  bool VisitUsingDecl(const clang::UsingDecl *UD) override;
 };
 
 /// [A7-1-7] Each expression statement and identifier declaration shall be
@@ -487,21 +486,21 @@ public:
   bool TraverseDecl(clang::Decl *D);
 
   bool VisitIntegerLiteral(const clang::IntegerLiteral *IL);
-  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *D);
-  bool VisitTypedefDecl(const clang::TypedefDecl *D);
-  bool VisitNamespaceDecl(const clang::NamespaceDecl *D);
+  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD);
+  bool VisitTypedefDecl(const clang::TypedefDecl *TD);
+  bool VisitNamespaceDecl(const clang::NamespaceDecl *ND);
   bool VisitVarDecl(const clang::VarDecl *VD);
   bool VisitFunctionDecl(const clang::FunctionDecl *FD);
-  bool VisitFieldDecl(const clang::FieldDecl *D);
-  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *D);
+  bool VisitFieldDecl(const clang::FieldDecl *FD);
+  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD);
   bool VisitEnumDecl(const clang::EnumDecl *D);
-  bool VisitEnumConstantDecl(const clang::EnumConstantDecl *D);
-  bool VisitCompoundStmt(const clang::CompoundStmt *S);
-  bool VisitForStmt(const clang::ForStmt *S);
-  bool VisitWhileStmt(const clang::WhileStmt *S);
-  bool VisitDoStmt(const clang::DoStmt *S);
-  bool VisitIfStmt(const clang::IfStmt *S);
-  bool VisitLambdaExpr(const clang::LambdaExpr *S);
+  bool VisitEnumConstantDecl(const clang::EnumConstantDecl *ECD);
+  bool VisitCompoundStmt(const clang::CompoundStmt *CS);
+  bool VisitForStmt(const clang::ForStmt *FS);
+  bool VisitWhileStmt(const clang::WhileStmt *WS);
+  bool VisitDoStmt(const clang::DoStmt *DS);
+  bool VisitIfStmt(const clang::IfStmt *IS);
+  bool VisitLambdaExpr(const clang::LambdaExpr *LE);
   bool VisitNullStmt(const clang::NullStmt *NS);
   bool VisitTypeLoc(const clang::TypeLoc &TL);
   bool VisitTranslationUnitDecl(const clang::TranslationUnitDecl *TUD);

@@ -1,11 +1,16 @@
 cmake_minimum_required(VERSION 3.13.4)
 
 project(autocheck 
-  VERSION 0.1.4
+  VERSION 0.2.0
   DESCRIPTION "AUTOSAR C++ Guidelines compliance checker"
 )
 
 set(AUTOCHECK_ROOT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Set C++ standard.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Find clang.
 if (NOT CLANG_DIR)

@@ -40,7 +40,7 @@ class TypesVisitorInterface {
 public:
   virtual ~TypesVisitorInterface();
 
-  virtual bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *E);
+  virtual bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE);
   virtual bool VisitIfStmt(clang::IfStmt *IS);
   virtual bool VisitWhileStmt(clang::WhileStmt *WS);
   virtual bool VisitForStmt(clang::ForStmt *FS);
@@ -54,14 +54,14 @@ public:
 /// character values.
 class CharStorageVisitor : public TypesVisitorInterface {
   clang::DiagnosticsEngine &DE;
-  clang::ASTContext &ASTCtx;
+  clang::ASTContext &AC;
 
 public:
   explicit CharStorageVisitor(clang::DiagnosticsEngine &DE,
-                              clang::ASTContext &ASTCtx);
+                              clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *E);
+  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE) override;
 
 private:
   bool isPlainChar(const clang::QualType &Type) const;
@@ -71,18 +71,18 @@ private:
 /// storage and use of numeric values.
 class SignCharStorageVisitor : public TypesVisitorInterface {
   clang::DiagnosticsEngine &DE;
-  clang::ASTContext &ASTCtx;
+  clang::ASTContext &AC;
 
 public:
   explicit SignCharStorageVisitor(clang::DiagnosticsEngine &DE,
-                                  clang::ASTContext &ASTCtx);
+                                  clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE);
+  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE) override;
 
 private:
   bool isPlainChar(const clang::QualType &Type) const;
-  bool isUnsignedOrSignedChar(const clang::QualType &Type);
+  bool isUnsignedOrSignedChar(const clang::QualType &Type) const;
 };
 
 /// [A5-0-2] The condition of an if-statement and the condition of an iteration
@@ -96,11 +96,11 @@ public:
   explicit ConditionNotBoolVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitIfStmt(clang::IfStmt *IS);
-  bool VisitWhileStmt(clang::WhileStmt *WS);
-  bool VisitForStmt(clang::ForStmt *FS);
-  bool VisitDoStmt(clang::DoStmt *DS);
-  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE);
+  bool VisitIfStmt(clang::IfStmt *IS) override;
+  bool VisitWhileStmt(clang::WhileStmt *WS) override;
+  bool VisitForStmt(clang::ForStmt *FS) override;
+  bool VisitDoStmt(clang::DoStmt *DS) override;
+  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE) override;
 
 private:
   /// Traverse the condition part and try to find IntegralToBoolean cast.
@@ -190,7 +190,7 @@ public:
 
   bool TraverseDecl(clang::Decl *D);
 
-  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *E);
+  bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE);
   bool VisitIfStmt(clang::IfStmt *IS);
   bool VisitWhileStmt(clang::WhileStmt *WS);
   bool VisitForStmt(clang::ForStmt *FS);

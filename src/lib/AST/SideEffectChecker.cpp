@@ -1,3 +1,15 @@
+//===--- SideEffectChecker.cpp - Expression side effect checker -----------===//
+//
+// Part of the Autocheck Project, under the Apache License v2.0 with Syrmia
+// Exceptions. See LICENSE for details.
+//
+//===----------------------------------------------------------------------===//
+//
+// This file defines helper functions to determine whether a given expression
+// has side effects according to AUTOSAR rules.
+//
+//===----------------------------------------------------------------------===//
+
 #include "AST/SideEffectChecker.h"
 
 #include "clang/AST/EvaluatedExprVisitor.h"

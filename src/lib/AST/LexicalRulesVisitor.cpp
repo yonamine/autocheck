@@ -20,7 +20,7 @@
 
 namespace autocheck {
 
-/*LexicalRulesVisitorInterface*/
+/* Implementation of LexicalRulesVisitorInterface */
 
 LexicalRulesVisitorInterface::~LexicalRulesVisitorInterface() {}
 
@@ -54,19 +54,17 @@ bool LVI::VisitUsingDecl(const clang::UsingDecl *) { return true; }
 bool LVI::VisitUsingDirectiveDecl(const clang::UsingDirectiveDecl *) {
   return true;
 }
-bool LVI::VisitDeclStmt(const clang::DeclStmt *DS) { return true; }
-bool LVI::VisitCXXForRangeStmt(const clang::CXXForRangeStmt *CFRS) {
-  return true;
-}
-bool LVI::VisitStmt(const clang::Stmt *S) { return true; }
-bool LVI::VisitDecl(const clang::Decl *D) { return true; }
+bool LVI::VisitDeclStmt(const clang::DeclStmt *) { return true; }
+bool LVI::VisitCXXForRangeStmt(const clang::CXXForRangeStmt *) { return true; }
+bool LVI::VisitStmt(const clang::Stmt *) { return true; }
+bool LVI::VisitDecl(const clang::Decl *) { return true; }
 
-/* UnsignedLiterals */
+/* Implementation of UnsignedLiterals */
 
 UnsignedLiterals::UnsignedLiterals(clang::DiagnosticsEngine &DE,
                                    const AutocheckContext &Context,
-                                   clang::ASTContext &ASTCtx)
-    : DE(DE), Context(Context), ASTCtx(ASTCtx) {}
+                                   clang::ASTContext &AC)
+    : DE(DE), Context(Context), AC(AC) {}
 
 bool UnsignedLiterals::VisitIntegerLiteral(const clang::IntegerLiteral *IL) {
   clang::SourceLocation Loc = IL->getBeginLoc();
@@ -79,7 +77,7 @@ bool UnsignedLiterals::VisitIntegerLiteral(const clang::IntegerLiteral *IL) {
   if (!isIntegerLiteralOctalorHexadecimal(IL))
     return true;
 
-  const auto &Parents = ASTCtx.getParents(*IL);
+  const auto &Parents = AC.getParents(*IL);
   if (Parents.size() != 1)
     return true;
 
@@ -96,7 +94,7 @@ bool UnsignedLiterals::VisitIntegerLiteral(const clang::IntegerLiteral *IL) {
         ICE->getType()->isSignedIntegerOrEnumerationType())
       return true;
 
-    const auto &GrandParents = ASTCtx.getParents(*ICE);
+    const auto &GrandParents = AC.getParents(*ICE);
     if (GrandParents.size() != 1)
       return true;
 
@@ -125,7 +123,7 @@ bool UnsignedLiterals::isIntegerLiteralOctalorHexadecimal(
   return (FirstChar == '0' && SecondChar != 'b' && SecondChar != 'B');
 }
 
-/*SimilarIdentifiersVisitor::IdScopes*/
+/* Implementation of SimilarIdentifiersVisitor::IdScopes */
 
 SimilarIdentifiersVisitor::IdScopes::IdScopes(clang::SourceManager &SrcMgr)
     : isBefore(SrcMgr) {
@@ -162,7 +160,7 @@ inline bool SimilarIdentifiersVisitor::IdScopes::isInSourceRange(
   return isInSourceRange(Range.getBegin(), Range.getEnd(), Location);
 }
 
-/*SimilarIdentifiersVisitor*/
+/* Implementation of SimilarIdentifiersVisitor */
 
 SimilarIdentifiersVisitor::SimilarIdentifiersVisitor(
     clang::DiagnosticsEngine &DE, const AutocheckContext &Context)
@@ -208,10 +206,10 @@ bool SimilarIdentifiersVisitor::VisitFunctionDecl(
 }
 
 bool SimilarIdentifiersVisitor::VisitCXXRecordDecl(
-    const clang::CXXRecordDecl *D) {
-  const std::string &RecordName = D->getNameAsString();
-  const clang::SourceLocation &RecordLoc = D->getBeginLoc();
-  const clang::SourceRange &RecordRange = D->getSourceRange();
+    const clang::CXXRecordDecl *CRD) {
+  const std::string &RecordName = CRD->getNameAsString();
+  const clang::SourceLocation &RecordLoc = CRD->getBeginLoc();
+  const clang::SourceRange &RecordRange = CRD->getSourceRange();
   Scopes.update(RecordLoc);
   // Skip names of classes that have been previously forward declared.
   if (!containsSameId(Scopes.getLastScope().getForwardDeclarations(),
@@ -224,7 +222,7 @@ bool SimilarIdentifiersVisitor::VisitCXXRecordDecl(
   // If this is a forward declaration that has a later definition then that
   // later definition will have same identifier and should not be treated as
   // typographically similar.
-  if (!D->isThisDeclarationADefinition() && D->hasDefinition())
+  if (!CRD->isThisDeclarationADefinition() && CRD->hasDefinition())
     addToIdentifierSet(Scopes.getLastScope().getForwardDeclarations(),
                        RecordName);
   Scopes.addNewScopeLevel(RecordRange);
@@ -235,28 +233,28 @@ bool SimilarIdentifiersVisitor::VisitCXXRecordDecl(
   return true;
 }
 
-bool SimilarIdentifiersVisitor::VisitFieldDecl(const clang::FieldDecl *D) {
-  if (!VisitCXXMethodOrFieldDecl(D))
+bool SimilarIdentifiersVisitor::VisitFieldDecl(const clang::FieldDecl *FD) {
+  if (!VisitCXXMethodOrFieldDecl(FD))
     return false;
   // Skip ObjC types.
-  if (llvm::dyn_cast_if_present<clang::ObjCIvarDecl>(D))
+  if (llvm::dyn_cast_if_present<clang::ObjCIvarDecl>(FD))
     return true;
   // Check subclasses for similar names.
   if (const clang::CXXRecordDecl *RD =
-          llvm::dyn_cast_or_null<clang::CXXRecordDecl>(D->getParent()))
-    return checkSubClassIndentifiers(RD, D->getNameAsString(),
-                                     D->getBeginLoc());
+          llvm::dyn_cast_or_null<clang::CXXRecordDecl>(FD->getParent()))
+    return checkSubClassIndentifiers(RD, FD->getNameAsString(),
+                                     FD->getBeginLoc());
   return true;
 }
 
 bool SimilarIdentifiersVisitor::VisitCXXMethodDecl(
-    const clang::CXXMethodDecl *D) {
-  const std::string &DeclName = D->getNameAsString();
-  const clang::SourceLocation &DeclLoc = D->getBeginLoc();
-  const clang::SourceRange &DeclRange = D->getSourceRange();
+    const clang::CXXMethodDecl *CMD) {
+  const std::string &DeclName = CMD->getNameAsString();
+  const clang::SourceLocation &DeclLoc = CMD->getBeginLoc();
+  const clang::SourceRange &DeclRange = CMD->getSourceRange();
   Scopes.update(DeclLoc);
   // Ignore methods that overload c++ operators.
-  if (D->isOverloadedOperator()) {
+  if (CMD->isOverloadedOperator()) {
     Scopes.addNewScopeLevel(DeclRange);
     return true;
   }
@@ -268,20 +266,20 @@ bool SimilarIdentifiersVisitor::VisitCXXMethodDecl(
   }
   addToIdentifierSet(Scopes.getLastScope().getOverloadingIdentifiers(),
                      DeclName);
-  if (!VisitCXXMethodOrFieldDecl(D))
+  if (!VisitCXXMethodOrFieldDecl(CMD))
     return false;
   // Check subclasses for similar names but skip methods that override.
-  if (!isMethodMarkedOverrideOrFinal(D))
-    if (!checkSubClassIndentifiers(D->getParent(), DeclName, DeclLoc))
+  if (!isMethodMarkedOverrideOrFinal(CMD))
+    if (!checkSubClassIndentifiers(CMD->getParent(), DeclName, DeclLoc))
       return false;
   Scopes.addNewScopeLevel(DeclRange);
   return true;
 }
 
 bool SimilarIdentifiersVisitor::VisitCXXMethodOrFieldDecl(
-    const clang::DeclaratorDecl *D) {
-  const std::string &DeclName = D->getNameAsString();
-  const clang::SourceLocation &DeclLoc = D->getBeginLoc();
+    const clang::DeclaratorDecl *DD) {
+  const std::string &DeclName = DD->getNameAsString();
+  const clang::SourceLocation &DeclLoc = DD->getBeginLoc();
   Scopes.update(DeclLoc);
   if (Scopes.empty())
     return true;
@@ -292,26 +290,26 @@ bool SimilarIdentifiersVisitor::VisitCXXMethodOrFieldDecl(
   return true;
 }
 
-bool SimilarIdentifiersVisitor::VisitEnumDecl(const clang::EnumDecl *D) {
-  const std::string &EnumName = D->getNameAsString();
+bool SimilarIdentifiersVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
+  const std::string &EnumName = ED->getNameAsString();
   if (EnumName.empty())
     return true;
-  const clang::SourceLocation &EnumLoc = D->getBeginLoc();
-  const clang::SourceRange &EnumRange = D->getSourceRange();
+  const clang::SourceLocation &EnumLoc = ED->getBeginLoc();
+  const clang::SourceRange &EnumRange = ED->getSourceRange();
   Scopes.update(EnumLoc);
   for (auto &e : Scopes)
     if (!checkIdentifierVector(e.getLocalTypeIdentifiers(), EnumName, EnumLoc))
       return false;
   addToIdentifierVector(getLocalTypeIdentifiers(), EnumName, EnumLoc);
-  if (D->isScoped())
+  if (ED->isScoped())
     Scopes.addNewScopeLevel(EnumRange);
   return true;
 }
 
 bool SimilarIdentifiersVisitor::VisitEnumConstantDecl(
-    const clang::EnumConstantDecl *D) {
-  const std::string &EnumConstantName = D->getNameAsString();
-  const clang::SourceLocation &EnumLoc = D->getBeginLoc();
+    const clang::EnumConstantDecl *ECD) {
+  const std::string &EnumConstantName = ECD->getNameAsString();
+  const clang::SourceLocation &EnumLoc = ECD->getBeginLoc();
   Scopes.update(EnumLoc);
   for (auto &e : Scopes)
     if (!checkIdentifierVector(e.getLocalVarIdentifiers(), EnumConstantName,
@@ -321,10 +319,10 @@ bool SimilarIdentifiersVisitor::VisitEnumConstantDecl(
   return true;
 }
 
-bool SimilarIdentifiersVisitor::VisitTypedefDecl(const clang::TypedefDecl *D) {
-  const std::string &TypedefName = D->getNameAsString();
-  const clang::SourceLocation &TypedefLoc = D->getBeginLoc();
-  const clang::SourceRange &TypedefRange = D->getSourceRange();
+bool SimilarIdentifiersVisitor::VisitTypedefDecl(const clang::TypedefDecl *TD) {
+  const std::string &TypedefName = TD->getNameAsString();
+  const clang::SourceLocation &TypedefLoc = TD->getBeginLoc();
+  const clang::SourceRange &TypedefRange = TD->getSourceRange();
   Scopes.update(TypedefLoc);
   if (!checkIdentifierVector(getGlobalTypeIdentifiers(), TypedefName,
                              TypedefLoc))
@@ -335,12 +333,12 @@ bool SimilarIdentifiersVisitor::VisitTypedefDecl(const clang::TypedefDecl *D) {
 }
 
 bool SimilarIdentifiersVisitor::VisitNamespaceDecl(
-    const clang::NamespaceDecl *D) {
-  const std::string &NamespaceName = D->getNameAsString();
+    const clang::NamespaceDecl *ND) {
+  const std::string &NamespaceName = ND->getNameAsString();
   if (NamespaceName.empty())
     return true;
-  const clang::SourceLocation &NamespaceLoc = D->getBeginLoc();
-  const clang::SourceRange &NamespaceRange = D->getSourceRange();
+  const clang::SourceLocation &NamespaceLoc = ND->getBeginLoc();
+  const clang::SourceRange &NamespaceRange = ND->getSourceRange();
   Scopes.update(NamespaceLoc);
   for (auto &e : Scopes)
     if (!checkIdentifierVector(e.getLocalNamespaceIdentifiers(), NamespaceName,
@@ -366,28 +364,28 @@ bool SimilarIdentifiersVisitor::VisitVarDecl(const clang::VarDecl *VD) {
 }
 
 bool SimilarIdentifiersVisitor::VisitCompoundStmt(
-    const clang::CompoundStmt *S) {
-  return VisitCodeBlock(S);
+    const clang::CompoundStmt *CS) {
+  return VisitCodeBlock(CS);
 }
 
-bool SimilarIdentifiersVisitor::VisitForStmt(const clang::ForStmt *S) {
-  return VisitCodeBlock(S);
+bool SimilarIdentifiersVisitor::VisitForStmt(const clang::ForStmt *FS) {
+  return VisitCodeBlock(FS);
 }
 
-bool SimilarIdentifiersVisitor::VisitWhileStmt(const clang::WhileStmt *S) {
-  return VisitCodeBlock(S);
+bool SimilarIdentifiersVisitor::VisitWhileStmt(const clang::WhileStmt *WS) {
+  return VisitCodeBlock(WS);
 }
 
-bool SimilarIdentifiersVisitor::VisitDoStmt(const clang::DoStmt *S) {
-  return VisitCodeBlock(S);
+bool SimilarIdentifiersVisitor::VisitDoStmt(const clang::DoStmt *DS) {
+  return VisitCodeBlock(DS);
 }
 
-bool SimilarIdentifiersVisitor::VisitIfStmt(const clang::IfStmt *S) {
-  return VisitCodeBlock(S);
+bool SimilarIdentifiersVisitor::VisitIfStmt(const clang::IfStmt *IS) {
+  return VisitCodeBlock(IS);
 }
 
-bool SimilarIdentifiersVisitor::VisitLambdaExpr(const clang::LambdaExpr *S) {
-  return VisitCodeBlock(S);
+bool SimilarIdentifiersVisitor::VisitLambdaExpr(const clang::LambdaExpr *LE) {
+  return VisitCodeBlock(LE);
 }
 
 bool SimilarIdentifiersVisitor::VisitCodeBlock(const clang::Stmt *S) {
@@ -461,11 +459,11 @@ SimilarIdentifiersVisitor::isMethodMarkedOverrideOrFinal(const clang::Decl *D) {
 }
 
 bool SimilarIdentifiersVisitor::checkSubClassIndentifiers(
-    const clang::CXXRecordDecl *RD, const std::string &Name,
+    const clang::CXXRecordDecl *CRD, const std::string &Name,
     const clang::SourceLocation &Loc) {
   for (clang::CXXRecordDecl::base_class_const_iterator
-           BaseIt = RD->bases_begin(),
-           BaseEnd = RD->bases_end();
+           BaseIt = CRD->bases_begin(),
+           BaseEnd = CRD->bases_end();
        BaseIt != BaseEnd; ++BaseIt) {
     if (const clang::CXXRecordDecl *BaseClass =
             BaseIt->getType()->getAsCXXRecordDecl()) {
@@ -546,7 +544,7 @@ bool SimilarIdentifiersVisitor::typographicallySimilar(
   return (I1 == E1 && I2 == E2);
 }
 
-/*ShadowClassOrEnumVisitor*/
+/* Implementation of ShadowClassOrEnumVisitor */
 
 ShadowClassOrEnumVisitor::ShadowClassOrEnumVisitor(
     clang::DiagnosticsEngine &DE, const AutocheckContext &Context)
@@ -606,8 +604,8 @@ bool ShadowClassOrEnumVisitor::VisitEnumConstantDecl(
   return true;
 }
 
-bool ShadowClassOrEnumVisitor::checkIfNameIsHidden(const clang::NamedDecl *ND,
-                                                   const TrackingSet &NameSet) {
+bool ShadowClassOrEnumVisitor::checkIfNameIsHidden(
+    const clang::NamedDecl *ND, const TrackingSet &NameSet) const {
   std::string Name = ND->getQualifiedNameAsString();
   clang::SourceLocation Location = ND->getBeginLoc();
 
@@ -632,7 +630,7 @@ void ShadowClassOrEnumVisitor::addToSet(const clang::NamedDecl *ND,
   NameSet.insert(std::make_pair(Name, Location));
 }
 
-/* FixedWidthIntegerTypesVisitor */
+/* Implementation of FixedWidthIntegerTypesVisitor */
 
 FixedWidthIntegerTypesVisitor::FixedWidthIntegerTypesVisitor(
     clang::DiagnosticsEngine &DE, const AutocheckContext &Context)
@@ -696,7 +694,7 @@ bool FixedWidthIntegerTypesVisitor::checkType(
               .limitReached();
 }
 
-/* NullStmtNotAloneVisitor */
+/* Implementation of NullStmtNotAloneVisitor */
 
 NullStmtNotAloneVisitor::NullStmtNotAloneVisitor(
     clang::DiagnosticsEngine &DE, const AutocheckContext &Context,
@@ -773,7 +771,7 @@ bool NullStmtNotAloneVisitor::VisitNullStmt(const clang::NullStmt *NS) {
   return true;
 }
 
-/* UsingInsideHeaderVisitor */
+/* Implementation of UsingInsideHeaderVisitor */
 
 UsingInsideHeaderVisitor::UsingInsideHeaderVisitor(
     clang::DiagnosticsEngine &DE, const AutocheckContext &Context)
@@ -825,7 +823,7 @@ bool UsingInsideHeaderVisitor::PostTraverseDecl(clang::Decl *D) {
   return true;
 }
 
-/* SeparateLineStatementVisitor */
+/* Implementation of SeparateLineStatementVisitor */
 
 SeparateLineStatementVisitor::SeparateLineStatementVisitor(
     clang::DiagnosticsEngine &DE, const AutocheckContext &Context,
@@ -845,15 +843,11 @@ bool SeparateLineStatementVisitor::VisitDeclStmt(const clang::DeclStmt *DS) {
   if (!Parents.empty() && Parents[0].get<clang::ForStmt>()) {
     return true;
   }
-  // DS->dump(llvm::outs(), AC);
   // Diagnose multiple declarations in the same line
   if (!DS->isSingleDecl()) {
-    // llvm::outs() << "not single decl\n";
     unsigned previousDeclLine = -1;
     for (const auto Decl : DS->getDeclGroup()) {
-      // llvm::outs() << "in group\n";
       if (SM.getSpellingLineNumber(Decl->getLocation()) == previousDeclLine) {
-        // llvm::outs() << "same line\n";
         previousWarning = Decl->getLocation();
         if (AutocheckDiagnostic::reportWarning(
                 DE, Decl->getLocation(),
@@ -863,7 +857,6 @@ bool SeparateLineStatementVisitor::VisitDeclStmt(const clang::DeclStmt *DS) {
         break;
       }
       previousDeclLine = SM.getSpellingLineNumber(Decl->getLocation());
-      // llvm::outs() << previousDeclLine << "\n";
     }
   }
 
@@ -991,7 +984,6 @@ bool SeparateLineStatementVisitor::VisitStmt(const clang::Stmt *S) {
 }
 
 bool SeparateLineStatementVisitor::VisitDecl(const clang::Decl *D) {
-
   // Process all declarations except the ones listed here. All nodes that have
   // DeclStmt as their parent are already processed in VisitDeclStmt method.
   const auto &Parents = AC.getParents(*D);
@@ -1015,12 +1007,9 @@ bool SeparateLineStatementVisitor::VisitDecl(const clang::Decl *D) {
     const clang::SourceLocation EndPreviousExprOrStmt =
         previousExprOrStmtRange.getEnd();
 
-    llvm::outs() << "decl\n";
-    D->dump(llvm::outs());
     if (!diagnoseSameLine(EndPreviousExprOrStmt, DeclBegin) ||
         !diagnoseSameLine(BeginPreviousExprOrStmt, DeclBegin))
       return false;
-    llvm::outs() << "decl2\n";
     previousExprOrStmtRange = clang::SourceRange(DeclBegin, DeclEnd);
   }
   return true;
@@ -1211,16 +1200,17 @@ bool LexicalRulesVisitor::VisitIntegerLiteral(const clang::IntegerLiteral *IL) {
   return true;
 }
 
-bool LexicalRulesVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *D) {
-  AllVisitors.remove_if([D](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
-    return !V->VisitCXXRecordDecl(D);
-  });
+bool LexicalRulesVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) {
+  AllVisitors.remove_if(
+      [CRD](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
+        return !V->VisitCXXRecordDecl(CRD);
+      });
   return true;
 }
 
-bool LexicalRulesVisitor::VisitTypedefDecl(const clang::TypedefDecl *D) {
-  AllVisitors.remove_if([D](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
-    return !V->VisitTypedefDecl(D);
+bool LexicalRulesVisitor::VisitTypedefDecl(const clang::TypedefDecl *TD) {
+  AllVisitors.remove_if([TD](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
+    return !V->VisitTypedefDecl(TD);
   });
   return true;
 }
@@ -1239,80 +1229,82 @@ bool LexicalRulesVisitor::VisitFunctionDecl(const clang::FunctionDecl *FD) {
   return true;
 }
 
-bool LexicalRulesVisitor::VisitNamespaceDecl(const clang::NamespaceDecl *D) {
-  AllVisitors.remove_if([D](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
-    return !V->VisitNamespaceDecl(D);
+bool LexicalRulesVisitor::VisitNamespaceDecl(const clang::NamespaceDecl *ND) {
+  AllVisitors.remove_if([ND](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
+    return !V->VisitNamespaceDecl(ND);
   });
   return true;
 }
 
-bool LexicalRulesVisitor::VisitFieldDecl(const clang::FieldDecl *D) {
-  AllVisitors.remove_if([D](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
-    return !V->VisitFieldDecl(D);
+bool LexicalRulesVisitor::VisitFieldDecl(const clang::FieldDecl *FD) {
+  AllVisitors.remove_if([FD](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
+    return !V->VisitFieldDecl(FD);
   });
   return true;
 }
 
-bool LexicalRulesVisitor::VisitCXXMethodDecl(const clang::CXXMethodDecl *D) {
-  AllVisitors.remove_if([D](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
-    return !V->VisitCXXMethodDecl(D);
-  });
+bool LexicalRulesVisitor::VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) {
+  AllVisitors.remove_if(
+      [CMD](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
+        return !V->VisitCXXMethodDecl(CMD);
+      });
   return true;
 }
 
-bool LexicalRulesVisitor::VisitEnumDecl(const clang::EnumDecl *D) {
-  AllVisitors.remove_if([D](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
-    return !V->VisitEnumDecl(D);
+bool LexicalRulesVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
+  AllVisitors.remove_if([ED](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
+    return !V->VisitEnumDecl(ED);
   });
   return true;
 }
 
 bool LexicalRulesVisitor::VisitEnumConstantDecl(
-    const clang::EnumConstantDecl *D) {
-  AllVisitors.remove_if([D](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
-    return !V->VisitEnumConstantDecl(D);
+    const clang::EnumConstantDecl *ECD) {
+  AllVisitors.remove_if(
+      [ECD](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
+        return !V->VisitEnumConstantDecl(ECD);
+      });
+  return true;
+}
+
+bool LexicalRulesVisitor::VisitCompoundStmt(const clang::CompoundStmt *CS) {
+  AllVisitors.remove_if([CS](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
+    return !V->VisitCompoundStmt(CS);
   });
   return true;
 }
 
-bool LexicalRulesVisitor::VisitCompoundStmt(const clang::CompoundStmt *S) {
-  AllVisitors.remove_if([S](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
-    return !V->VisitCompoundStmt(S);
+bool LexicalRulesVisitor::VisitForStmt(const clang::ForStmt *FS) {
+  AllVisitors.remove_if([FS](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
+    return !V->VisitForStmt(FS);
   });
   return true;
 }
 
-bool LexicalRulesVisitor::VisitForStmt(const clang::ForStmt *S) {
-  AllVisitors.remove_if([S](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
-    return !V->VisitForStmt(S);
+bool LexicalRulesVisitor::VisitWhileStmt(const clang::WhileStmt *WS) {
+  AllVisitors.remove_if([WS](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
+    return !V->VisitWhileStmt(WS);
   });
   return true;
 }
 
-bool LexicalRulesVisitor::VisitWhileStmt(const clang::WhileStmt *S) {
-  AllVisitors.remove_if([S](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
-    return !V->VisitWhileStmt(S);
+bool LexicalRulesVisitor::VisitDoStmt(const clang::DoStmt *DS) {
+  AllVisitors.remove_if([DS](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
+    return !V->VisitDoStmt(DS);
   });
   return true;
 }
 
-bool LexicalRulesVisitor::VisitDoStmt(const clang::DoStmt *S) {
-  AllVisitors.remove_if([S](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
-    return !V->VisitDoStmt(S);
+bool LexicalRulesVisitor::VisitIfStmt(const clang::IfStmt *IS) {
+  AllVisitors.remove_if([IS](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
+    return !V->VisitIfStmt(IS);
   });
   return true;
 }
 
-bool LexicalRulesVisitor::VisitIfStmt(const clang::IfStmt *S) {
-  AllVisitors.remove_if([S](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
-    return !V->VisitIfStmt(S);
-  });
-  return true;
-}
-
-bool LexicalRulesVisitor::VisitLambdaExpr(const clang::LambdaExpr *S) {
-  AllVisitors.remove_if([S](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
-    return !V->VisitLambdaExpr(S);
+bool LexicalRulesVisitor::VisitLambdaExpr(const clang::LambdaExpr *LE) {
+  AllVisitors.remove_if([LE](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
+    return !V->VisitLambdaExpr(LE);
   });
   return true;
 }

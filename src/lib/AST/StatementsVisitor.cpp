@@ -18,7 +18,7 @@
 
 namespace autocheck {
 
-/* StatementsVisitorInterface */
+/* Implementation of StatementsVisitorInterface */
 
 StatementsVisitorInterface::~StatementsVisitorInterface() {}
 
@@ -29,15 +29,13 @@ bool SVI::VisitDefaultStmt(const clang::DefaultStmt *) { return true; }
 bool SVI::VisitCaseStmt(const clang::CaseStmt *) { return true; }
 bool SVI::VisitGotoStmt(const clang::GotoStmt *) { return true; }
 bool SVI::VisitIfStmt(const clang::IfStmt *) { return true; }
-bool SVI::VisitForStmt(const clang::ForStmt *FS) { return true; }
-bool SVI::VisitCXXForRangeStmt(const clang::CXXForRangeStmt *CFRS) {
-  return true;
-}
-bool SVI::VisitDoStmt(const clang::DoStmt *DS) { return true; }
-bool SVI::VisitWhileStmt(const clang::WhileStmt *WS) { return true; }
-bool SVI::VisitSwitchStmt(const clang::SwitchStmt *SS) { return true; }
+bool SVI::VisitForStmt(const clang::ForStmt *) { return true; }
+bool SVI::VisitCXXForRangeStmt(const clang::CXXForRangeStmt *) { return true; }
+bool SVI::VisitDoStmt(const clang::DoStmt *) { return true; }
+bool SVI::VisitWhileStmt(const clang::WhileStmt *) { return true; }
+bool SVI::VisitSwitchStmt(const clang::SwitchStmt *) { return true; }
 
-/* IfElseIfTerminatedVisitor */
+/* Implementation of IfElseIfTerminatedVisitor */
 
 IfElseIfTerminatedVisitor::IfElseIfTerminatedVisitor(
     clang::DiagnosticsEngine &DE, const AutocheckContext &Context,
@@ -76,7 +74,7 @@ bool IfElseIfTerminatedVisitor::VisitIfStmt(const clang::IfStmt *IS) {
   return true;
 }
 
-/* GotoLabelBlockVisitor */
+/* Implementation of GotoLabelBlockVisitor */
 
 GotoLabelBlockVisitor::GotoLabelBlockVisitor(clang::DiagnosticsEngine &DE,
                                              const AutocheckContext &Context,
@@ -98,7 +96,7 @@ bool GotoLabelBlockVisitor::VisitGotoStmt(const clang::GotoStmt *GS) {
 
 const clang::Stmt *
 GotoLabelBlockVisitor::getGotoParent(const clang::Stmt *S,
-                                     const clang::LabelStmt *LSWanted) {
+                                     const clang::LabelStmt *LSWanted) const {
   const auto &ParentIt = AC.getParents(*S).begin();
   if (ParentIt == AC.getParents(*S).end())
     return nullptr;
@@ -117,7 +115,7 @@ GotoLabelBlockVisitor::getGotoParent(const clang::Stmt *S,
   return nullptr;
 }
 
-/* SwitchStmtDefaultClause */
+/* Implementation of SwitchStmtDefaultClause */
 
 SwitchStmtDefaultClause::SwitchStmtDefaultClause(
     clang::DiagnosticsEngine &DE, const AutocheckContext &Context,
@@ -178,7 +176,7 @@ bool SwitchStmtDefaultClause::PostTraverseStmt(clang::Stmt *S) {
   return true;
 }
 
-/* DoWhileUsedVisitor */
+/* Implementation of DoWhileUsedVisitor */
 
 DoWhileUsedVisitor::DoWhileUsedVisitor(
     clang::DiagnosticsEngine &DE, const AutocheckContext &Context,
@@ -284,7 +282,7 @@ bool GotoBackJumpVisitor::VisitGotoStmt(const clang::GotoStmt *GS) {
   return true;
 }
 
-/* StatementsVisitor */
+/* Implementation of StatementsVisitor */
 
 StatementsVisitor::StatementsVisitor(clang::DiagnosticsEngine &DE,
                                      clang::ASTContext &AC,

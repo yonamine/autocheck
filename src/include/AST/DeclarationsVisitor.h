@@ -135,7 +135,7 @@ public:
   explicit ASMDeclarationUsedVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitGCCAsmStmt(const clang::GCCAsmStmt *GAS);
+  bool VisitGCCAsmStmt(const clang::GCCAsmStmt *GAS) override;
 };
 
 /// [A8-4-1] Functions shall not be defined using the ellipsis notation.
@@ -146,7 +146,7 @@ public:
   explicit VariadicFunctionUsedVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitFunctionDecl(const clang::FunctionDecl *FD);
+  bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
 };
 
 /// [M8-4-2] The identifiers used for the parameters in a re-declaration of a
@@ -158,7 +158,7 @@ public:
   explicit FunctionRedeclParamsVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitFunctionDecl(const clang::FunctionDecl *FD);
+  bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
 };
 
 /// [A8-5-3] A variable of type auto shall not be initialized using {} or ={}
@@ -172,7 +172,7 @@ public:
                                     clang::Sema &SemaRef);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitVarDecl(const clang::VarDecl *VD);
+  bool VisitVarDecl(const clang::VarDecl *VD) override;
 };
 
 /// [A8-5-2] Braced-initialization {}, without equals sign, shall be used for
@@ -187,7 +187,7 @@ public:
                                 clang::ASTContext &AC, clang::Sema &SemaRef);
   static bool isFlagPresent(const AutocheckContext &Context);
 
-  bool VisitVarDecl(const clang::VarDecl *VD);
+  bool VisitVarDecl(const clang::VarDecl *VD) override;
 };
 
 /// [A0-1-6] There should be no unused type declarations.
@@ -197,7 +197,6 @@ class UnusedGlobalTypedef : public DeclarationsVisitorInterface {
 
 public:
   explicit UnusedGlobalTypedef(clang::DiagnosticsEngine &DE);
-
   static bool isFlagPresent(const AutocheckContext &Context);
 
   /// Emits warnings for all unused global typedefs. Should be called after the
@@ -214,25 +213,27 @@ class CVQualifiersPlacedLeftVisitor : public DeclarationsVisitorInterface {
   clang::Sema &SemaRef;
 
 public:
-  CVQualifiersPlacedLeftVisitor(clang::SourceManager &SM,
-                                clang::DiagnosticsEngine &DE,
-                                clang::Sema &SemaRef)
-      : SM(SM), DE(DE), SemaRef(SemaRef) {}
-  bool VisitVarDecl(const clang::VarDecl *VD);
+  explicit CVQualifiersPlacedLeftVisitor(clang::SourceManager &SM,
+                                         clang::DiagnosticsEngine &DE,
+                                         clang::Sema &SemaRef);
   static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitVarDecl(const clang::VarDecl *VD) override;
 };
 
 /// [A13-2-1] An assignment operator shall return a reference to "this".
 class AssignmentOperatorReturn : public DeclarationsVisitorInterface {
   clang::DiagnosticsEngine &DE;
 
-  bool isWrongReturnStmt(const clang::CXXMethodDecl *CMD);
-  bool isWrongDeclarationReturnType(const clang::CXXMethodDecl *CMD);
-
 public:
-  explicit AssignmentOperatorReturn(clang::DiagnosticsEngine &DE) : DE(DE) {}
-  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD);
+  explicit AssignmentOperatorReturn(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
+
+private:
+  bool isWrongReturnStmt(const clang::CXXMethodDecl *CMD) const;
+  bool isWrongDeclarationReturnType(const clang::CXXMethodDecl *CMD) const;
 };
 
 /// [A7-1-1] Constexpr or const specifiers shall be used for immutable data
@@ -258,7 +259,6 @@ public:
   bool VisitCallExpr(const clang::CallExpr *CE) override;
 
 private:
-  bool isAssign(clang::OverloadedOperatorKind Op);
   bool CheckFunctionArguments(const clang::CallExpr *CE);
   bool CheckOperatorCallExpr(const clang::CallExpr *CE);
   bool CheckMemberCallExpr(const clang::CallExpr *CE);
@@ -276,10 +276,10 @@ class NSDMIAndConsutructorInitUsed : public DeclarationsVisitorInterface {
   clang::DiagnosticsEngine &DE;
 
 public:
-  explicit NSDMIAndConsutructorInitUsed(clang::DiagnosticsEngine &DE)
-      : DE(DE) {}
-  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD);
+  explicit NSDMIAndConsutructorInitUsed(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
 };
 
 /// [M3-4-1] An identifier declared to be an object or type shall be defined in
@@ -379,11 +379,10 @@ class MissingBracesOrEltsVisitor : public DeclarationsVisitorInterface {
 
 public:
   explicit MissingBracesOrEltsVisitor(clang::DiagnosticsEngine &DE,
-                                      clang::Sema &SemaRef)
-      : DE(DE), SM(DE.getSourceManager()), SemaRef(SemaRef) {}
+                                      clang::Sema &SemaRef);
+  static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitVarDecl(const clang::VarDecl *VD) override;
-  static bool isFlagPresent(const AutocheckContext &Context);
 };
 
 /// [A3-3-2] Static and thread-local objects shall be constant-initialized.
@@ -392,15 +391,15 @@ class ConstantInitializer : public DeclarationsVisitorInterface {
   clang::ASTContext &AC;
   clang::Sema &SemaRef;
 
-  bool hasRedeclaration(const clang::VarDecl *VD);
-
 public:
   explicit ConstantInitializer(clang::DiagnosticsEngine &DE,
-                               clang::ASTContext &AC, clang::Sema &SemaRef)
-      : DE(DE), AC(AC), SemaRef(SemaRef) {}
+                               clang::ASTContext &AC, clang::Sema &SemaRef);
+  static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitVarDecl(const clang::VarDecl *VD) override;
-  static bool isFlagPresent(const AutocheckContext &Context);
+
+private:
+  bool hasRedeclaration(const clang::VarDecl *VD) const;
 };
 
 /// [A26-5-2] Random number engines shall not be default-initialized.
@@ -419,9 +418,12 @@ class RandomEngineDefaultInitialized : public DeclarationsVisitorInterface {
 
 public:
   explicit RandomEngineDefaultInitialized(clang::DiagnosticsEngine &DE);
-  bool VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE);
-  bool isAcceptableEngine(const std::string &Name);
   static bool isFlagPresent(const AutocheckContext &Context);
+
+  bool VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE) override;
+
+private:
+  bool isAcceptableEngine(const std::string &Name) const;
 };
 
 /// [A5-0-3] The declaration of objects shall contain no more than two levels of
@@ -501,6 +503,7 @@ class ExitedWithExceptionVisitor : public DeclarationsVisitorInterface {
 public:
   explicit ExitedWithExceptionVisitor(clang::DiagnosticsEngine &DE);
   static bool isFlagPresent(const AutocheckContext &Context);
+
   bool PreTraverseDecl(clang::Decl *D) override;
   bool PostTraverseDecl(clang::Decl *D) override;
   bool PreTraverseStmt(clang::Stmt *S) override;
@@ -580,13 +583,16 @@ class CStyleStringUsed : public DeclarationsVisitorInterface {
   llvm::SmallSet<const clang::ValueDecl *, 16> PotentiallyBadVars;
 
 public:
-  explicit CStyleStringUsed(clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
-      : DE(DE), AC(AC) {}
+  explicit CStyleStringUsed(clang::DiagnosticsEngine &DE,
+                            clang::ASTContext &AC);
+  static bool isFlagPresent(const AutocheckContext &Context);
+
   bool VisitVarDecl(const clang::VarDecl *VD) override;
   bool VisitCallExpr(const clang::CallExpr *CE) override;
   bool VisitDeclRefExpr(const clang::DeclRefExpr *DRE) override;
-  bool isCharPtrOrArray(const clang::QualType &T);
-  static bool isFlagPresent(const AutocheckContext &Context);
+
+private:
+  bool isCharPtrOrArray(const clang::QualType &T) const;
 };
 
 /// [A5-1-7] A lambda shall not be an operandto decltype or typeid.
@@ -778,7 +784,6 @@ public:
   void run(clang::TranslationUnitDecl *TUD);
 
   bool TraverseDecl(clang::Decl *D);
-
   bool TraverseStmt(clang::Stmt *S);
 
   bool VisitGCCAsmStmt(const clang::GCCAsmStmt *GAS);

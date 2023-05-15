@@ -81,7 +81,7 @@ class GotoLabelBlockVisitor : public StatementsVisitorInterface {
   clang::ASTContext &AC;
 
   const clang::Stmt *getGotoParent(const clang::Stmt *S,
-                                   const clang::LabelStmt *LSWanted);
+                                   const clang::LabelStmt *LSWanted) const;
 
 public:
   explicit GotoLabelBlockVisitor(clang::DiagnosticsEngine &DE,
