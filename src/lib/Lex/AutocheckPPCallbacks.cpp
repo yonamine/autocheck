@@ -13,6 +13,7 @@
 
 #include "AST/HeadersVisitor.h"
 #include "Diagnostics/AutocheckDiagnostic.h"
+#include "Lex/AutocheckLex.h"
 #include "clang/Basic/IdentifierTable.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Token.h"
@@ -31,8 +32,32 @@ const std::unordered_set<std::string> ProblematicCHeaders{
     "stdlib.h",    "stdnoreturn.h", "string.h", "tgmath.h",   "threads.h",
     "time.h",      "uchar.h",       "wchar.h",  "wctype.h"};
 
-AutocheckPPCallbacks::AutocheckPPCallbacks(clang::DiagnosticsEngine &DE)
-    : Context(AutocheckContext::Get()), DE(DE), SM(DE.getSourceManager()) {}
+AutocheckPPCallbacks::AutocheckPPCallbacks(clang::CompilerInstance &CI)
+    : Context(AutocheckContext::Get()), CI(CI), DE(CI.getDiagnostics()),
+      SM(DE.getSourceManager()) {}
+
+void AutocheckPPCallbacks::LexedFileChanged(
+    clang::FileID FID, clang::PPCallbacks::LexedFileChangeReason Reason,
+    clang::SrcMgr::CharacteristicKind FileType, clang::FileID PrevFID,
+    clang::SourceLocation Loc) {
+  // Only perform checks upon entering a file.
+  if (Reason != clang::PPCallbacks::LexedFileChangeReason::EnterFile)
+    return;
+
+  // Skip checking headers if the flag is present.
+  if (Context.DontCheckHeaders && FID != SM.getMainFileID())
+    return;
+
+  // Skip checking system headers if the flag is not present.
+  if (!Context.CheckSystemHeaders &&
+      (FileType == clang::SrcMgr::CharacteristicKind::C_System ||
+       FileType == clang::SrcMgr::C_ExternCSystem ||
+       FileType == clang::SrcMgr::C_System_ModuleMap))
+    return;
+
+  // Perform raw lexer checks.
+  lex::RunRawLexer(CI, FID);
+}
 
 static bool checkHeaderExtension(AutocheckContext &Context,
                                  clang::SrcMgr::CharacteristicKind FileType,

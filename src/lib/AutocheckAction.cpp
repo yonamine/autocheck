@@ -113,17 +113,15 @@ void AutocheckAction::ExecuteAction() {
   clang::Preprocessor &PP = getCompilerInstance().getPreprocessor();
   clang::SourceManager &SM = getCompilerInstance().getSourceManager();
 
-  // Create and run lexer/preprocessor checks. Two types of checks are
-  // performed:
-  // 1. A raw lexer pass which check all rules without the preprocessor. These
-  //    checks are run immediately on the entire file.
-  // 2. A token handler with the preprocessor active. Thsese checks are
-  //    performed in a callback function for each lexed token.
-  AutocheckLex LexerChecks(getCompilerInstance());
-  LexerChecks.Run();
+  // Create handler to perform lexer checks when each token is lexed.
+  PP.setTokenWatcher([&CI](const clang::Token &Tok) {
+    lex::CheckToken(AutocheckContext::Get(), CI, Tok);
+  });
 
-  // Set up preprocessor callbacks.
-  auto Callbacks = std::make_unique<AutocheckPPCallbacks>(CI.getDiagnostics());
+  // Set up preprocessor callbacks. This will also perform a raw lexer pass for
+  // each included file to check tokens before preprocessor directives are
+  // executed.
+  auto Callbacks = std::make_unique<AutocheckPPCallbacks>(CI);
   PPCallbacks = Callbacks.get();
   CI.getPreprocessor().addPPCallbacks(std::move(Callbacks));
 
