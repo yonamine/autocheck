@@ -227,7 +227,7 @@ DIAG(nonBracedInit, "non-braced-init-used",
      "variable initialization",
      "A8-5-2")
 DIAG(unusedTypedef, "unused-typedef",
-     "There should be no unused type declarations", "A0-1-6")
+     "Unused %select{typedef|type alias}0 %1", "A0-1-6")
 DIAG(cvQualifiersPlacedLeft, "cv-qualifiers-placed-left",
      "CV-qualifiers shall be placed on the right hand side of the type that is "
      "a typedef or a using name",
@@ -288,7 +288,7 @@ NOTE(noteMismatchedNewDelete,
 DIAG(cStyleStringUsed, "c-style-string-used",
      "C-style strings shall not be used", "A17-0-4")
 DIAG(lambdaDecltypeTypeid, "lambda-decltype-typeid",
-     "A lambda shall not be an operand to decltype or typeid", "A5-7-1")
+     "A lambda shall not be an operand to decltype or typeid", "A5-1-7")
 DIAG(implicitlyCapturedVar, "implicitly-captured-var",
      "Variables shall not be implicitly captured in a lambda expression",
      "A5-1-2")

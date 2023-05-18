@@ -218,8 +218,8 @@ void initTemplateVars() {
 // autosar-warning@61 {{Unused variable 'instance'}}
 // autosar-warning@64 {{Unused variable 'F'}}
 // autosar-warning@65 {{Unused variable 'G'}}
-// autosar-warning@81 {{function 'fact' is not needed and will not be emitted}}
-// autosar-warning@100 {{function 'fact_good' is not needed and will not be emitted}}
+// autosar-warning@81 {{Unused function 'fact'}}
+// autosar-warning@100 {{Unused function 'fact_good'}}
 // autosar-warning@121 {{Unused variable 'kNum'}}
 // autosar-warning@124 {{Unused variable 'kX'}}
 // autosar-warning@126 {{Unused function 'foo1'}}

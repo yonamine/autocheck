@@ -15,6 +15,7 @@
 #ifndef DIAGNOSTICS_AUTOCHECK_DIAGNOSTIC_CONSUMER_H
 #define DIAGNOSTICS_AUTOCHECK_DIAGNOSTIC_CONSUMER_H
 
+#include "Diagnostics/AutocheckDiagnostic.h"
 #include "Diagnostics/AutocheckWarnings.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/SourceLocation.h"
@@ -35,7 +36,13 @@ public:
                         const clang::Diagnostic &Info) override;
 
 private:
-  void EmitDiag(AutocheckWarnings Warning, const clang::SourceLocation &Loc);
+  template <typename... ArgsType>
+  void EmitDiag(AutocheckWarnings Warning, const clang::SourceLocation &Loc,
+                ArgsType &&...Args) {
+    Diags.Clear();
+    AutocheckDiagnostic::reportWarning(Diags, Loc, Warning,
+                                       std::forward<ArgsType>(Args)...);
+  }
 
 private:
   clang::DiagnosticsEngine &Diags;

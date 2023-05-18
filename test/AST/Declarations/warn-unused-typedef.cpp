@@ -4,8 +4,8 @@
 #include <cstdint>
 
 int main() {
-  typedef long int ld; // expected-warning {{There should be no unused type declarations}}
-  typedef void (*SignalHandler)(int signum); // expected-warning {{There should be no unused type declarations}}
+  typedef long int ld; // expected-warning {{Unused typedef 'ld'}}
+  typedef void (*SignalHandler)(int signum); // expected-warning {{Unused typedef 'SignalHandler'}}
   typedef long int ld2;
   ld2 x{3};
 
@@ -16,13 +16,13 @@ int main() {
   return x + static_cast<long int>(s);
 }
 
-typedef double dd; // expected-warning {{There should be no unused type declarations}}
+typedef double dd; // expected-warning {{Unused typedef 'dd'}}
 
 namespace {
-typedef float lf; // expected-warning {{There should be no unused type declarations}}
+typedef float lf; // expected-warning {{Unused typedef 'lf'}}
 
 std::uint32_t Fn() noexcept {
-  using LocalUIntPtr = std::uint32_t*; // expected-warning {{There should be no unused type declarations}}
+  using LocalUIntPtr = std::uint32_t*; // expected-warning {{Unused type alias 'LocalUIntPtr'}}
   return 0U;
 }
 }

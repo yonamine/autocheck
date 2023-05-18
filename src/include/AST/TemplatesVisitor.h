@@ -46,9 +46,6 @@ class InParametersPassedByValue : public TemplateVisitorInterface {
 
   bool checkParameter(const clang::ParmVarDecl *PVD,
                       const clang::SourceLocation &InstantiationLoc);
-  // We consider that class is not cheap to copy if it has a field with a
-  // pointer type.
-  bool classHasPointerField(const clang::Type *T);
 
 public:
   explicit InParametersPassedByValue(clang::DiagnosticsEngine &DE,

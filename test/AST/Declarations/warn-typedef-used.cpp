@@ -15,6 +15,6 @@ typedef struct x { // expected-warning {{The typedef specifier shall not be used
 } // namespace
 
 // autosar-warning@5 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
-// autosar-warning@5 1 {{There should be no unused type declarations}}
-// autosar-warning@14 1 {{There should be no unused type declarations}}
+// autosar-warning@5 1 {{Unused typedef 'ulong'}}
+// autosar-warning@14 1 {{Unused typedef 'y'}}
 // autosar-warning@13 1 {{Each expression statement and identifier declaration shall be placed on a separate line}}

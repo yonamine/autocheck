@@ -174,7 +174,7 @@ static void HandleToken(const AutocheckContext &Context,
     }
   }
 
-  // [A13-6-1] Digit sequences separators ’ shall only be used as follows: (1)
+  // [A13-6-1] Digit sequences separators ' shall only be used as follows: (1)
   // for decimal, every 3 digits, (2) for hexadecimal, every 2 digits, (3) for
   // binary, every 4 digits.
   if (Context.isEnabled(AutocheckWarnings::digitSequenceSeparator) &&
@@ -230,9 +230,9 @@ AutocheckLex::AutocheckLex(clang::CompilerInstance &CI)
 // and comments, and return clang::Token instead of clang::syntax::Token.
 static std::vector<clang::Token> tokenize(clang::FileID FID,
                                           const clang::SourceManager &SM,
-                                          const clang::LangOptions &LO) {
+                                          const clang::LangOptions &LO,
+                                          clang::IdentifierTable &Identifiers) {
   std::vector<clang::Token> Tokens;
-  clang::IdentifierTable Identifiers(LO);
   auto AddToken = [&](clang::Token T) {
     // Fill the proper token kind for keywords, etc.
     if (T.getKind() == clang::tok::raw_identifier && !T.needsCleaning() &&
@@ -357,8 +357,9 @@ void AutocheckLex::Run() {
 
   // Run a raw lexer pass to check rules which can't be checked with a
   // preprocessor.
+  clang::IdentifierTable Identifiers(CI.getLangOpts());
   std::vector<clang::Token> RawTokens =
-      tokenize(SM.getMainFileID(), SM, CI.getLangOpts());
+      tokenize(SM.getMainFileID(), SM, CI.getLangOpts(), Identifiers);
 
   clang::Token Tok;
   for (unsigned i = 0; i < RawTokens.size(); i++) {

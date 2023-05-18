@@ -181,8 +181,8 @@ bool InvalidEnumExpressionVisitor::isExprEnumerationType(
 /* Implementation of InvalidCharExpressionVisitor */
 
 InvalidCharExpressionVisitor::InvalidCharExpressionVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {
+    clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
+    : DE(DE), AC(AC) {
   AllowedUnaryOps.insert(clang::UO_AddrOf);
 
   AllowedBinaryOps.insert(clang::BO_Assign);
@@ -277,11 +277,10 @@ bool InvalidCharExpressionVisitor::isIntLessThan10(const clang::Expr *E) const {
       llvm::dyn_cast_if_present<clang::IntegerLiteral>(E);
   if (!IL)
     return false;
-  const char FirstChar =
-      DE.getSourceManager().getCharacterData(IL->getBeginLoc())[0];
-  const char SecondChar =
-      DE.getSourceManager().getCharacterData(IL->getBeginLoc())[1];
-  return (isdigit(FirstChar) && !(isdigit(SecondChar)));
+  clang::Expr::EvalResult Result;
+  if (IL->EvaluateAsInt(Result, AC))
+    return Result.Val.getInt() >= 0 && Result.Val.getInt() < 10;
+  return false;
 }
 
 /* Implementation of ImplicitFloatIntegralConversionVisitor */
@@ -782,7 +781,8 @@ ConversionsVisitor::ConversionsVisitor(clang::DiagnosticsEngine &DE,
   if (InvalidEnumExpressionVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<InvalidEnumExpressionVisitor>(DE));
   if (InvalidCharExpressionVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<InvalidCharExpressionVisitor>(DE));
+    AllVisitors.push_front(
+        std::make_unique<InvalidCharExpressionVisitor>(DE, AC));
   if (ImplicitFloatIntegralConversionVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
         std::make_unique<ImplicitFloatIntegralConversionVisitor>(DE));

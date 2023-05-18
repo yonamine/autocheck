@@ -27,7 +27,7 @@ wchar_t test3() { // expected-warning {{Type wchar_t shall not be used}}
 void test4(wchar_t a) {} // expected-warning {{Type wchar_t shall not be used}}
 } // namespace
 
-// autosar-warning@5 1 {{There should be no unused type declarations}}
+// autosar-warning@5 1 {{Unused typedef 'Z'}}
 // autosar-warning@13 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
 // autosar-warning@14 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
 // autosar-warning@9 1 {{Unused parameter 'a'}}

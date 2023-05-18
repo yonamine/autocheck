@@ -66,17 +66,6 @@ bool InParametersPassedByValue::VisitFunctionDecl(
   return true;
 }
 
-bool InParametersPassedByValue::classHasPointerField(const clang::Type *T) {
-  if (auto CXXRD = T->getAsCXXRecordDecl()) {
-    for (auto field : CXXRD->fields()) {
-      auto T = field->getType();
-      if (T->isPointerType())
-        return true;
-    }
-  }
-  return false;
-}
-
 bool InParametersPassedByValue::checkParameter(
     const clang::ParmVarDecl *PVD,
     const clang::SourceLocation &InstantiationLoc) {
@@ -103,7 +92,7 @@ bool InParametersPassedByValue::checkParameter(
       return true;
   }
   // Get pointer size in bits.
-  const auto PtrWidth = sizeof(void *) * 8;
+  const auto CheapTypeLimit = 2 * sizeof(void *) * 8;
 
   // Process reference type.
   if (T->isLValueReferenceType()) {
@@ -117,10 +106,10 @@ bool InParametersPassedByValue::checkParameter(
       // Get and check underlying Type.
       const clang::Type *NRT = NRQT.getTypePtrOrNull();
 
-      if (!NRT || isIncompleteOrDependentType(NRT) || classHasPointerField(NRT))
+      if (!NRT || isIncompleteOrDependentType(NRT))
         return true;
 
-      if (AC.getTypeSize(NRT) <= PtrWidth) {
+      if (AC.getTypeSize(NRT) <= CheapTypeLimit) {
         bool stopVisitor =
             AutocheckDiagnostic::reportWarning(
                 DE, SL, AutocheckWarnings::inParamPassedByValue, 0,
@@ -137,7 +126,7 @@ bool InParametersPassedByValue::checkParameter(
     }
     // Process non-reference type.
   } else {
-    if (AC.getTypeSize(T) > PtrWidth || classHasPointerField(T)) {
+    if (AC.getTypeSize(T) > CheapTypeLimit) {
       bool stopVisitor = AutocheckDiagnostic::reportWarning(
                              DE, SL, AutocheckWarnings::inParamPassedByValue, 1,
                              clang::TypeName::getFullyQualifiedType(
@@ -241,11 +230,6 @@ bool ThrowEscapesVisitor::VisitFunctionDecl(const clang::FunctionDecl *FD) {
   // explosion for destructors that can result and the compile time hit.
   AC.getCFGBuildOptions().PruneTriviallyFalseEdges = true;
   AC.getCFGBuildOptions().AddEHEdges = false;
-  AC.getCFGBuildOptions().AddInitializers = true;
-  AC.getCFGBuildOptions().AddImplicitDtors = true;
-  AC.getCFGBuildOptions().AddTemporaryDtors = true;
-  AC.getCFGBuildOptions().AddCXXNewAllocator = false;
-  AC.getCFGBuildOptions().AddCXXDefaultInitExprInCtors = true;
   AC.getCFGBuildOptions().setAllAlwaysAdd();
 
   clang::CFG *BodyCFG = AC.getCFG();

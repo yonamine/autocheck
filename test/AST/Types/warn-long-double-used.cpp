@@ -40,9 +40,7 @@ private:
 // autosar-warning@17 1 {{Unused parameter 'a'}}
 // autosar-warning@31 1 {{Unused parameter 'a'}}
 // autosar-warning@5 1 {{The typedef specifier shall not be used}}
-// autosar-warning@5 1 {{There should be no unused type declarations}}
-// autosar-warning@17 1 {{Type 'long double' is not "cheap to copy" and should be passed by const reference}}
-// autosar-warning@31 1 {{Type 'long double' is not "cheap to copy" and should be passed by const reference}}
+// autosar-warning@5 1 {{Unused typedef 'longd'}}
 // autosar-warning@7 1 {{Unused function 'test1'}}
 // autosar-warning@13 1 {{Unused function 'test2'}}
 // autosar-warning@17 1 {{Unused function 'test3'}}

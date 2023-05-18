@@ -15,10 +15,16 @@ void test1() {
   // value in the range 0 to 9 to '0';
   char_result = '0' + 0;
   char_result = 9 + '0';
-  char_result = '0' + 10;   // expected-warning {{Expressions with type (plain) char and wchar_t shall not be used as operands to built-in operators other than the assignment operator = , the equality operators == and != , and the unary & operator}}
-  char_result = '0' + (-1); // expected-warning {{Expressions with type (plain) char and wchar_t shall not be used as operands to built-in operators other than the assignment operator = , the equality operators == and != , and the unary & operator}}
-  char_result = 0 + '1';    // expected-warning {{Expressions with type (plain) char and wchar_t shall not be used as operands to built-in operators other than the assignment operator = , the equality operators == and != , and the unary & operator}}
-  char_result = '3' + 3;    // expected-warning {{Expressions with type (plain) char and wchar_t shall not be used as operands to built-in operators other than the assignment operator = , the equality operators == and != , and the unary & operator}}
+  char_result = '0' + 10;    // expected-warning {{Expressions with type (plain) char and wchar_t shall not be used as operands to built-in operators other than the assignment operator = , the equality operators == and != , and the unary & operator}}
+  char_result = '0' + (-1);  // expected-warning {{Expressions with type (plain) char and wchar_t shall not be used as operands to built-in operators other than the assignment operator = , the equality operators == and != , and the unary & operator}}
+  char_result = 0 + '1';     // expected-warning {{Expressions with type (plain) char and wchar_t shall not be used as operands to built-in operators other than the assignment operator = , the equality operators == and != , and the unary & operator}}
+  char_result = '3' + 3;     // expected-warning {{Expressions with type (plain) char and wchar_t shall not be used as operands to built-in operators other than the assignment operator = , the equality operators == and != , and the unary & operator}}
+  char_result = '0' + 0x1;
+  char_result = '0' + 0xA;   // expected-warning {{Expressions with type (plain) char and wchar_t shall not be used as operands to built-in operators other than the assignment operator = , the equality operators == and != , and the unary & operator}}
+  char_result = '0' + 01;
+  char_result = '0' + 012;   // expected-warning {{Expressions with type (plain) char and wchar_t shall not be used as operands to built-in operators other than the assignment operator = , the equality operators == and != , and the unary & operator}}
+  char_result = '0' + 0b1;
+  char_result = '0' + 0b1010; // expected-warning {{Expressions with type (plain) char and wchar_t shall not be used as operands to built-in operators other than the assignment operator = , the equality operators == and != , and the unary & operator}}
 
   // Exception check : The binary - operator may be used to subtract character
   // '0';
@@ -47,9 +53,15 @@ void test1() {
 // autosar-warning@19 1 {{The plain char type shall only be used for the storage and use of character values}}
 // autosar-warning@20 1 {{The plain char type shall only be used for the storage and use of character values}}
 // autosar-warning@21 1 {{The plain char type shall only be used for the storage and use of character values}}
+// autosar-warning@22 1 {{The plain char type shall only be used for the storage and use of character values}}
+// autosar-warning@23 1 {{The plain char type shall only be used for the storage and use of character values}}
+// autosar-warning@24 1 {{The plain char type shall only be used for the storage and use of character values}}
 // autosar-warning@25 1 {{The plain char type shall only be used for the storage and use of character values}}
 // autosar-warning@26 1 {{The plain char type shall only be used for the storage and use of character values}}
 // autosar-warning@27 1 {{The plain char type shall only be used for the storage and use of character values}}
+// autosar-warning@31 1 {{The plain char type shall only be used for the storage and use of character values}}
+// autosar-warning@32 1 {{The plain char type shall only be used for the storage and use of character values}}
+// autosar-warning@33 1 {{The plain char type shall only be used for the storage and use of character values}}
 // autosar-warning@11 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
 // autosar-warning@12 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
 // autosar-warning@16 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
@@ -58,6 +70,12 @@ void test1() {
 // autosar-warning@19 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
 // autosar-warning@20 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
 // autosar-warning@21 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@22 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@23 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@24 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@31 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@32 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
+// autosar-warning@33 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
 // autosar-warning@25 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
 // autosar-warning@26 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
 // autosar-warning@27 1 {{An implicit integral or floating-point conversion shall not reduce the size of the underlying type}}
@@ -66,3 +84,5 @@ void test1() {
 // autosar-warning@8 1 {{Fixed width integer types from <cstdint>, indicating the size and signedness, shall be used in place of the basic numerical types}}
 // autosar-warning@6 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
 // autosar-warning@7 1 {{Constexpr or const specifiers shall be used for immutable data declaration}}
+// autosar-warning@24 1 {{Octal constants (other than zero) and octal escape sequences (other than "\0") shall not be used}}
+// autosar-warning@25 1 {{Octal constants (other than zero) and octal escape sequences (other than "\0") shall not be used}}

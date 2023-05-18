@@ -318,7 +318,7 @@ int main() {
 // autosar-warning@185 1 {{Unused variable 'c'}}
 // autosar-warning@186 1 {{Unused variable 'd'}}
 // autosar-warning@180 1 {{Unused function 'enum_test'}}
-// autosar-warning@194 1 {{There should be no unused type declarations}}
+// autosar-warning@194 1 {{Unused typedef 'seek'}}
 // autosar-warning@30 1 {{Unused private method '__static__method__'}}
 // autosar-warning@45 1 {{Unused private method 'complex_method_'}}
 // autosar-warning@26 1 {{Unused private method 'class_method'}}

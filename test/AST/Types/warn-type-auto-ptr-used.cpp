@@ -53,6 +53,5 @@ std::auto_ptr<bool> stdAutoPtr; //expected-warning {{The std::auto_ptr type shal
 // autosar-warning@23 {{Constexpr or const specifiers shall be used for immutable data declaration}}
 // autosar-warning@35 {{Constexpr or const specifiers shall be used for immutable data declaration}}
 // autosar-warning@36 {{Constexpr or const specifiers shall be used for immutable data declaration}}
-// autosar-warning@18 {{Type 'std::auto_ptr<C>' is not "cheap to copy" and should be passed by const reference}}
 // autosar-warning@4 {{There shall be no unused include directives:}}
 // autosar-note@4 {{But one or more of it's own #include directives is used}}

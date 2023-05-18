@@ -71,6 +71,12 @@ public:
 // autosar-warning@58 1 {{Unused parameter 'a'}}
 // autosar-warning@4 1 {{There shall be no unused include directives:}}
 // autosar-note@4 1 {{But one or more of it's own #include directives is used}}
+// autosar-warning@11 1 {{Type '(anonymous namespace)::Foo1' is "cheap to copy" and should be passed by value}}
+// autosar-warning@15 1 {{Type '(anonymous namespace)::Foo1' is "cheap to copy" and should be passed by value}}
+// autosar-warning@19 1 {{Type '(anonymous namespace)::Foo1' is "cheap to copy" and should be passed by value}}
+// autosar-warning@23 1 {{Type '(anonymous namespace)::Foo1' is "cheap to copy" and should be passed by value}}
+// autosar-warning@27 1 {{Type '(anonymous namespace)::Foo1' is "cheap to copy" and should be passed by value}}
+// autosar-warning@31 1 {{Type '(anonymous namespace)::Foo1' is "cheap to copy" and should be passed by value}}
 // autosar-warning@38 1 {{Type '(anonymous namespace)::Foo2' is "cheap to copy" and should be passed by value}}
 // autosar-warning@42 1 {{Type '(anonymous namespace)::Foo2' is "cheap to copy" and should be passed by value}}
 // autosar-warning@46 1 {{Type '(anonymous namespace)::Foo2' is "cheap to copy" and should be passed by value}}
