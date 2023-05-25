@@ -15,6 +15,7 @@
 #define AUTOCHECK_CONTEXT_H
 
 #include "Diagnostics/AutocheckWarnings.h"
+#include "llvm/ADT/StringRef.h"
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -36,6 +37,7 @@ public:
 
   bool enableWarning(const std::string &Warning);
   bool isEnabled(AutocheckWarnings Warning) const;
+  const std::unordered_set<AutocheckWarnings> &getEnabledWarnings() const;
 
   // Maximum number of warnings per rule to display. If set to zero, all
   // warnings will be shown.
@@ -53,6 +55,10 @@ public:
   // value true if Autosar rules should be checked in macro expansions, false
   // otherwise.
   bool DontCheckMacroExpansions = false;
+  // Path to output file to write all detected warnings to.
+  llvm::StringRef OutputPath;
+  // Should output all diagnostics or just the summary.
+  bool FullOutput = true;
 
 private:
   AutocheckContext() = default;
