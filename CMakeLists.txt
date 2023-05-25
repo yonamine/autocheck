@@ -27,6 +27,9 @@ list(APPEND CMAKE_MODULE_PATH ${LLVM_CMAKE_DIR} ${CLANG_CMAKE_DIR})
 include(AddLLVM)
 include(AddClang)
 
+# Configure install dirs.
+include(GNUInstallDirs)
+
 # Copy clang built-in headers.
 file(COPY "${LLVM_BINARY_DIR}/lib/clang/16/include" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/lib/autocheck")
 
@@ -59,9 +62,9 @@ if (AUTOCHECK_GTEST_AVAILABLE)
   add_subdirectory(unittests)
 endif()
 add_subdirectory(test)
+add_subdirectory(scripts)
 
 # Install autocheck.
-include(GNUInstallDirs)
 install(TARGETS autocheck RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/autocheck DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

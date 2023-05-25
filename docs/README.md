@@ -19,6 +19,10 @@ These packages have to be available in your distributions package repository. If
 - glibc version 2.31 or newer
 - libstdc++ development package version 10 or newer
 
+To use the `autocheck-dir` script the following are required to be installed:
+
+- python 3.8+
+
 ## Install package
 
 ### Ubuntu, Debian
@@ -151,6 +155,36 @@ int main() {
     return 0;
 }
 ```
+
+## Scripts
+
+### autocheck-dir
+
+Runs autocheck on all C++ files in a folder and outputs the results to a specified folder.
+
+#### Usage
+
+```
+autocheck-dir [options] SCAN_DIR OUTPUT_DIR
+```
+
+#### Command line options
+
+| Flag        | Description |
+| ---         | ---         |
+| `-p <build-path>` | Path to compile command database. For more information see the [compilation database section](#compilation-database). |
+| `-j` <br> `--threads` <br> `--workers` | Number of parallel workers. Uses all available logical CPUs by default. |
+| `--output-type` | Should output all diagnostics or just a summary. Valid values: `full` (default), `summary`. |
+| `--skip-existing` | Don't check files for which output already exists. |
+| `--autocheck-executable` | Path to autocheck executable. If not specified, first available of the following is used: <ul><li>Same directory as autocheck_dir</li><li>Default autocheck install directory</li></ul> |
+| `--autocheck-flags` | Flags to pass to autocheck. |
+| `--check-includes` | Report warnings from included files. |
+| `--filter` | Regular expression to filter files to run autocheck on. |
+| `--filter-out` | Regular expression to exclude files to run autocheck on. |
+| `--extensions` | Comma separated list of file extensions to be filtered. Default: `cpp, h, hpp`. |
+| `-v` <br> `--verbose` | Show error output when compilation fails. |
+| `-vv` <br> `--echo-all-commands` | Echo all commands as they are executed to stdout. |
+| `-q` <br> `--quiet` | Show message only when compilation fails. |
 
 ## Common issues
 
