@@ -16,17 +16,17 @@
 #include "Lex/LiteralHelper.h"
 #include "clang/Basic/IdentifierTable.h"
 #include "clang/Basic/LangOptions.h"
-#include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Lex/Preprocessor.h"
-#include "clang/Lex/Token.h"
 #include "llvm/ADT/StringRef.h"
 #include <functional>
 
 #define MAX_OCTAL_ESCAPE_LENGTH 3
 
 namespace autocheck {
+
+namespace lex {
 
 static bool checkHexEscape(const llvm::StringRef &Literal) {
   return Literal.size() > 1 && isHexDigit(Literal[1]);
@@ -46,8 +46,8 @@ static bool checkUCNEscape(const llvm::StringRef &Literal,
   return true;
 }
 
-static void HandleToken(const AutocheckContext &Context,
-                        clang::CompilerInstance &CI, const clang::Token &Tok) {
+void CheckToken(const AutocheckContext &Context, clang::CompilerInstance &CI,
+                const clang::Token &Tok) {
   clang::DiagnosticsEngine &DE = CI.getDiagnostics();
   const clang::SourceManager &SM = CI.getSourceManager();
 
@@ -216,14 +216,6 @@ static void HandleToken(const AutocheckContext &Context,
   }
 }
 
-AutocheckLex::AutocheckLex(clang::CompilerInstance &CI)
-    : Context(AutocheckContext::Get()), CI(CI) {
-  clang::Preprocessor &PP = CI.getPreprocessor();
-  PP.setTokenWatcher([&CI](const clang::Token &Tok) {
-    HandleToken(AutocheckContext::Get(), CI, Tok);
-  });
-};
-
 // Runs a raw lexer pass on the file and returns a list of tokens.
 //
 // Implementation taken from clang::syntax::tokenize modified to keep whitespace
@@ -351,7 +343,8 @@ bool checkNonUniversalNames(const AutocheckContext &Context,
   return false;
 }
 
-void AutocheckLex::Run() {
+void RunRawLexer(const clang::CompilerInstance &CI, clang::FileID FID) {
+  const AutocheckContext &Context = AutocheckContext::Get();
   clang::DiagnosticsEngine &DE = CI.getPreprocessor().getDiagnostics();
   clang::SourceManager &SM = CI.getSourceManager();
 
@@ -359,7 +352,7 @@ void AutocheckLex::Run() {
   // preprocessor.
   clang::IdentifierTable Identifiers(CI.getLangOpts());
   std::vector<clang::Token> RawTokens =
-      tokenize(SM.getMainFileID(), SM, CI.getLangOpts(), Identifiers);
+      tokenize(FID, SM, CI.getLangOpts(), Identifiers);
 
   clang::Token Tok;
   for (unsigned i = 0; i < RawTokens.size(); i++) {
@@ -520,5 +513,7 @@ void AutocheckLex::Run() {
     }
   }
 }
+
+} // namespace lex
 
 } // namespace autocheck

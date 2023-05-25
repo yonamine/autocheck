@@ -37,6 +37,7 @@
 #include "AutocheckContext.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/SourceLocation.h"
+#include "clang/Frontend/CompilerInstance.h"
 #include "clang/Lex/MacroInfo.h"
 #include "clang/Lex/PPCallbacks.h"
 #include "llvm/ADT/SmallSet.h"
@@ -63,6 +64,7 @@ struct IncludeInfo {
 
 class AutocheckPPCallbacks : public clang::PPCallbacks {
   AutocheckContext &Context;
+  clang::CompilerInstance &CI;
   clang::DiagnosticsEngine &DE;
   const clang::SourceManager &SM;
 
@@ -80,7 +82,13 @@ class AutocheckPPCallbacks : public clang::PPCallbacks {
   llvm::SmallSet<clang::SourceLocation, 0> DoWhileMacros;
 
 public:
-  AutocheckPPCallbacks(clang::DiagnosticsEngine &DE);
+  AutocheckPPCallbacks(clang::CompilerInstance &CI);
+
+  void LexedFileChanged(clang::FileID FID,
+                        clang::PPCallbacks::LexedFileChangeReason Reason,
+                        clang::SrcMgr::CharacteristicKind FileType,
+                        clang::FileID PrevFID,
+                        clang::SourceLocation Loc) override;
 
   void InclusionDirective(clang::SourceLocation HashLoc,
                           const clang::Token &IncludeTok,
