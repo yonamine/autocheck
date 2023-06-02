@@ -13,6 +13,7 @@
 
 #include "AutocheckContext.h"
 #include "AutocheckTool.h"
+#include "Diagnostics/DiagnosticHelper.h"
 #include "Version.h"
 #include "clang/Basic/Version.h"
 #include "clang/Tooling/CommonOptionsParser.h"
@@ -75,6 +76,11 @@ static cl::opt<std::string> OutputType("output-type", cl::desc("Output type"),
                                        cl::ValueRequired,
                                        cl::cat(AutocheckCategory));
 
+static cl::opt<bool>
+    ListRules("list-rules",
+              cl::desc("Print a list of supported rules and their identifiers"),
+              cl::init(false), cl::ValueDisallowed, cl::cat(AutocheckCategory));
+
 static ArgumentsAdjuster getVerifyModeAdjuster(const std::string &Verify) {
   return [Verify](const CommandLineArguments &Args, StringRef /*unused*/) {
     CommandLineArguments AdjustedArgs(Args);
@@ -94,12 +100,17 @@ int main(int argc, const char **argv) {
   });
 
   auto ExpectedParser = CommonOptionsParser::create(
-      argc, argv, AutocheckCategory, cl::NumOccurrencesFlag::Required);
+      argc, argv, AutocheckCategory, cl::NumOccurrencesFlag::Optional);
   if (!ExpectedParser) {
     llvm::errs() << ExpectedParser.takeError();
     return 1;
   }
   CommonOptionsParser &OptionsParser = ExpectedParser.get();
+
+  if (ListRules) {
+    autocheck::printRuleIdentifierTable();
+    return 0;
+  }
 
   // Initialize context.
   autocheck::AutocheckContext &Context = autocheck::AutocheckContext::Get();
@@ -160,6 +171,11 @@ int main(int argc, const char **argv) {
                      << "'. Using 'full' instead\n";
       }
     }
+  }
+
+  if (OptionsParser.getSourcePathList().empty()) {
+    llvm::errs() << "No source file specified\n";
+    return 1;
   }
 
   AutocheckTool Tool(OptionsParser.getCompilations(),

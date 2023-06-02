@@ -144,8 +144,8 @@ For more options and examples see the following sections.
 
 | Flag        | Description |
 | ---         | ---         |
-| `-W<rule>` | Enable the specified rule. For the full list of supported rules and their flags, see [AutosarRules](docs/AutosarRules.md). By default all rules are on (same as `-Wall`). |
-| `-Wno-<rule>` | Disable the specified rule. For the full list of supported rules and their flags, see [AutosarRules](docs/AutosarRules.md). |
+| `-W<rule>` | Enable the specified rule. For the full list of supported rules and their identifiers see [AutosarRules](docs/AutosarRules.md) or the `--list-rules` flag. By default all rules are enabled (same as `-Wall`). |
+| `-Wno-<rule>` | Disable the specified rule. For the full list of supported rules and their identifiers see [AutosarRules](docs/AutosarRules.md) or the `--list-rules` flag. |
 | `--check-between-lines=<from,to>` | Run autocheck only between given lines. |
 | `--check-system-headers` | Check Autosar rules in system headers. |
 | `--dont-check-headers` | Don't check Autosar rules in headers. |
@@ -156,6 +156,7 @@ For more options and examples see the following sections.
 | `-p <build-path>` | Path to compile command database. For more information see the [compilation database section](#compilation-database). |
 | `-o <file>` | Path to ouput file with a json extension. |
 | `--output-type=<full\|summary>` | Should output all diagnostics or just a summary. Default is `full`. |
+| `--list-rules`| Display a list of supported rules and their identifiers. When this flag is present, all source files are ignored. |
 
 ## Compilation Database
 
