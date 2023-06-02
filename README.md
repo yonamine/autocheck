@@ -12,7 +12,7 @@ Its main purpose is to check code against AUTOSAR guidelines for the use of the 
 - Ubuntu 20.04 or newer
 - Debian 11 or newer
 
-## Install dependencies
+## Build dependencies
 
 - C++ compiler (e.g. g++, clang++, ...)
 - git
@@ -21,6 +21,8 @@ Its main purpose is to check code against AUTOSAR guidelines for the use of the 
 - python 3 (for tests)
 
 ## Runtime dependencies
+
+These packages have to be available in your distributions package repository. If they are, they will be automatically installed. Otherwise, the tool will not work.
 
 - glibc version 2.31 or newer
 - libstdc++ development package version 10 or newer
@@ -85,11 +87,13 @@ The generated package will be located in the same directory under the name `auto
 
 *Note: You should generate .deb packages only on a debian-based system, otherwise it might not work properly.*
 
+*Note: The build should be performed on the oldest supported OS version to ensure glibc compatibility*
+
 ## Install package
 
-### Ubuntu
+### Ubuntu, Debian
 
-Supports Ubutu 22.04 or newer.
+Supports Ubuntu 20.04 and Debian 11 or newer.
 
 To install the DEB package, run the following command:
 ```console
@@ -110,6 +114,23 @@ $ autocheck [file]
 This will check compliance with all supported AUTOSAR rules in the given file.
 For more options and examples see the following sections.
 
+## Command line options
+
+| Flag        | Description |
+| ---         | ---         |
+| `-W<rule>` | Enable the specified rule. For the full list of supported rules and their flags, see [AutosarRules](docs/AutosarRules.md). By default all rules are on (same as `-Wall`). |
+| `-Wno-<rule>` | Disable the specified rule. For the full list of supported rules and their flags, see [AutosarRules](docs/AutosarRules.md). |
+| `--check-between-lines=<from,to>` | Run autocheck only between given lines. |
+| `--check-system-headers` | Check Autosar rules in system headers. |
+| `--dont-check-headers` | Don't check Autosar rules in headers. |
+| `--dont-check-macro-expansions` | Don't check Autosar rules in macro expansions. |
+| `--extra-arg` | Argument to append to the compiler (e.g. include directory, link directory, define...). |
+| `--extra-arg-before` | Argument to prepend to the compiler (e.g. include directory, link directory, define...). |
+| `--warning-limit=<value>` | Set the limit of warnings per Autosar rule. By default, there is no limit. |
+| `-p <build-path>` | Path to compile command database. For more information see the [compilation database section](#compilation-database). |
+
+## Compilation Database
+
 Autocheck requires a compilation database file (`compile_commands.json`) to work on a file that is a part of a project, otherwise it can't resolve include directives.
 You can find out how to generate this file for your project [here](docs/CompilationDatabase.md).
 If the compilation database is not specifed using the `-p` flag, autocheck will try to automatically find it.
@@ -123,19 +144,6 @@ fixed-compilation-database: Error while opening fixed database: No such file or 
 json-compilation-database: Error while opening JSON database: No such file or directory
 Running without flags.
 ```
-
-## Command line options
-
-| Flag        | Description |
-| ---         | ---         |
-| `-W<rule>` | Enable the specified rule. For the full list of supported rules and their flags, see [AutosarRules](docs/AutosarRules.md). By default all rules are on (same as `-Wall`). |
-| `-Wno-<rule>` | Disable the specified rule. For the full list of supported rules and their flags, see [AutosarRules](docs/AutosarRules.md). |
-| `--check-between-lines=<from,to>` | Run autocheck only between given lines. |
-| `--check-system-headers` | Check Autosar rules in system headers. |
-| `--dont-check-headers` | Don't check Autosar rules in headers.
-| `--dont-check-macro-expansions` | Don't check Autosar rules in macro expansions.
-| `--warning-limit=<value>` | Set the limit of warnings per Autosar rule. By default, there is no limit.
-| `-p <build-path>` | Path to compile command database.
 
 ## Examples
 

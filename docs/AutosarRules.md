@@ -147,7 +147,7 @@
 | A13-5-1 | If “operator[]” is to be overloaded with a non-const version, const version shall also be implemented. | subscript-op-overload |
 | A13-5-2 | All user-defined conversion operators shall be defined explicit. | implicit-conversion-op |
 | A13-5-3 | User-defined conversion operators should not be used. | conversion-op-used |
-| A13-6-1 | Digit sequences separators ’ shall only be used as follows: (1) for decimal, every 3 digits, (2) for hexadecimal, every 2 digits, (3) for binary, every 4 digits. | digit-sequence-separator |
+| A13-6-1 | Digit sequences separators ' shall only be used as follows: (1) for decimal, every 3 digits, (2) for hexadecimal, every 2 digits, (3) for binary, every 4 digits. | digit-sequence-separator |
 | A15-1-2 | An exception object shall not be a pointer. | exception-object-is-pointer |
 | M15-1-2 | NULL shall not be thrown explicitly. | null-thrown-explicitly |
 | M15-3-4 | Each exception explicitly thrown in the code shall have a handler of a compatible type in all call paths that could lead to that point. | handler-of-compatible-type |
@@ -187,3 +187,20 @@
 | A26-5-2 | Random number engines shall not be default-initialized. | random-engine-default-initialized |
 | M27-0-1 | The stream input/output library \<cstdio\> shall not be used. | cstdio-used |
 | A27-0-4 | C-style strings shall not be used. | c-style-string-used |
+
+## Notes
+
+- Rule A16-2-2 (There shall be no unused include directives) has three implementations activated with the following flags: 
+  1. `headers-unused` - Basic version that follows the rule as stated. This is the default implementation.
+  2. `headers-unused-system-off` - Ignores checking of system headers.
+  3. `headers-unused-system-smart` - Checks system headers but does not report a warning if header itself is not used but one or more of it’s own #include directives is.
+  Only one of these can be active at a time. If multiple flags are specified, the last one will be used.
+- Some rules are implemented using static analysis.
+  These are more expensive to run so they are not included by default or under the `-Wall` flag.
+  Instead they can all be using the `-Wanalysis` flag.
+  Those rules are:
+  - [M0-1-1] A project shall not contain unreachable code.
+  - [M5-0-16] A pointer operand and any pointer resulting from pointer arithmetic using that operand shall both address elements of the same array.
+  - [A5-3-2] Null pointers shall not be dereferenced.
+  - [A5-6-1] The right hand operand of the integer division or remainder operators shall not be equal to zero.
+  - [A7-5-2] Functions shall not call themselves, either directly or indirectly.
