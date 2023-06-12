@@ -27,7 +27,7 @@ These packages have to be available in your distributions package repository. If
 - glibc version 2.31 or newer
 - libstdc++ development package version 10 or newer
 
-To use the `autocheck-dir` script the following are required to be installed:
+To use the `autocheck-dir` and `autocheck-genhtml` scripts the following are required to be installed:
 
 - python 3.8+
 
@@ -237,6 +237,7 @@ python3 autocheck-dir/autocheck-dir.py [options] SCAN_DIR OUTPUT_DIR
 *Note: You will have to pass the path to the autocheck executable in your build directory using `--autocheck-executable`. Otherwise it will attempt to run an installed version of autocheck.*
 
 #### Command line options
+
 | Flag        | Description |
 | ---         | ---         |
 | `-p <build-path>` | Path to compile command database. For more information see the [compilation database section](#compilation-database). |
@@ -252,6 +253,40 @@ python3 autocheck-dir/autocheck-dir.py [options] SCAN_DIR OUTPUT_DIR
 | `-v` <br> `--verbose` | Show error output when compilation fails. |
 | `-vv` <br> `--echo-all-commands` | Echo all commands as they are executed to stdout. |
 | `-q` <br> `--quiet` | Show message only when compilation fails. |
+
+### autocheck-genhtml
+
+Creates HTML reports from autocheck output files.
+
+#### Usage
+
+From the scripts directory run:
+```
+python3 autocheck-genhtml/autocheck-genhtml.py [options] INPUT OUTPUT
+```
+where `INPUT` is a path to autocheck output file or directory with autocheck output files, and `OUTPUT` is the ouput path.
+It should be an html file if the input was a file and a directory is the input was a directory.
+
+#### Example
+
+To generate a report for a project located in `/opt/src` run the following commands from the scripts directory:
+```
+python3 autocheck-dir/autocheck-dir.py --autocheck-executable="[autocheck_binary]" /opt/src /opt/autocheck_export
+python3 autocheck-genhtml/autocheck-genhtml.py --open /opt/autocheck_export /opt/report
+```
+where `[autocheck_binary]` is the path to the compiled autocheck executable. This will generate and open a report page that looks like this:
+
+<img style="max-height:800px;" src="docs/assets/report.png"/>
+
+You can navigate to different files and folders by clicking their names in the table and navigate back using the path displayed near the top of the page.
+
+#### Command line options
+
+| Flag        | Description |
+| ---         | ---         |
+| `-v` <br> `--verbose` | Show warning messages. |
+| `--clean-output-dir` | Empty the output directory before writing reports. Only works if outputting to a directory. |
+| `--open` | Open report in a web browser. |
 
 ## Tests
 

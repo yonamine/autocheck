@@ -1,0 +1,5 @@
+                    <tr>
+                        <td><span style="background-color: {color};" class="legend-color"></span></td>
+                        <td title="{title}">{id}</td>
+                        <td>({percentage}%)</td>
+                    </tr>

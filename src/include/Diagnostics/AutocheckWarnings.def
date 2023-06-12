@@ -286,7 +286,7 @@ NOTE(noteMismatchedNewDelete,
      "allocated with 'new%select{[]|}1'; %select{did you mean "
      "'delete%select{[]|}1'?|possible problem with delete operator}0")
 DIAG(cStyleStringUsed, "c-style-string-used",
-     "C-style strings shall not be used", "A17-0-4")
+     "C-style strings shall not be used", "A27-0-4")
 DIAG(lambdaDecltypeTypeid, "lambda-decltype-typeid",
      "A lambda shall not be an operand to decltype or typeid", "A5-1-7")
 DIAG(implicitlyCapturedVar, "implicitly-captured-var",
