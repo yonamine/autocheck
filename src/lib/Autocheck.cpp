@@ -18,6 +18,7 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
 
 using namespace clang::tooling;
@@ -65,6 +66,15 @@ static cl::opt<bool> DontCheckMacroExpansions(
     "dont-check-macro-expansions",
     cl::desc("Dont check Autosar rules in macro expansions."), cl::init(false),
     cl::cat(AutocheckCategory));
+
+static cl::opt<std::string> Output("o", cl::desc("Write output to <file>"),
+                                   cl::value_desc("file"), cl::ValueRequired,
+                                   cl::cat(AutocheckCategory));
+
+static cl::opt<std::string> OutputType("output-type", cl::desc("Output type"),
+                                       cl::value_desc("full|summary"),
+                                       cl::ValueRequired,
+                                       cl::cat(AutocheckCategory));
 
 ArgumentsAdjuster
 getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
@@ -169,8 +179,8 @@ int main(int argc, const char **argv) {
        << "Based on Clang " << CLANG_VERSION_STRING << "\n";
   });
 
-  auto ExpectedParser =
-      CommonOptionsParser::create(argc, argv, AutocheckCategory);
+  auto ExpectedParser = CommonOptionsParser::create(
+      argc, argv, AutocheckCategory, cl::NumOccurrencesFlag::Required);
   if (!ExpectedParser) {
     llvm::errs() << ExpectedParser.takeError();
     return 1;
@@ -203,6 +213,43 @@ int main(int argc, const char **argv) {
                       "Ignoring option\n";
   }
   Context.DontCheckMacroExpansions = DontCheckMacroExpansions;
+  if (!Output.empty()) {
+    // Make sure output path is absolute since the current directory might
+    // change when the tool is run.
+    if (llvm::sys::path::is_relative(Output)) {
+      llvm::SmallString<256> Storage;
+      if (std::error_code EC = llvm::sys::fs::current_path(Storage)) {
+        // It is possible for llvm::sys::fs::current_path to fail in rare cases.
+        // If it does, the output would become relative to the compile commands
+        // directory which is not what the user expects. Instead we ignore the
+        // option completely.
+        llvm::errs()
+            << "Warning: Couldn't resolve output path. Ignoring option\n";
+        Output.clear();
+      } else {
+        llvm::sys::path::append(Storage, Output);
+        Output.setValue(Storage.c_str());
+      }
+    }
+    Context.OutputPath = Output;
+  }
+  if (OutputType.getNumOccurrences() > 0) {
+    if (Output.empty()) {
+      llvm::errs() << "Warning: Output type is specified but no output path is "
+                      "given. No output will be emitted\n";
+    } else {
+      constexpr std::string_view OutputTypeFull = "full";
+      constexpr std::string_view OutputTypeSummary = "summary";
+      if (OutputType == OutputTypeFull) {
+        Context.FullOutput = true;
+      } else if (OutputType == OutputTypeSummary) {
+        Context.FullOutput = false;
+      } else {
+        llvm::errs() << "Warning: Unkown output type '" << OutputType
+                     << "'. Using 'full' instead\n";
+      }
+    }
+  }
 
   // Set up built-in warning flags.
   Tool.appendArgumentsAdjuster(getBuiltinWarningAdjuster(Context));

@@ -1,10 +1,3 @@
-include_directories(
-    ${LLVM_INCLUDE_DIRS}
-    ${CLANG_INCLUDE_DIRS}
-    ${AUTOCHECK_ROOT_SRC_DIR}/src/include
-    ${CMAKE_BINARY_DIR}/include
-)
-
 set(LLVM_LINK_COMPONENTS
     ${LLVM_TARGETS_TO_BUILD}
     Option
@@ -19,6 +12,9 @@ add_clang_executable(autocheck
     "lib/AutocheckContext.cpp"
     "lib/Diagnostics/AutocheckDiagnostic.cpp"
     "lib/Diagnostics/AutocheckDiagnosticConsumer.cpp"
+    "lib/Diagnostics/DiagnosticHelper.cpp"
+    "lib/Export/DiagExporter.cpp"
+    "lib/Export/DiagExporterJson.cpp"
     "lib/Lex/AutocheckLex.cpp"
     "lib/Lex/AutocheckPPCallbacks.cpp"
     "lib/Lex/CharHelper.cpp"

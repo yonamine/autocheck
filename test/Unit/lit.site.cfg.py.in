@@ -1,0 +1,8 @@
+@LIT_SITE_CFG_IN_HEADER@
+
+import sys
+
+config.autocheck_build_dir = "@CMAKE_BINARY_DIR@"
+
+# Let the main config do the real work.
+lit_config.load_config(config, "@AUTOCHECK_ROOT_SRC_DIR@/test/Unit/lit.cfg.py")

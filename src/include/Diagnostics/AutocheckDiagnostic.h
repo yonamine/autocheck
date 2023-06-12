@@ -20,6 +20,26 @@
 
 namespace autocheck {
 
+// Storage class for diagnostics information.
+struct DiagnosticInfo {
+  const char *Message;
+  const char *Rule;
+  clang::DiagnosticIDs::Level Level;
+};
+
+// Observer class for diagnostic events.
+//
+// To be notified when a diagnostic event is emitted extend this class and
+// register the object using
+// `AutocheckDiagnostic::AddDiagListener`
+// When it is no longer needed, unregister it with
+// `AutocheckDiagnostic::RemoveDiagListener`
+class DiagListener {
+public:
+  virtual void OnDiagnosticEmitted(AutocheckWarnings Warning,
+                                   const clang::SourceLocation &Loc) = 0;
+};
+
 // Utility class that keeps track of consecutive warnings of the same type for a
 // select group of Autosar rules which emit a lot of warnings in a row. This
 // helps declutter warnings reported to the user.
@@ -138,6 +158,11 @@ public:
   }
 
   static AutocheckWarnings getLatestWarning();
+
+  static bool AddDiagListener(DiagListener *DL);
+  static bool RemoveDiagListener(DiagListener *DL);
+
+  static const DiagnosticInfo &GetDiagInfo(AutocheckWarnings Warning);
 
 private:
   static AutocheckDiagnosticBuilder Diag(clang::DiagnosticsEngine &DE,

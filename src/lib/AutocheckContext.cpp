@@ -88,4 +88,8 @@ bool AutocheckContext::isEnabled(AutocheckWarnings Warning) const {
   return EnabledWarnings.find(Warning) != EnabledWarnings.end();
 }
 
+const std::unordered_set<AutocheckWarnings> &AutocheckContext::getEnabledWarnings() const {
+  return EnabledWarnings;
+}
+
 } // namespace autocheck

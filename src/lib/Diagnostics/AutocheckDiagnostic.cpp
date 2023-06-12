@@ -14,17 +14,14 @@
 
 #include "AutocheckContext.h"
 #include "clang/Basic/SourceManager.h"
+#include "llvm/ADT/SmallSet.h"
 #include <sstream>
 #include <utility>
 
 namespace autocheck {
 
-// Storage class for diagnostics information.
-struct DiagnosticInfo {
-  const char *Message;
-  const char *Rule;
-  clang::DiagnosticIDs::Level Level;
-};
+// List of diagnostic emitted event listeners.
+static llvm::SmallSet<DiagListener *, 1> Listeners = {};
 
 // List of warning messages and rule ids indexed by AutocheckWarnings enum
 // value.
@@ -202,6 +199,14 @@ AutocheckDiagnosticBuilder::AutocheckDiagnosticBuilder(
   // Save the type of current warning.
   if (Level == clang::DiagnosticIDs::Level::Warning)
     WarningCount.Warning = Warning;
+
+  // Notify observers when a warning is emitted.
+  if (ReportWarning && Level == clang::DiagnosticIDs::Level::Warning) {
+    std::for_each(Listeners.begin(), Listeners.end(),
+                  [&Warning, Loc](DiagListener *L) {
+                    L->OnDiagnosticEmitted(Warning, Loc);
+                  });
+  }
 }
 
 AutocheckDiagnosticBuilder::~AutocheckDiagnosticBuilder() {
@@ -234,6 +239,20 @@ AutocheckDiagnostic::Diag(clang::DiagnosticsEngine &DE,
 }
 
 void AutocheckDiagnostic::addArgsToDiagBuilder(AutocheckDiagnosticBuilder &DB) {
+}
+
+bool AutocheckDiagnostic::AddDiagListener(DiagListener *DL) {
+  const auto result = Listeners.insert(DL);
+  return result.second;
+}
+
+bool AutocheckDiagnostic::RemoveDiagListener(DiagListener *DL) {
+  return Listeners.erase(DL);
+}
+
+const DiagnosticInfo &
+AutocheckDiagnostic::GetDiagInfo(AutocheckWarnings Warning) {
+  return DiagnosticMessages[static_cast<int>(Warning)];
 }
 
 } // namespace autocheck

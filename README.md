@@ -124,10 +124,12 @@ For more options and examples see the following sections.
 | `--check-system-headers` | Check Autosar rules in system headers. |
 | `--dont-check-headers` | Don't check Autosar rules in headers. |
 | `--dont-check-macro-expansions` | Don't check Autosar rules in macro expansions. |
-| `--extra-arg` | Argument to append to the compiler (e.g. include directory, link directory, define...). |
-| `--extra-arg-before` | Argument to prepend to the compiler (e.g. include directory, link directory, define...). |
+| `--extra-arg=<arg>` | Argument to append to the compiler (e.g. include directory, link directory, define...). |
+| `--extra-arg-before=<arg>` | Argument to prepend to the compiler (e.g. include directory, link directory, define...). |
 | `--warning-limit=<value>` | Set the limit of warnings per Autosar rule. By default, there is no limit. |
 | `-p <build-path>` | Path to compile command database. For more information see the [compilation database section](#compilation-database). |
+| `-o <file>` | Path to ouput file with a json extension. |
+| `--output-type=<full\|summary>` | Should output all diagnostics or just a summary. Default is `full`. |
 
 ## Compilation Database
 

@@ -23,6 +23,7 @@
 #include "AST/TemplatesVisitor.h"
 #include "AST/TypesVisitor.h"
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
+#include "Export/DiagExporter.h"
 #include "Lex/AutocheckLex.h"
 #include "StaticAnalyzer/DivZeroChecker.h"
 #include "StaticAnalyzer/RecursionChecker.h"
@@ -113,6 +114,14 @@ void AutocheckAction::ExecuteAction() {
   clang::Preprocessor &PP = getCompilerInstance().getPreprocessor();
   clang::SourceManager &SM = getCompilerInstance().getSourceManager();
 
+  // Create and open exporter to save diagnostics to file.
+  std::unique_ptr<DiagExporter> Exporter;
+  if (!Context.OutputPath.empty())
+    Exporter = DiagExporter::GetExporterForPath(Context.OutputPath, SM,
+                                                Context.FullOutput);
+  if (Exporter)
+    Exporter->Open();
+
   // Create handler to perform lexer checks when each token is lexed.
   PP.setTokenWatcher([&CI](const clang::Token &Tok) {
     lex::CheckToken(AutocheckContext::Get(), CI, Tok);
@@ -133,6 +142,10 @@ void AutocheckAction::ExecuteAction() {
 
   runVisitors(CI.getASTContext(), *PPCallbacks, CI.getSema());
   runMatchers(CI.getASTContext());
+
+  // Close and save diagnostic output file.
+  if (Exporter)
+    Exporter->Close();
 }
 
 std::unique_ptr<clang::ASTConsumer>
