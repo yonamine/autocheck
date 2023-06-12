@@ -1,10 +1,3 @@
-include_directories(
-    ${LLVM_INCLUDE_DIRS}
-    ${CLANG_INCLUDE_DIRS}
-    ${AUTOCHECK_ROOT_SRC_DIR}/src/include
-    ${CMAKE_BINARY_DIR}/include
-)
-
 set(LLVM_LINK_COMPONENTS
     ${LLVM_TARGETS_TO_BUILD}
     Option

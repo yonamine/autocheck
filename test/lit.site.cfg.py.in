@@ -6,6 +6,7 @@ config.host_triple = "@LLVM_HOST_TRIPLE@"
 config.target_triple = "@LLVM_TARGET_TRIPLE@"
 config.llvm_tools_dir = "@CMAKE_BINARY_DIR@/llvm/bin"
 config.autocheck_src_dir = "@AUTOCHECK_ROOT_SRC_DIR@/src"
+config.autocheck_build_dir = "@CMAKE_BINARY_DIR@"
 config.autocheck_bin_dir = "@CMAKE_BINARY_DIR@/bin"
 
 import lit.llvm
