@@ -1,4 +1,4 @@
-//===-------- autocheck.cpp - Main driver for the tool --------------------===//
+//===--- Driver.cpp - Main driver for autocheck ---------------------------===//
 //
 // Copyright (C) 2023 SYRMIA
 // Part of the Autocheck Project, under the Apache License v2.0.
@@ -11,16 +11,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "AutocheckAction.h"
 #include "AutocheckContext.h"
+#include "AutocheckTool.h"
 #include "Version.h"
 #include "clang/Basic/Version.h"
-#include "clang/Frontend/FrontendAction.h"
-#include "clang/StaticAnalyzer/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
 
 using namespace clang::tooling;
@@ -78,75 +75,7 @@ static cl::opt<std::string> OutputType("output-type", cl::desc("Output type"),
                                        cl::ValueRequired,
                                        cl::cat(AutocheckCategory));
 
-ArgumentsAdjuster
-getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
-  return [&Context](const CommandLineArguments &Args, StringRef /*unused*/) {
-    CommandLineArguments AdjustedArgs(Args);
-
-    // Disable all clang warnings and reenable only those that autocheck relies
-    // on.
-    CommandLineArguments WarningsToEnable{"-Wno-everything"};
-    if (Context.isEnabled(autocheck::AutocheckWarnings::embeddedDirective))
-      WarningsToEnable.push_back("-Wembedded-directive");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::trigraphsUsed))
-      WarningsToEnable.push_back("-Wtrigraphs");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::reservedIdentifiers)) {
-      WarningsToEnable.push_back("-Wbuiltin-macro-redifined");
-      WarningsToEnable.push_back("-Wreserved-macro-identifier");
-    }
-    if (Context.isEnabled(
-            autocheck::AutocheckWarnings::unusedFunctionOrMethod) ||
-        Context.isEnabled(autocheck::AutocheckWarnings::unusedFunction))
-      WarningsToEnable.push_back("-Wunused-function");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::unusedTypedef))
-      WarningsToEnable.push_back("-Wunused-local-typedef");
-    if (Context.isEnabled(
-            autocheck::AutocheckWarnings::deprecatedDynamicExceptionSpec))
-      WarningsToEnable.push_back("-Wdynamic-exception-spec");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::cStyleCastUsed))
-      WarningsToEnable.push_back("-Wold-style-cast");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::castRemovesQual))
-      WarningsToEnable.push_back("-Wcast-qual");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::unusedParameter))
-      WarningsToEnable.push_back("-Wunused-parameter");
-    if (Context.isEnabled(
-            autocheck::AutocheckWarnings::exceptionHandlerInversion))
-      WarningsToEnable.push_back("-Wexceptions");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::returnStackAddress))
-      WarningsToEnable.push_back("-Wreturn-stack-address");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::returnNonVoidFunction))
-      WarningsToEnable.push_back("-Wreturn-type");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::breakSwitchCase))
-      WarningsToEnable.push_back("-Wimplicit-fallthrough");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::uninitializedMemory))
-      WarningsToEnable.push_back("-Wuninitialized");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::registerKeywordUsed))
-      WarningsToEnable.push_back("-Wregister");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::invalidNoreturn))
-      WarningsToEnable.push_back("-Winvalid-noreturn");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::arrayBounds)) {
-      WarningsToEnable.push_back("-Warray-bounds");
-      WarningsToEnable.push_back("-Warray-bounds-pointer-arithmetic");
-    }
-    if (Context.isEnabled(autocheck::AutocheckWarnings::deleteIncomplete))
-      WarningsToEnable.push_back("-Wdelete-incomplete");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::switchBool))
-      WarningsToEnable.push_back("-Wswitch-bool");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::writableString))
-      WarningsToEnable.push_back("-Wwritable-strings");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::undefMacroUsed))
-      WarningsToEnable.push_back("-Wundef");
-    if (Context.isEnabled(autocheck::AutocheckWarnings::unusedVariable))
-      WarningsToEnable.push_back("-Wunused-variable");
-
-    if (!WarningsToEnable.empty())
-      AdjustedArgs.insert(llvm::find(AdjustedArgs, "--"),
-                          WarningsToEnable.cbegin(), WarningsToEnable.cend());
-    return AdjustedArgs;
-  };
-}
-
-ArgumentsAdjuster getVerifyModeAdjuster(const std::string &Verify) {
+static ArgumentsAdjuster getVerifyModeAdjuster(const std::string &Verify) {
   return [Verify](const CommandLineArguments &Args, StringRef /*unused*/) {
     CommandLineArguments AdjustedArgs(Args);
     CommandLineArguments VerifyArgs{"-Xclang", "-verify=" + Verify};
@@ -154,23 +83,6 @@ ArgumentsAdjuster getVerifyModeAdjuster(const std::string &Verify) {
                         VerifyArgs.cend());
     return AdjustedArgs;
   };
-}
-
-ArgumentsAdjuster getResourceDirAdjuster(const char *ExecPath) {
-  // Find the absolute path to the directory of the executable.
-  static int Symbol;
-  std::string ExecutablePath = sys::fs::getMainExecutable(ExecPath, &Symbol);
-  StringRef ExecutableDir = sys::path::parent_path(ExecutablePath);
-
-  // Resource dir should be in ../lib/autocheck relative to the executable
-  // directory.
-  SmallString<128> ResourceDir = sys::path::parent_path(ExecutableDir);
-  sys::path::append(ResourceDir, "lib", "autocheck");
-
-  // Create the argument aduster.
-  return getInsertArgumentAdjuster(
-      {Twine("-resource-dir=").concat(ResourceDir).str()},
-      ArgumentInsertPosition::BEGIN);
 }
 
 int main(int argc, const char **argv) {
@@ -188,9 +100,6 @@ int main(int argc, const char **argv) {
     return 1;
   }
   CommonOptionsParser &OptionsParser = ExpectedParser.get();
-
-  ClangTool Tool(OptionsParser.getCompilations(),
-                 OptionsParser.getSourcePathList());
 
   // Initialize context.
   autocheck::AutocheckContext &Context = autocheck::AutocheckContext::Get();
@@ -253,8 +162,8 @@ int main(int argc, const char **argv) {
     }
   }
 
-  // Set up built-in warning flags.
-  Tool.appendArgumentsAdjuster(getBuiltinWarningAdjuster(Context));
+  AutocheckTool Tool(OptionsParser.getCompilations(),
+                     OptionsParser.getSourcePathList()[0]);
 
   // Set up verify mode.
   if (Verify.getNumOccurrences() > 0) {
@@ -263,11 +172,10 @@ int main(int argc, const char **argv) {
     Tool.appendArgumentsAdjuster(getVerifyModeAdjuster(Verify));
   }
 
-  // TODO: Since no linux distro currently has clang 16, we ship our own clang
-  // headers and specify where to find them. We should change this to be a
-  // package dependency when clang 16 comes to repositories.
+  // We ship our own clang headers and specify where to find them. This is done
+  // to support systems where those headers might not be available in the
+  // package manager.
   Tool.appendArgumentsAdjuster(getResourceDirAdjuster(argv[0]));
 
-  // Create and run autocheck checks.
-  return Tool.run(newFrontendActionFactory<autocheck::AutocheckAction>().get());
+  return Tool.run();
 }
