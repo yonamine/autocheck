@@ -1,0 +1,12 @@
+        <div class="plot">
+            <h3>{title}</h3>
+            <div class="pie" style="background: conic-gradient({background})"></div>
+            <div class="plot-caption">
+                <table class="legend">
+                    <tr>
+                        <th colspan="3">Legend</td>
+                    </tr>
+{legend}
+                </table>
+            </div>
+        </div>

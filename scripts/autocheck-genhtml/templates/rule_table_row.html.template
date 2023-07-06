@@ -1,0 +1,6 @@
+        <tr>
+            <td class="center">{id}</td>
+            <td class="center">{obligation}</td>
+            <td>{message}</td>
+            <td class="center">{n_violations} ({p_violations}%)</td>
+        </tr>

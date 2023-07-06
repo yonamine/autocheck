@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autocheck report</title>
+{style}
+</head>
+<body>
+    <h1>Autocheck report</h1>
+
+    <hr>
+
+    <div class="header">
+        <ul class="path">
+{path}
+        </ul>
+    </div>
+
+    <hr>
+
+    <table class="info">
+        <tr>
+            <th>Directory:</th>
+            <td>{dirname}</td>
+        </tr>
+        <tr>
+            <th>Total rule violations:</th>
+            <td>{rule_violations_total}</td>
+        </tr>
+        <tr>
+            <th>Required rule violations:</th>
+            <td>{rule_violations_required}</td>
+        </tr>
+        <tr>
+            <th>Advisory rule violations:</th>
+            <td>{rule_violations_advisory}</td>
+        </tr>
+        <tr>
+            <th>Total rules violated:</th>
+            <td>{rules_violated_total}</td>
+        </tr>
+        <tr>
+            <th>Required rules violated:</th>
+            <td>{rules_violated_required}</td>
+        </tr>
+        <tr>
+            <th>Advisory rules violated:</th>
+            <td>{rules_violated_advisory}</td>
+        </tr>
+    </table>
+
+    <div class="plots">
+        <div class="plot">
+            <h3>AUTOSAR rule compliance</h3>
+            <div class="progress" style="--p:{autosar_rules_compliant_percent}; --b:30px;">{autosar_rules_compliant_percent}%</div>
+            <div class="plot-caption">
+                <table class="legend"></table>
+                <p>Code complies with {autosar_rules_compliant}/{autosar_rules_supported} AUTOSAR rules</p>
+            </div>
+        </div>
+
+{chart_by_rule}
+
+{chart_by_obligation}
+
+{chart_by_enforcement}
+    </div>
+    
+    <table id="files">
+        <colgroup>
+            <col span="1">
+            <col span="1" style="min-width: 150px; width: 20%">
+         </colgroup>
+        <tr>
+            <th>Name</th>
+            <th>Number of violations</th>
+        </tr>
+        {files_table_rows}
+    </table>
+
+    <table id="rules">
+        <tr>
+            <th>Rule</th>
+            <th>Obligation</th>
+            <th>Message</th>
+            <th>Number of violations</th>
+        </tr>
+        {rules_table_rows}
+    </table>
+</body>

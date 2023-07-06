@@ -1,0 +1,4 @@
+        <tr>
+            <td>{file}</td>
+            <td class="center">{violations} ({p_violations}%)</td>
+        </tr>

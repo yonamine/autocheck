@@ -1,6 +1,9 @@
 # Build directory
-build
+build/
 
 # IDE files
 .vscode
 .vs
+
+# Python cache
+**/__pycache__/**

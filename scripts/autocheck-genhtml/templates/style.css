@@ -1,0 +1,172 @@
+body {
+    width: 80%;
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+}
+
+ul {
+    margin: 0;
+    list-style-type: none;
+    padding: 0;
+}
+
+.path {
+    list-style-type: none;
+    display: flex;
+    padding: 0;
+}
+
+.path li {
+    margin: 10px;
+}
+
+.header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap-reverse;
+}
+
+.plots {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.plot {
+    display: inline-block;
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.progress {
+    width: 200px;
+    height: 200px;
+    position: relative;
+    display: inline-grid;
+    place-content: center;
+    font-size: 25px;
+    font-weight: bold;
+    font-family: sans-serif;
+}
+
+.progress:before {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    inset: 0;
+    background: conic-gradient(purple calc(var(--p)*1%), #0003 0);
+    -webkit-mask: radial-gradient(farthest-side, #0000 calc(99% - var(--b)), #000 calc(100% - var(--b)));
+    mask: radial-gradient(farthest-side, #0000 calc(99% - var(--b)), #000 calc(100% - var(--b)));
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+}
+
+.pie {
+    height: 200px;
+    width: 200px;
+    border-radius: 50%;
+    display: inline-block;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+}
+
+.plot-caption {
+    display: inline-block;
+    width: 300px;
+}
+
+.legend {
+    display: table;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.legend td {
+    padding: 0 5px;
+}
+
+.legend-color {
+    display: inline-block;
+    height: 20px;
+    width: 20px;
+    background-color: black;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+}
+
+#rules {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+}
+
+#rules tr:nth-child(odd) {
+    background-color: lightgrey;
+}
+
+#rules tr:nth-child(even) {
+    background-color: white;
+}
+
+#rules th,
+#rules td {
+    padding: 6px;
+    border: 2px solid grey;
+}
+
+#rules th {
+    background-color: grey;
+    color: white;
+}
+
+.center {
+    text-align: center;
+}
+
+#files {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+}
+
+#files tr:nth-child(odd) {
+    background-color: lightgrey;
+}
+
+#files tr:nth-child(even) {
+    background-color: white;
+}
+
+#files td,
+#files th {
+    padding: 6px;
+    border: 2px solid grey;
+}
+
+#files th {
+    background-color: grey;
+    color: white;
+}
+
+.info th {
+    text-align: left;
+}
+
+@media screen and (max-width: 720px) {
+    .plots {
+        grid-template-columns: 1fr;
+    }
+
+    body {
+        width: 95%;
+    }
+
+    #rules tr td:nth-child(2),
+    #rules tr th:nth-child(2) {
+        display: none;
+    }
+}
