@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+################################################################################
+# Copyright (C) 2023 SYRMIA
+# Part of the Autocheck Project, under the Apache License v2.0.
+# See LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+################################################################################
+
 import argparse
 from enum import IntEnum, unique
 import multiprocessing

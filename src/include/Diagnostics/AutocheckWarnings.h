@@ -1,7 +1,9 @@
 //===- AutocheckWarnings.h - Enumeration of supported warnings ------------===//
 //
-// Part of the Autocheck Project, under the Apache License v2.0 with Syrmia
-// Exceptions. See LICENSE for details.
+// Copyright (C) 2023 SYRMIA
+// Part of the Autocheck Project, under the Apache License v2.0.
+// See LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 //
