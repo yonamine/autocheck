@@ -6,10 +6,18 @@ set(LLVM_LINK_COMPONENTS
 
 configure_file(include/Version.h.in ${CMAKE_BINARY_DIR}/include/Version.h)
 
-add_clang_executable(autocheck 
-    "lib/Autocheck.cpp"
+# MSVC doesn't add 'lib' prefix to libraries so it is added here for consistency.
+if(MSVC)
+  set(output_name "libautocheck")
+else()
+  set(output_name "autocheck")
+endif()
+
+add_clang_library(libautocheck
+    OUTPUT_NAME ${output_name}
     "lib/AutocheckAction.cpp"
     "lib/AutocheckContext.cpp"
+    "lib/AutocheckTool.cpp"
     "lib/Diagnostics/AutocheckDiagnostic.cpp"
     "lib/Diagnostics/AutocheckDiagnosticConsumer.cpp"
     "lib/Diagnostics/DiagnosticHelper.cpp"
@@ -36,8 +44,8 @@ add_clang_executable(autocheck
     "lib/StaticAnalyzer/RecursionChecker.cpp"
     "lib/StaticAnalyzer/UnreachableCodeChecker.cpp"
 )
-clang_target_link_libraries(autocheck
-    PRIVATE
+clang_target_link_libraries(libautocheck
+    PUBLIC
     clangAST
     clangBasic
     clangFrontend
@@ -46,9 +54,11 @@ clang_target_link_libraries(autocheck
     clangTooling
     clangToolingSyntax
 )
-set_target_properties(autocheck
+set_target_properties(libautocheck
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
+
+add_subdirectory(tools)
