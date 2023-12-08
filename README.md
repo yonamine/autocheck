@@ -33,16 +33,28 @@ To use the `autocheck-dir` and `autocheck-genhtml` scripts the following are req
 
 ## Clone the repo
 
-Since we use ```llvm-project``` as submodule, we need to clone the submodule as well:
+First clone the repository without submodules:
+```
+$ git clone https://github.com/syrmia/autocheck.git
+$ cd autocheck
+```
 
+Since we use `llvm-project` as a submodule, we need to clone it as well:
 ```
-$ git clone --recurse-submodules git@github.com:syrmia/autocheck.git
+$ git submodule init
+$ git submodule update src/llvm-project
 ```
-As well as to ```pull``` the code, we need to do it as follows:
 
+If you have access to the private `vscode-autocheck-plugins` repository, clone it as well. By default, this uses the HTTP protocol which requires a Personal Access Token with write access to the repository:
 ```
-$ git pull --recurse-submodules
+$ git submodule update src/tools/vscode-autocheck
 ```
+If you want to use SSH instead, you can change the URL locally:
+```
+$ git config submodule.vscode-autocheck.url git@github.com:syrmia/vscode-autocheck-plugins.git
+$ git submodule update src/tools/vscode-autocheck
+```
+
 
 ## Automated build
 
