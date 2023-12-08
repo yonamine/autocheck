@@ -233,6 +233,12 @@ int main() {
 }
 ```
 
+## VSCode plugin
+
+Autocheck is available as a plugin for [VSCode](https://code.visualstudio.com/). It shows AUTOSAR C++ rule violations in real-time as the user types code. Each violation is highlighted in the editor and a message showing the violated rule is displayed when hovering over the code as well as in the `Problems` panel.
+
+<img src="docs/assets/vscode-autocheck.gif"/>
+
 ## Scripts
 
 ### autocheck-dir
@@ -306,3 +312,17 @@ Autocheck uses [LLVM Integrated Tester (lit)](https://www.llvm.org/docs/CommandG
 ```console
 $ ninja check-autocheck
 ```
+
+## Authors
+
+- Milena Vujosevic-Janicic
+- Vladimir Vuksanovic
+- Djordje Todorovic
+- Mirko Brkusanin
+- Milos Stojanovic
+- Petar Avramovic
+- Ognjen Plavsic
+- Jelena Graovac
+- Djordje Milicevic
+- Djordje Curkovic
+- Aleksandar Vracarevic
