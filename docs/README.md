@@ -29,6 +29,10 @@ To use the `autocheck-dir` and `autocheck-genhtml` scripts the following are req
 
 - python 3.8+
 
+## Releases
+
+Installation packages for Autocheck can be found in the releases section of the repository [here](https://github.com/syrmia/autocheck/releases).
+
 ## Install package
 
 ### Ubuntu, Debian
@@ -243,6 +247,13 @@ It means that the `_apt` user which is used to install packages doesn't have per
 - Running autocheck shows `/lib/x86_64-linux-gnu/libc.so.6: version 'GLIBC_2.XX' not found (required by autocheck)`
 
   You are trying to use autocheck on an unsupported system. The list of supported operating systems can be found [here](#supported-operating-systems).
+
+## TODO
+
+- Implement more rules from the AUTOSAR C++ Guidelines
+- Add support for MISRA C++ 2023 standard
+- Make releases for Windows and Mac, but it should work as is
+- ...
 
 ## Authors
 

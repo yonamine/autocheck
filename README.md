@@ -111,6 +111,10 @@ The generated package will be located in the same directory under the name `auto
 
 *Note: The build should be performed on the oldest supported OS version to ensure glibc compatibility*
 
+## Releases
+
+Installation packages for Autocheck can be found in the releases section of the repository [here](https://github.com/syrmia/autocheck/releases).
+
 ## Install package
 
 ### Ubuntu, Debian
@@ -312,6 +316,13 @@ Autocheck uses [LLVM Integrated Tester (lit)](https://www.llvm.org/docs/CommandG
 ```console
 $ ninja check-autocheck
 ```
+
+## TODO
+
+- Implement more rules from the AUTOSAR C++ Guidelines
+- Add support for MISRA C++ 2023 standard
+- Make releases for Windows and Mac, but it should work as is
+- ...
 
 ## Authors
 
