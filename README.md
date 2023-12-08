@@ -7,6 +7,12 @@ Its main purpose is to check code against AUTOSAR guidelines for the use of the 
 
 <img src="docs/assets/autocheck.gif"/>
 
+## VSCode plugin
+
+Autocheck is available as a plugin for [VSCode](https://code.visualstudio.com/). It shows AUTOSAR C++ rule violations in real-time as the user types code. Each violation is highlighted in the editor and a message showing the violated rule is displayed when hovering over the code as well as in the `Problems` panel.
+
+<img src="docs/assets/vscode-autocheck.gif"/>
+
 ## Supported Operating Systems
 
 - Ubuntu 20.04 or newer
@@ -233,12 +239,6 @@ int main() {
 }
 ```
 
-## VSCode plugin
-
-Autocheck is available as a plugin for [VSCode](https://code.visualstudio.com/). It shows AUTOSAR C++ rule violations in real-time as the user types code. Each violation is highlighted in the editor and a message showing the violated rule is displayed when hovering over the code as well as in the `Problems` panel.
-
-<img src="docs/assets/vscode-autocheck.gif"/>
-
 ## Scripts
 
 ### autocheck-dir
@@ -318,6 +318,7 @@ $ ninja check-autocheck
 - Milena Vujosevic-Janicic
 - Vladimir Vuksanovic
 - Djordje Todorovic
+- Petar Jovanovic
 - Mirko Brkusanin
 - Milos Stojanovic
 - Petar Avramovic
