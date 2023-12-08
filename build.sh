@@ -11,7 +11,7 @@ if ! [ "$(ls -A $project_root/src/llvm-project)" ]; then
     echo "Cloning llvm-project submodule"
     pushd $project_root > /dev/null
     git submodule init
-    git submodule update
+    git submodule update src/llvm-project
     popd > /dev/null
 fi
 

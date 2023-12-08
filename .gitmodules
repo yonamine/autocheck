@@ -1,4 +1,6 @@
-[submodule "src/llvm-project"]
+[submodule "llvm-project"]
 	path = src/llvm-project
-	url = https://github.com/llvm/llvm-project
-	shallow = true
+	url = https://github.com/llvm/llvm-project.git
+[submodule "vscode-autocheck"]
+	path = src/tools/vscode-autocheck
+	url = https://github.com/syrmia/vscode-autocheck-plugins.git
