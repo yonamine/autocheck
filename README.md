@@ -326,7 +326,7 @@ $ ninja check-autocheck
 
 ## Authors
 
-- Milena Vujosevic-Janicic
+- Milena Vujosevic Janicic
 - Vladimir Vuksanovic
 - Djordje Todorovic
 - Petar Jovanovic
