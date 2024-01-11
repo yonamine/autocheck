@@ -22,6 +22,9 @@ namespace autocheck {
 // the rule starts with A or 1 if it starts with M)
 int hashRuleId(const char *RuleId);
 
+// Print a table of all supported AUTOSAR rules and their autocheck identifiers.
+void printRuleIdentifierTable();
+
 } // namespace autocheck
 
 #endif
