@@ -67,6 +67,8 @@
 
 namespace autocheck {
 
+class AutocheckDiagnostic;
+
 /// Common interface for all AutosarClasses visitors.
 class ClassesVisitorInterface {
 public:
@@ -93,10 +95,10 @@ public:
 
 /// [M10-1-1] Classes should not be derived from virtual bases.
 class DerivedFromVirtualVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit DerivedFromVirtualVisitor(clang::DiagnosticsEngine &DE);
+  explicit DerivedFromVirtualVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
@@ -105,10 +107,10 @@ public:
 /// [A10-3-1] Virtual function declaration shall contain exactly one of the
 /// three specifiers: (1) virtual, (2) override, (3) final.
 class VirtualFuncSpecifierVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit VirtualFuncSpecifierVisitor(clang::DiagnosticsEngine &DE);
+  explicit VirtualFuncSpecifierVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
@@ -117,10 +119,10 @@ public:
 /// [A10-3-2] Each overriding virtual function shall be declared with the
 /// override or final specifier.
 class OverrideFuncSpecifierVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit OverrideFuncSpecifierVisitor(clang::DiagnosticsEngine &DE);
+  explicit OverrideFuncSpecifierVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
@@ -128,10 +130,10 @@ public:
 
 /// [A10-3-3] Virtual functions shall not be introduced in a final class.
 class VirtualMethodFinalClassVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit VirtualMethodFinalClassVisitor(clang::DiagnosticsEngine &DE);
+  explicit VirtualMethodFinalClassVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
@@ -140,10 +142,10 @@ public:
 /// [M10-3-3] A virtual function shall only be overridden by a pure virtual
 /// function if it is itself declared as pure virtual.
 class PureFuncOverrideVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit PureFuncOverrideVisitor(clang::DiagnosticsEngine &DE);
+  explicit PureFuncOverrideVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
@@ -151,10 +153,10 @@ public:
 
 /// [M11-0-1] Member data in non-POD class types shall be private.
 class MemberDataPrivateVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit MemberDataPrivateVisitor(clang::DiagnosticsEngine &DE);
+  explicit MemberDataPrivateVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
@@ -162,10 +164,10 @@ public:
 
 /// [A11-0-1] A non-POD type should be defined as class.
 class NonPODAsClassVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit NonPODAsClassVisitor(clang::DiagnosticsEngine &DE);
+  explicit NonPODAsClassVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
@@ -174,10 +176,10 @@ public:
 /// [A12-1-4] All constructors that are callable with a single argument of
 /// fundamental type shall be declared explicit.
 class ExplicitCtorsVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit ExplicitCtorsVisitor(clang::DiagnosticsEngine &DE);
+  explicit ExplicitCtorsVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
@@ -186,10 +188,10 @@ public:
 /// [A12-4-2] If a public destructor of a class is non-virtual, then the class
 /// should be declared final.
 class FinalClassDestructorVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit FinalClassDestructorVisitor(clang::DiagnosticsEngine &DE);
+  explicit FinalClassDestructorVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
@@ -197,10 +199,10 @@ public:
 
 /// [A13-2-3] A relational operator shall return a boolean value.
 class RelOpBoolValueVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit RelOpBoolValueVisitor(clang::DiagnosticsEngine &DE);
+  explicit RelOpBoolValueVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
@@ -208,10 +210,10 @@ public:
 
 /// [A13-5-2] All user-defined conversion operators shall be defined explicit.
 class ImplicitConversionOpVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit ImplicitConversionOpVisitor(clang::DiagnosticsEngine &DE);
+  explicit ImplicitConversionOpVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXConversionDecl(const clang::CXXConversionDecl *CCD) override;
@@ -219,10 +221,10 @@ public:
 
 /// [A13-5-3] User-defined conversion operators should not be used.
 class ConverionOpUsedVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit ConverionOpUsedVisitor(clang::DiagnosticsEngine &DE);
+  explicit ConverionOpUsedVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXConversionDecl(const clang::CXXConversionDecl *CCD) override;
@@ -231,10 +233,10 @@ public:
 /// [A13-5-1] If "operator[]" is to be overloaded with a non-const version,
 /// const version shall also be implemented.
 class SubscriptOperatorOverloadVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit SubscriptOperatorOverloadVisitor(clang::DiagnosticsEngine &DE);
+  explicit SubscriptOperatorOverloadVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
@@ -243,12 +245,12 @@ public:
 /// [A0-1-3] Every function defined in an anonymous namespace, or static
 /// function with internal linkage, or private member function shall be used.
 class UnusedPrivateMethodVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   std::set<const clang::CXXMethodDecl *> PrivateMethods;
   const clang::CXXMethodDecl *CurrentMethod;
 
 public:
-  explicit UnusedPrivateMethodVisitor(clang::DiagnosticsEngine &DE);
+  explicit UnusedPrivateMethodVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   /// Track when entering a method declaration.
@@ -272,10 +274,10 @@ public:
 /// [M9-3-1] Const member functions shall not return non-const pointers or
 /// references to class-data.
 class NonConstReturnedFromConst : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit NonConstReturnedFromConst(clang::DiagnosticsEngine &DE);
+  explicit NonConstReturnedFromConst(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
@@ -284,10 +286,10 @@ public:
 /// [A12-8-2] User-defined copy and move assignment operators should use
 /// user-defined no-throw swap function.
 class CopyAndMoveAssignmentNoSwapVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit CopyAndMoveAssignmentNoSwapVisitor(clang::DiagnosticsEngine &DE);
+  explicit CopyAndMoveAssignmentNoSwapVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
   bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CRD) override;
 };
@@ -295,19 +297,18 @@ public:
 /// [A9-5-1] Unions shall not be used.
 class UnionsUsedVisitor : public ClassesVisitorInterface {
 private:
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit UnionsUsedVisitor(clang::DiagnosticsEngine &DE,
-                             clang::ASTContext &AC);
+  explicit UnionsUsedVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
 };
 
 class ChangedDefaultArgumentsVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &ASTCtx;
   // Set of locations where warning should be shown.
   std::set<clang::SourceLocation> Locations;
@@ -341,9 +342,8 @@ class ChangedDefaultArgumentsVisitor : public ClassesVisitorInterface {
                                   const clang::SourceLocation &Loc);
 
 public:
-  explicit ChangedDefaultArgumentsVisitor(clang::DiagnosticsEngine &DE,
-                                          clang::ASTContext &ASTCtx)
-      : DE(DE), ASTCtx(ASTCtx) {}
+  explicit ChangedDefaultArgumentsVisitor(AutocheckDiagnostic &AD,
+                                          clang::ASTContext &ASTCtx);
   static bool isFlagPresent(const AutocheckContext &Context);
   bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
 };
@@ -351,10 +351,10 @@ public:
 /// [M5-2-11] The comma operator, && operator and the || operator shall not be
 /// overloaded.
 class ForbiddenOperatorOverloadVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit ForbiddenOperatorOverloadVisitor(clang::DiagnosticsEngine &DE);
+  explicit ForbiddenOperatorOverloadVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
@@ -362,10 +362,10 @@ public:
 
 /// [M5-3-3] The unary & operator shall not be overloaded.
 class UnaryAmpOperatorOverloadVisitor : public ClassesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit UnaryAmpOperatorOverloadVisitor(clang::DiagnosticsEngine &DE);
+  explicit UnaryAmpOperatorOverloadVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
@@ -375,13 +375,11 @@ public:
 /// [A10-3-5] A user-defined assignment operator shall not be virtual.
 class AssignmentOpVisitor : public ClassesVisitorInterface {
 private:
-  clang::DiagnosticsEngine &DE;
-  const AutocheckContext &Context;
+  AutocheckDiagnostic &AD;
   bool CheckRefQual, CheckVirtual;
 
 public:
-  explicit AssignmentOpVisitor(clang::DiagnosticsEngine &DE,
-                               const AutocheckContext &Context);
+  explicit AssignmentOpVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
@@ -393,10 +391,10 @@ public:
 /// class.
 class ProperStructureVisitor : public ClassesVisitorInterface {
 private:
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit ProperStructureVisitor(clang::DiagnosticsEngine &DE);
+  explicit ProperStructureVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
@@ -406,10 +404,10 @@ public:
 /// override or protected non-virtual.
 class BaseDestructorVisitor : public ClassesVisitorInterface {
 private:
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit BaseDestructorVisitor(clang::DiagnosticsEngine &DE);
+  explicit BaseDestructorVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
@@ -419,13 +417,12 @@ public:
 /// implement a ClassesVisitorInterface if appropriate flag is found. Runs all
 /// Class Visitors with one AST traversal.
 class ClassesVisitor : public clang::RecursiveASTVisitor<ClassesVisitor> {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
   std::forward_list<std::unique_ptr<ClassesVisitorInterface>> AllVisitors;
 
 public:
-  explicit ClassesVisitor(clang::DiagnosticsEngine &DE,
-                          clang::ASTContext &ASTCtx);
+  explicit ClassesVisitor(AutocheckDiagnostic &AD, clang::ASTContext &ASTCtx);
   void run(clang::TranslationUnitDecl *TUD);
 
   bool TraverseDecl(clang::Decl *D);

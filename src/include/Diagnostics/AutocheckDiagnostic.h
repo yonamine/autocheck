@@ -18,9 +18,13 @@
 #include "Diagnostics/AutocheckWarnings.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/SourceLocation.h"
+#include "llvm/ADT/SmallSet.h"
 #include <unordered_map>
 
 namespace autocheck {
+
+class AutocheckContext;
+class AutocheckDiagnostic;
 
 // Storage class for diagnostics information.
 struct DiagnosticInfo {
@@ -55,10 +59,12 @@ public:
     bool isAlreadyEmitted() { return Current == Previous; };
   };
 
-  static WarningRepeatChecker &getWarningRepeatChecker();
+  WarningRepeatChecker();
+
   /// Checks whether the given warning is in the set of rules whose warnings
   /// shouldn't repeat in the same line of a file.
   bool shouldControl(AutocheckWarnings Warning);
+
   /// Updates the previous line number and returns an object on which
   /// isAlreadyEmitted() can be called.
   /// Assumes that each subsequent call for the same type of warning gets a
@@ -69,8 +75,6 @@ public:
                                AutocheckWarnings Warning);
 
 private:
-  WarningRepeatChecker();
-
   // Map of previous warning line numbers for a group Autosar rules that
   // WarningRepeatChecker tracks.
   std::unordered_map<AutocheckWarnings, unsigned> PreviousLineNumbers;
@@ -118,17 +122,15 @@ private:
 
 /// Check if given location is in main file or allowed header based on currently
 /// set flags.
-bool appropriateHeaderLocation(clang::DiagnosticsEngine &DE,
+bool appropriateHeaderLocation(AutocheckDiagnostic &AD,
                                const clang::SourceLocation &Loc);
-
-WarningCounter &getWarningCounter();
 
 /// Custom DiagnosticsBuilder class that checks autocheck diagnostics options to
 /// determine whether to report the diagnostic to the user or not.
 class AutocheckDiagnosticBuilder : public clang::DiagnosticBuilder {
 public:
   AutocheckDiagnosticBuilder(clang::DiagnosticBuilder &DB,
-                             clang::DiagnosticsEngine &DE,
+                             AutocheckDiagnostic &AD,
                              const clang::SourceLocation &Loc,
                              AutocheckWarnings Warning,
                              clang::DiagnosticIDs::Level Level);
@@ -143,43 +145,67 @@ private:
 
 class AutocheckDiagnostic {
 public:
-  AutocheckDiagnostic() = delete;
+  AutocheckDiagnostic(const AutocheckContext &Context,
+                      clang::DiagnosticsEngine &DE);
 
   template <typename... ArgsType>
-  static WarningCounter &
-  reportWarning(clang::DiagnosticsEngine &DE, const clang::SourceLocation &Loc,
-                AutocheckWarnings Warning, ArgsType &&...Args) {
+  WarningCounter &reportWarning(const clang::SourceLocation &Loc,
+                                AutocheckWarnings Warning, ArgsType &&...Args) {
     // Open a new scope to control when DB gets destructed. The diagnostic is
     // emitted in the DiagnosticBuilder's destructor.
     {
-      AutocheckDiagnosticBuilder DB = Diag(DE, Loc, Warning);
+      AutocheckDiagnosticBuilder DB = Diag(Loc, Warning);
       addArgsToDiagBuilder(DB, std::forward<ArgsType>(Args)...);
     }
 
-    return getWarningCounter();
+    return Counter;
   }
 
-  static AutocheckWarnings getLatestWarning();
+  AutocheckWarnings getLatestWarning() const;
 
-  static bool AddDiagListener(DiagListener *DL);
-  static bool RemoveDiagListener(DiagListener *DL);
+  bool AddDiagListener(DiagListener *DL);
+  bool RemoveDiagListener(DiagListener *DL);
 
   static const DiagnosticInfo &GetDiagInfo(AutocheckWarnings Warning);
 
+  const AutocheckContext &GetContext() const;
+  // Convenience function to check whether a rule is enabled in the context.
+  bool IsEnabled(AutocheckWarnings Warning) const;
+
+  clang::DiagnosticsEngine &GetDiagnostics();
+  // Convenience function to access diagnostics engines source manger.
+  clang::SourceManager &GetSourceManager() const;
+
 private:
-  static AutocheckDiagnosticBuilder Diag(clang::DiagnosticsEngine &DE,
-                                         const clang::SourceLocation &Loc,
-                                         AutocheckWarnings Warning);
+  AutocheckDiagnosticBuilder Diag(const clang::SourceLocation &Loc,
+                                  AutocheckWarnings Warning);
 
   // Base case for variadic template.
-  static void addArgsToDiagBuilder(AutocheckDiagnosticBuilder &DB);
+  void addArgsToDiagBuilder(AutocheckDiagnosticBuilder &DB);
 
   template <typename ArgType, typename... ArgsType>
-  static void addArgsToDiagBuilder(AutocheckDiagnosticBuilder &DB,
-                                   ArgType &&Arg, ArgsType &&...Args) {
+  void addArgsToDiagBuilder(AutocheckDiagnosticBuilder &DB, ArgType &&Arg,
+                            ArgsType &&...Args) {
     DB << std::forward<ArgType>(Arg);
     addArgsToDiagBuilder(DB, std::forward<ArgsType>(Args)...);
   }
+
+  // Autocheck invocation settings.
+  const AutocheckContext &Context;
+
+  // Diagnostics engine of the compiler invocation.
+  clang::DiagnosticsEngine &DE;
+
+  // Warning counter to limit number of warnings.
+  WarningCounter Counter;
+
+  // Checker to prevent a large number of consecutive warnings.
+  WarningRepeatChecker RepeatChecker;
+
+  // List of diagnostic emitted event listeners.
+  llvm::SmallSet<DiagListener *, 1> Listeners;
+
+  friend class AutocheckDiagnosticBuilder;
 };
 
 } // namespace autocheck

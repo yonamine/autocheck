@@ -18,9 +18,9 @@
 
 namespace autocheck {
 
-DiagExporterJson::DiagExporterJson(llvm::StringRef FilePath,
+DiagExporterJson::DiagExporterJson(AutocheckDiagnostic &AD, llvm::StringRef FilePath,
                                    clang::SourceManager &SM, bool FullOutput)
-    : DiagExporter(FilePath, SM, FullOutput) {}
+    : DiagExporter(AD, FilePath, SM, FullOutput) {}
 
 void DiagExporterJson::Begin() {
   OS = std::make_unique<llvm::json::OStream>(Out->os(), 2);

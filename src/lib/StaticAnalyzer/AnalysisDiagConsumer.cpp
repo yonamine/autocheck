@@ -17,8 +17,8 @@
 namespace autocheck {
 
 AutocheckAnalysisDiagConsumer::AutocheckAnalysisDiagConsumer(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 llvm::StringRef AutocheckAnalysisDiagConsumer::getName() const {
   return "Autocheck Diagnostic Consumer";
@@ -36,17 +36,17 @@ void AutocheckAnalysisDiagConsumer::FlushDiagnosticsImpl(
     FilesMade *FilesMade) {
   for (auto &Diag : Diags) {
     if (Diag->getCheckerName() == "autosar.DivZeroChecker")
-      AutocheckDiagnostic::reportWarning(DE, Diag->getLocation().asLocation(),
-                                         AutocheckWarnings::divByZero);
+      AD.reportWarning(Diag->getLocation().asLocation(),
+                       AutocheckWarnings::divByZero);
     else if (Diag->getCheckerName() == "autosar.UnreachableCodeChecker") {
-      AutocheckDiagnostic::reportWarning(DE, Diag->getLocation().asLocation(),
-                                         AutocheckWarnings::unreachableCode);
+      AD.reportWarning(Diag->getLocation().asLocation(),
+                       AutocheckWarnings::unreachableCode);
     } else {
       // For all other checkers display their description through autochecks
       // report system so we can track diagnostics properly.
-      unsigned WarnID =
-          DE.getCustomDiagID(clang::DiagnosticsEngine::Warning, "%0");
-      DE.Report(Diag->getLocation().asLocation(), WarnID)
+      unsigned WarnID = AD.GetDiagnostics().getCustomDiagID(
+          clang::DiagnosticsEngine::Warning, "%0");
+      AD.GetDiagnostics().Report(Diag->getLocation().asLocation(), WarnID)
           << Diag->getShortDescription();
     }
   }

@@ -19,12 +19,17 @@
 
 class DiagnosticConsumer;
 
+namespace autocheck {
+
+class AutocheckContext;
+
 clang::tooling::ArgumentsAdjuster getResourceDirAdjuster(const char *ExecPath);
 
 /// Utility to check AUTOSAR C++ Guidelines compilance on a file.
 class AutocheckTool {
 public:
-  AutocheckTool(clang::tooling::CompilationDatabase &CD,
+  AutocheckTool(const AutocheckContext &Context,
+                clang::tooling::CompilationDatabase &CD,
                 const std::string &File);
 
   /// Append a command line arguments adjuster to the adjuster chain.
@@ -33,11 +38,18 @@ public:
   /// Set a DiagnosticConsumer to handle detected diagnostics.
   void setDiagnosticConsumer(clang::DiagnosticConsumer *DiagConsumer);
 
+  void mapVirtualFile(llvm::StringRef FilePath, llvm::StringRef Content) {
+    Tool.mapVirtualFile(FilePath, Content);
+  }
+
   /// Perform check for AUTOSAR C++ Guidelines compliance.
   int run();
 
 private:
+  const AutocheckContext &Context;
   clang::tooling::ClangTool Tool;
 };
+
+} // namespace autocheck
 
 #endif

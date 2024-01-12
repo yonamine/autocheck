@@ -22,10 +22,10 @@
 
 namespace autocheck {
 
-DiagExporter::DiagExporter(llvm::StringRef FilePath, clang::SourceManager &SM,
-                           bool FullOutput)
-    : FilePath(FilePath), SM(SM), FullOutput(FullOutput), DiagsPerFile({}),
-      DiagSummary({}) {}
+DiagExporter::DiagExporter(AutocheckDiagnostic &AD, llvm::StringRef FilePath,
+                           clang::SourceManager &SM, bool FullOutput)
+    : AD(AD), FilePath(FilePath), SM(SM), FullOutput(FullOutput),
+      DiagsPerFile({}), DiagSummary({}) {}
 
 DiagExporter::~DiagExporter() {
   assert(!isOpen && "Output file not properly closed");
@@ -52,16 +52,16 @@ void DiagExporter::Open() {
   WriteTime(std::chrono::duration_cast<std::chrono::seconds>(
                 std::chrono::system_clock::now().time_since_epoch())
                 .count());
-  WriteEnabledRules(AutocheckContext::Get().getEnabledWarnings());
+  WriteEnabledRules(AD.GetContext().getEnabledWarnings());
 
-  AutocheckDiagnostic::AddDiagListener(this);
+  AD.AddDiagListener(this);
 }
 
 void DiagExporter::Close() {
   if (!isOpen)
     return;
 
-  AutocheckDiagnostic::RemoveDiagListener(this);
+  AD.RemoveDiagListener(this);
 
   if (FullOutput)
     WriteDiagnostics(DiagsPerFile);
@@ -74,11 +74,12 @@ void DiagExporter::Close() {
 }
 
 std::unique_ptr<DiagExporter>
-DiagExporter::GetExporterForPath(llvm::StringRef FilePath,
+DiagExporter::GetExporterForPath(AutocheckDiagnostic &AD,
+                                 llvm::StringRef FilePath,
                                  clang::SourceManager &SM, bool FullOutput) {
   llvm::StringRef OutputExtension = llvm::sys::path::extension(FilePath);
   if (OutputExtension == ".json")
-    return std::make_unique<DiagExporterJson>(FilePath, SM, FullOutput);
+    return std::make_unique<DiagExporterJson>(AD, FilePath, SM, FullOutput);
   llvm::errs() << "Unsupported output file extension: '" << OutputExtension
                << "'. Ignoring option.\n";
   return nullptr;

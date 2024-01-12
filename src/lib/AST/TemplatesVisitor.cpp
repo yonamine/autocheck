@@ -37,9 +37,9 @@ static bool isIncompleteOrDependentType(const clang::Type *T) {
   return (T->isIncompleteType() || T->isDependentType());
 }
 
-InParametersPassedByValue::InParametersPassedByValue(
-    clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+InParametersPassedByValue::InParametersPassedByValue(AutocheckDiagnostic &AD,
+                                                     clang::ASTContext &AC)
+    : AD(AD), AC(AC) {}
 
 bool InParametersPassedByValue::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::inParamPassedByValue);
@@ -113,15 +113,14 @@ bool InParametersPassedByValue::checkParameter(
 
       if (AC.getTypeSize(NRT) <= CheapTypeLimit) {
         bool stopVisitor =
-            AutocheckDiagnostic::reportWarning(
-                DE, SL, AutocheckWarnings::inParamPassedByValue, 0,
-                clang::TypeName::getFullyQualifiedType(
-                    NRQT.getLocalUnqualifiedType(), AC))
+            AD.reportWarning(SL, AutocheckWarnings::inParamPassedByValue, 0,
+                             clang::TypeName::getFullyQualifiedType(
+                                 NRQT.getLocalUnqualifiedType(), AC))
                 .limitReached();
         if (InstantiationLoc.isValid()) {
-          AutocheckDiagnostic::reportWarning(
-              DE, InstantiationLoc, AutocheckWarnings::noteInParamPassedByValue,
-              NRQT.getUnqualifiedType());
+          AD.reportWarning(InstantiationLoc,
+                           AutocheckWarnings::noteInParamPassedByValue,
+                           NRQT.getUnqualifiedType());
         }
         return !stopVisitor;
       }
@@ -129,15 +128,15 @@ bool InParametersPassedByValue::checkParameter(
     // Process non-reference type.
   } else {
     if (AC.getTypeSize(T) > CheapTypeLimit) {
-      bool stopVisitor = AutocheckDiagnostic::reportWarning(
-                             DE, SL, AutocheckWarnings::inParamPassedByValue, 1,
-                             clang::TypeName::getFullyQualifiedType(
-                                 QT.getLocalUnqualifiedType(), AC))
-                             .limitReached();
+      bool stopVisitor =
+          AD.reportWarning(SL, AutocheckWarnings::inParamPassedByValue, 1,
+                           clang::TypeName::getFullyQualifiedType(
+                               QT.getLocalUnqualifiedType(), AC))
+              .limitReached();
       if (InstantiationLoc.isValid())
-        AutocheckDiagnostic::reportWarning(
-            DE, InstantiationLoc, AutocheckWarnings::noteInParamPassedByValue,
-            QT.getUnqualifiedType());
+        AD.reportWarning(InstantiationLoc,
+                         AutocheckWarnings::noteInParamPassedByValue,
+                         QT.getUnqualifiedType());
       return !stopVisitor;
     }
   }
@@ -147,9 +146,9 @@ bool InParametersPassedByValue::checkParameter(
 
 /* Implementation of ThrowEscapesVisitor */
 
-ThrowEscapesVisitor::ThrowEscapesVisitor(clang::DiagnosticsEngine &DE,
+ThrowEscapesVisitor::ThrowEscapesVisitor(AutocheckDiagnostic &AD,
                                          clang::Sema &SemaRef)
-    : DE(DE), SemaRef(SemaRef) {}
+    : AD(AD), SemaRef(SemaRef) {}
 
 bool ThrowEscapesVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::handlerOfCompatibleType);
@@ -241,15 +240,14 @@ bool ThrowEscapesVisitor::VisitFunctionDecl(const clang::FunctionDecl *FD) {
     return true;
 
   bool stopVisitor = false;
-  visitReachableThrows(
-      BodyCFG, [&](const clang::CXXThrowExpr *Throw, clang::CFGBlock &Block) {
-        if (!stopVisitor && throwEscapes(SemaRef, Throw, Block, BodyCFG)) {
-          stopVisitor = AutocheckDiagnostic::reportWarning(
-                            DE, Throw->getExprLoc(),
-                            AutocheckWarnings::handlerOfCompatibleType)
-                            .limitReached();
-        }
-      });
+  visitReachableThrows(BodyCFG, [&](const clang::CXXThrowExpr *Throw,
+                                    clang::CFGBlock &Block) {
+    if (!stopVisitor && throwEscapes(SemaRef, Throw, Block, BodyCFG)) {
+      stopVisitor = AD.reportWarning(Throw->getExprLoc(),
+                                     AutocheckWarnings::handlerOfCompatibleType)
+                        .limitReached();
+    }
+  });
 
   return !stopVisitor;
 }
@@ -257,8 +255,8 @@ bool ThrowEscapesVisitor::VisitFunctionDecl(const clang::FunctionDecl *FD) {
 /* Implementation of RHSOperandSideEffectVisitor */
 
 RHSOperandSideEffectVisitor::RHSOperandSideEffectVisitor(
-    clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    AutocheckDiagnostic &AD, clang::ASTContext &AC)
+    : AD(AD), AC(AC) {}
 
 bool RHSOperandSideEffectVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -272,9 +270,8 @@ bool RHSOperandSideEffectVisitor::VisitBinaryOperator(
 
   if (BO->getOpcode() == clang::BO_LAnd || BO->getOpcode() == clang::BO_LOr) {
     if (hasAutosarSideEffects(BO->getRHS(), AC)) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, BO->getRHS()->getBeginLoc(),
-                  AutocheckWarnings::rhsOperandAndOrSideEffect)
+      return !AD.reportWarning(BO->getRHS()->getBeginLoc(),
+                               AutocheckWarnings::rhsOperandAndOrSideEffect)
                   .limitReached();
     }
   }
@@ -284,17 +281,17 @@ bool RHSOperandSideEffectVisitor::VisitBinaryOperator(
 
 /* Implementation of TemplatesVisitor */
 
-TemplatesVisitor::TemplatesVisitor(clang::DiagnosticsEngine &DE,
+TemplatesVisitor::TemplatesVisitor(AutocheckDiagnostic &AD,
                                    clang::ASTContext &AC, clang::Sema &SemaRef)
-    : DE(DE) {
-  const AutocheckContext &Context = AutocheckContext::Get();
+    : AD(AD) {
+  const AutocheckContext &Context = AD.GetContext();
   if (InParametersPassedByValue::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<InParametersPassedByValue>(DE, AC));
+    AllVisitors.push_front(std::make_unique<InParametersPassedByValue>(AD, AC));
   if (ThrowEscapesVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<ThrowEscapesVisitor>(DE, SemaRef));
+    AllVisitors.push_front(std::make_unique<ThrowEscapesVisitor>(AD, SemaRef));
   if (RHSOperandSideEffectVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<RHSOperandSideEffectVisitor>(DE, AC));
+        std::make_unique<RHSOperandSideEffectVisitor>(AD, AC));
 }
 
 void TemplatesVisitor::run(clang::TranslationUnitDecl *TUD) {

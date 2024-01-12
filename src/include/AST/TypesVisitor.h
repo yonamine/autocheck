@@ -38,6 +38,8 @@
 
 namespace autocheck {
 
+class AutocheckDiagnostic;
+
 /// Common interface for all autocheck type visitors.
 class TypesVisitorInterface {
 public:
@@ -57,12 +59,11 @@ public:
 /// [M5-0-11] The plain char type shall only be used for the storage and use of
 /// character values.
 class CharStorageVisitor : public TypesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit CharStorageVisitor(clang::DiagnosticsEngine &DE,
-                              clang::ASTContext &AC);
+  explicit CharStorageVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE) override;
@@ -74,11 +75,11 @@ private:
 /// [M5-0-12] Signed char and unsigned char type shall only be used for the
 /// storage and use of numeric values.
 class SignCharStorageVisitor : public TypesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit SignCharStorageVisitor(clang::DiagnosticsEngine &DE,
+  explicit SignCharStorageVisitor(AutocheckDiagnostic &AD,
                                   clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -92,12 +93,12 @@ private:
 /// [A5-0-2] The condition of an if-statement and the condition of an iteration
 /// statement shall have type bool.
 class ConditionNotBoolVisitor : public TypesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::BeforeThanCompare<clang::SourceLocation> IsBefore;
   clang::SourceRange ConditionSourceRange;
 
 public:
-  explicit ConditionNotBoolVisitor(clang::DiagnosticsEngine &DE);
+  explicit ConditionNotBoolVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitIfStmt(clang::IfStmt *IS) override;
@@ -113,12 +114,11 @@ private:
 
 /// [A2-13-3] Type wchar_t shall not be used.
 class TypeWchartVisitor : public TypesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit TypeWchartVisitor(clang::DiagnosticsEngine &DE,
-                             clang::ASTContext &AC);
+  explicit TypeWchartVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitTypeLoc(const clang::TypeLoc &TL) override;
@@ -126,15 +126,14 @@ public:
 
 /// [A18-1-1] C-style arrays shall not be used.
 class CStyleArrayVisitor : public TypesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
   /// TypeLoc of the last constexpr declared variable which should be exempt
   /// from the rule.
   clang::TypeLoc IgnoredTypeLoc;
 
 public:
-  explicit CStyleArrayVisitor(clang::DiagnosticsEngine &DE,
-                              clang::ASTContext &AC);
+  explicit CStyleArrayVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitVarDecl(const clang::VarDecl *VD) override;
@@ -144,11 +143,11 @@ public:
 
 /// [A18-1-2] The std::vector<bool> specialization shall not be used.
 class BoolVectorUsedVisitor : public TypesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit BoolVectorUsedVisitor(clang::DiagnosticsEngine &DE,
+  explicit BoolVectorUsedVisitor(AutocheckDiagnostic &AD,
                                  clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -157,11 +156,11 @@ public:
 
 /// [A0-4-2] Type long double shall not be used.
 class TypeLongDoubleVisitor : public TypesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit TypeLongDoubleVisitor(clang::DiagnosticsEngine &DE,
+  explicit TypeLongDoubleVisitor(AutocheckDiagnostic &AD,
                                  clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -170,11 +169,11 @@ public:
 
 /// [A18-1-3] The std::auto_ptr type shall not be used.
 class AutoPtrVisitor : public TypesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit AutoPtrVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC);
+  explicit AutoPtrVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitTypeLoc(const clang::TypeLoc &TL) override;
@@ -182,11 +181,11 @@ public:
 
 /// [A5-1-7] A lambda shall not be an operand to decltype or typeid.
 class DecltypeTypeidVisitor : public TypesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit DecltypeTypeidVisitor(clang::DiagnosticsEngine &DE,
+  explicit DecltypeTypeidVisitor(AutocheckDiagnostic &AD,
                                  clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -203,12 +202,12 @@ private:
 /// implement a TypesVisitorInterface if appropriate flag is found. Runs all
 /// Type Visitors with one AST traversal.
 class TypesVisitor : public clang::RecursiveASTVisitor<TypesVisitor> {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
   std::forward_list<std::unique_ptr<TypesVisitorInterface>> AllVisitors;
 
 public:
-  explicit TypesVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC);
+  explicit TypesVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC);
   void run(clang::TranslationUnitDecl *TUD);
 
   bool TraverseDecl(clang::Decl *D);

@@ -12,8 +12,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Lex/AutocheckLex.h"
-
-#include "Diagnostics/AutocheckDiagnostic.h"
+#include "AutocheckContext.h"
 #include "Lex/CharHelper.h"
 #include "Lex/LiteralHelper.h"
 #include "clang/Basic/IdentifierTable.h"
@@ -48,7 +47,7 @@ static bool checkUCNEscape(const llvm::StringRef &Literal,
   return true;
 }
 
-void CheckToken(const AutocheckContext &Context, clang::CompilerInstance &CI,
+void CheckToken(AutocheckDiagnostic &AD, clang::CompilerInstance &CI,
                 const clang::Token &Tok) {
   clang::DiagnosticsEngine &DE = CI.getDiagnostics();
   const clang::SourceManager &SM = CI.getSourceManager();
@@ -56,19 +55,18 @@ void CheckToken(const AutocheckContext &Context, clang::CompilerInstance &CI,
   // Check should this location be checked for AUTOSAR rules based on the
   // currently set flags.
   const clang::SourceLocation Loc = Tok.getLocation();
-  if (!appropriateHeaderLocation(DE, Loc))
+  if (!appropriateHeaderLocation(AD, Loc))
     return;
 
   // [A2-13-5] Hexadecimal constants should be upper case.
-  if (Context.isEnabled(AutocheckWarnings::hexConstUpperCase) &&
+  if (AD.IsEnabled(AutocheckWarnings::hexConstUpperCase) &&
       Tok.is(clang::tok::numeric_constant)) {
     llvm::StringRef Literal(Tok.getLiteralData(), Tok.getLength());
     if (Literal.startswith_insensitive("0x")) {
       for (int offset = 2; offset < Tok.getLength(); offset++) {
         if (Literal[offset] >= 'a' && Literal[offset] <= 'f') {
-          AutocheckDiagnostic::reportWarning(
-              DE, Tok.getLocation().getLocWithOffset(offset),
-              AutocheckWarnings::hexConstUpperCase);
+          AD.reportWarning(Tok.getLocation().getLocWithOffset(offset),
+                           AutocheckWarnings::hexConstUpperCase);
           break;
         } else if (Literal[offset] == 'p' || Literal[offset] == 'P') {
           // Reached the exponent, don't check any more digits.
@@ -80,7 +78,7 @@ void CheckToken(const AutocheckContext &Context, clang::CompilerInstance &CI,
 
   // [A2-13-1] Only those escape sequences that are defined in
   // ISO/IEC 14882:2014 shall be used.
-  if (Context.isEnabled(AutocheckWarnings::nonIsoEscapeSequence) &&
+  if (AD.IsEnabled(AutocheckWarnings::nonIsoEscapeSequence) &&
       (clang::tok::isStringLiteral(Tok.getKind()) ||
        isCharacterLiteral(Tok.getKind()))) {
     llvm::StringRef Literal(Tok.getLiteralData(), Tok.getLength());
@@ -97,41 +95,37 @@ void CheckToken(const AutocheckContext &Context, clang::CompilerInstance &CI,
                                      Literal.size() - offset - 1);
         if (tolower(CurrentChar) == 'x') { // Hex escape
           if (!checkHexEscape(EscapeString))
-            AutocheckDiagnostic::reportWarning(
-                DE, Tok.getLocation().getLocWithOffset(offset),
-                AutocheckWarnings::nonIsoEscapeSequence);
+            AD.reportWarning(Tok.getLocation().getLocWithOffset(offset),
+                             AutocheckWarnings::nonIsoEscapeSequence);
         } else if (CurrentChar == 'u') {
           // Universal character name \uXXXX
           if (!checkUCNEscape(EscapeString, 4))
-            AutocheckDiagnostic::reportWarning(
-                DE, Tok.getLocation().getLocWithOffset(offset),
-                AutocheckWarnings::nonIsoEscapeSequence);
+            AD.reportWarning(Tok.getLocation().getLocWithOffset(offset),
+                             AutocheckWarnings::nonIsoEscapeSequence);
 
         } else if (CurrentChar == 'U') {
           // Universal character name \UXXXXXXXX
           if (!checkUCNEscape(EscapeString, 8))
-            AutocheckDiagnostic::reportWarning(
-                DE, Tok.getLocation().getLocWithOffset(offset),
-                AutocheckWarnings::nonIsoEscapeSequence);
+            AD.reportWarning(Tok.getLocation().getLocWithOffset(offset),
+                             AutocheckWarnings::nonIsoEscapeSequence);
         }
       } else {
-        AutocheckDiagnostic::reportWarning(
-            DE, Tok.getLocation().getLocWithOffset(offset),
-            AutocheckWarnings::nonIsoEscapeSequence);
+        AD.reportWarning(Tok.getLocation().getLocWithOffset(offset),
+                         AutocheckWarnings::nonIsoEscapeSequence);
       }
     }
   }
 
   // [M2-13-2] Octal constants (other than zero) and octal escape sequences
   // (other than "\0") shall not be used.
-  if (Context.isEnabled(AutocheckWarnings::octalConstantUsed)) {
+  if (AD.IsEnabled(AutocheckWarnings::octalConstantUsed)) {
     // Case 1: Octal constants (other than zero) shall not be used.
     if (Tok.is(clang::tok::numeric_constant)) {
       llvm::StringRef Literal(Tok.getLiteralData(), Tok.getLength());
       if (Literal.size() > 1 && Literal[0] == '0' && isOctalDigit(Literal[1]) &&
           !Literal.contains('.') && !Literal.contains_insensitive('e')) {
-        AutocheckDiagnostic::reportWarning(
-            DE, Tok.getLocation(), AutocheckWarnings::octalConstantUsed);
+        AD.reportWarning(Tok.getLocation(),
+                         AutocheckWarnings::octalConstantUsed);
       }
     }
 
@@ -152,8 +146,8 @@ void CheckToken(const AutocheckContext &Context, clang::CompilerInstance &CI,
           EscapeCodeLength++;
         }
         if (!isZero) {
-          AutocheckDiagnostic::reportWarning(
-              DE, Tok.getLocation(), AutocheckWarnings::octalConstantUsed);
+          AD.reportWarning(Tok.getLocation(),
+                           AutocheckWarnings::octalConstantUsed);
         }
         Start += EscapeCodeLength; // Move after the escape code.
       }
@@ -161,7 +155,7 @@ void CheckToken(const AutocheckContext &Context, clang::CompilerInstance &CI,
   }
 
   // [M2-13-4] Literal suffixes shall be upper case.
-  if (Context.isEnabled(AutocheckWarnings::literalSuffixLowerCase) &&
+  if (AD.IsEnabled(AutocheckWarnings::literalSuffixLowerCase) &&
       Tok.is(clang::tok::numeric_constant)) {
     llvm::StringRef Literal(Tok.getLiteralData(), Tok.getLength());
 
@@ -169,8 +163,8 @@ void CheckToken(const AutocheckContext &Context, clang::CompilerInstance &CI,
     for (unsigned i = 0; i < ParsedLiteral.SuffixLen; ++i) {
       char C = ParsedLiteral.SuffixBegin[i];
       if (isalpha(C) && !isupper(C)) {
-        AutocheckDiagnostic::reportWarning(
-            DE, Tok.getLocation(), AutocheckWarnings::literalSuffixLowerCase);
+        AD.reportWarning(Tok.getLocation(),
+                         AutocheckWarnings::literalSuffixLowerCase);
         break;
       }
     }
@@ -179,42 +173,38 @@ void CheckToken(const AutocheckContext &Context, clang::CompilerInstance &CI,
   // [A13-6-1] Digit sequences separators ' shall only be used as follows: (1)
   // for decimal, every 3 digits, (2) for hexadecimal, every 2 digits, (3) for
   // binary, every 4 digits.
-  if (Context.isEnabled(AutocheckWarnings::digitSequenceSeparator) &&
+  if (AD.IsEnabled(AutocheckWarnings::digitSequenceSeparator) &&
       Tok.is(clang::tok::numeric_constant)) {
     llvm::StringRef Literal(Tok.getLiteralData(), Tok.getLength());
 
     ParsedNumber ParsedLiteral = parseNumberLiteral(Literal);
     if (!checkDigitSeparators(ParsedLiteral))
-      AutocheckDiagnostic::reportWarning(
-          DE, Tok.getLocation(), AutocheckWarnings::digitSequenceSeparator);
+      AD.reportWarning(Tok.getLocation(),
+                       AutocheckWarnings::digitSequenceSeparator);
   }
 
   // [A6-6-1] The goto statement shall not be used.
-  if (Context.isEnabled(AutocheckWarnings::gotoUsed) &&
+  if (AD.IsEnabled(AutocheckWarnings::gotoUsed) &&
       Tok.is(clang::tok::kw_goto)) {
-    AutocheckDiagnostic::reportWarning(DE, Tok.getLocation(),
-                                       AutocheckWarnings::gotoUsed);
+    AD.reportWarning(Tok.getLocation(), AutocheckWarnings::gotoUsed);
   }
 
   // [A2-11-1] Volatile keyword shall not be used.
-  if (Context.isEnabled(AutocheckWarnings::volatileKeywordUsed) &&
+  if (AD.IsEnabled(AutocheckWarnings::volatileKeywordUsed) &&
       Tok.is(clang::tok::kw_volatile)) {
-    AutocheckDiagnostic::reportWarning(DE, Tok.getLocation(),
-                                       AutocheckWarnings::volatileKeywordUsed);
+    AD.reportWarning(Tok.getLocation(), AutocheckWarnings::volatileKeywordUsed);
   }
 
   // [A5-2-1] dynamic_cast should not be used.
-  if (Context.isEnabled(AutocheckWarnings::dynamicCastUsed) &&
+  if (AD.IsEnabled(AutocheckWarnings::dynamicCastUsed) &&
       Tok.is(clang::tok::kw_dynamic_cast)) {
-    AutocheckDiagnostic::reportWarning(DE, Tok.getLocation(),
-                                       AutocheckWarnings::dynamicCastUsed);
+    AD.reportWarning(Tok.getLocation(), AutocheckWarnings::dynamicCastUsed);
   }
 
   // [A5-2-4] reinterpret_cast shall not be used.
-  if (Context.isEnabled(AutocheckWarnings::reinterpretCastUsed) &&
+  if (AD.IsEnabled(AutocheckWarnings::reinterpretCastUsed) &&
       Tok.is(clang::tok::kw_reinterpret_cast)) {
-    AutocheckDiagnostic::reportWarning(DE, Tok.getLocation(),
-                                       AutocheckWarnings::reinterpretCastUsed);
+    AD.reportWarning(Tok.getLocation(), AutocheckWarnings::reinterpretCastUsed);
   }
 }
 
@@ -345,10 +335,10 @@ bool checkNonUniversalNames(const AutocheckContext &Context,
   return false;
 }
 
-void RunRawLexer(const clang::CompilerInstance &CI, clang::FileID FID) {
-  const AutocheckContext &Context = AutocheckContext::Get();
-  clang::DiagnosticsEngine &DE = CI.getPreprocessor().getDiagnostics();
-  clang::SourceManager &SM = CI.getSourceManager();
+void RunRawLexer(AutocheckDiagnostic &AD, const clang::CompilerInstance &CI,
+                 clang::FileID FID) {
+  clang::DiagnosticsEngine &DE = AD.GetDiagnostics();
+  clang::SourceManager &SM = AD.GetSourceManager();
 
   // Run a raw lexer pass to check rules which can't be checked with a
   // preprocessor.
@@ -367,7 +357,7 @@ void RunRawLexer(const clang::CompilerInstance &CI, clang::FileID FID) {
     // Special cases:
     // - Comments can contain '@' character
     // - Wide and UTF string/char literals can contain any character
-    if (Context.isEnabled(AutocheckWarnings::nonCppStandardCharUsed)) {
+    if (AD.IsEnabled(AutocheckWarnings::nonCppStandardCharUsed)) {
       llvm::StringRef TokenString(SM.getCharacterData(Tok.getLocation()),
                                   Tok.getLength());
       // Only tokens that can contain non standard characters which need to be
@@ -389,9 +379,8 @@ void RunRawLexer(const clang::CompilerInstance &CI, clang::FileID FID) {
           char C = TokenString[offset];
           if (!(isComment && C == '@') && !isCPlusPlusStandardChar(C)) {
             if (WasASCIIChar || clang::isASCII(C))
-              AutocheckDiagnostic::reportWarning(
-                  DE, Tok.getLocation().getLocWithOffset(offset),
-                  AutocheckWarnings::nonCppStandardCharUsed);
+              AD.reportWarning(Tok.getLocation().getLocWithOffset(offset),
+                               AutocheckWarnings::nonCppStandardCharUsed);
           }
           WasASCIIChar = isASCII(C);
         }
@@ -400,7 +389,7 @@ void RunRawLexer(const clang::CompilerInstance &CI, clang::FileID FID) {
 
     // [A2-7-1] The character \ shall not occur as a last character of a C++
     // comment.
-    if (Context.isEnabled(AutocheckWarnings::lineCommentLastChar) &&
+    if (AD.IsEnabled(AutocheckWarnings::lineCommentLastChar) &&
         Tok.is(clang::tok::comment)) {
       const char *CurrentChar = SM.getCharacterData(Tok.getLocation());
       // Check is this a line comment.
@@ -418,8 +407,8 @@ void RunRawLexer(const clang::CompilerInstance &CI, clang::FileID FID) {
               escapeOffset++;
             }
             if (*EscapeChar == '\\')
-              AutocheckDiagnostic::reportWarning(
-                  DE, Tok.getLocation().getLocWithOffset(Offset - escapeOffset),
+              AD.reportWarning(
+                  Tok.getLocation().getLocWithOffset(Offset - escapeOffset),
                   AutocheckWarnings::lineCommentLastChar);
           }
           CurrentChar++;
@@ -430,7 +419,7 @@ void RunRawLexer(const clang::CompilerInstance &CI, clang::FileID FID) {
 
     // [M2-7-1] The character sequence /* shall not be used within a C-style
     // comment.
-    if (Context.isEnabled(AutocheckWarnings::commentStartInComment) &&
+    if (AD.IsEnabled(AutocheckWarnings::commentStartInComment) &&
         Tok.is(clang::tok::comment)) {
       llvm::StringRef CommentString(SM.getCharacterData(Tok.getLocation()),
                                     Tok.getLength());
@@ -439,9 +428,8 @@ void RunRawLexer(const clang::CompilerInstance &CI, clang::FileID FID) {
         while ((idx = CommentString.find("/*", idx + 2)) !=
                llvm::StringRef::npos) {
           if (idx + 2 < CommentString.size() && CommentString[idx + 2] != '/')
-            AutocheckDiagnostic::reportWarning(
-                DE, Tok.getLocation().getLocWithOffset(idx),
-                AutocheckWarnings::commentStartInComment);
+            AD.reportWarning(Tok.getLocation().getLocWithOffset(idx),
+                             AutocheckWarnings::commentStartInComment);
         }
       }
     }
@@ -458,9 +446,8 @@ void RunRawLexer(const clang::CompilerInstance &CI, clang::FileID FID) {
     // This is implemented in the raw lexer pass in case digraphs are used
     // inside a macro to display the warning once inside the macro instead of
     // for every expansion of that macro.
-    if (checkDigraphsUsed(Context, Tok))
-      AutocheckDiagnostic::reportWarning(DE, Tok.getLocation(),
-                                         AutocheckWarnings::digraphsUsed);
+    if (checkDigraphsUsed(AD.GetContext(), Tok))
+      AD.reportWarning(Tok.getLocation(), AutocheckWarnings::digraphsUsed);
 
     // [M16-0-8] If the # token appears as the first token on a line, then it
     // shall be immediately followed by a pre-processing token.
@@ -478,21 +465,20 @@ void RunRawLexer(const clang::CompilerInstance &CI, clang::FileID FID) {
     if (II) {
       switch (II->getPPKeywordID()) {
       case clang::tok::pp_not_keyword:
-        if (Context.isEnabled(AutocheckWarnings::preprocessorTokenError))
-          AutocheckDiagnostic::reportWarning(
-              DE, Tok.getLocation(), AutocheckWarnings::preprocessorTokenError);
+        if (AD.IsEnabled(AutocheckWarnings::preprocessorTokenError))
+          AD.reportWarning(Tok.getLocation(),
+                           AutocheckWarnings::preprocessorTokenError);
         break;
       case clang::tok::pp_error:
-        if (Context.isEnabled(AutocheckWarnings::directiveErrorUsed))
-          AutocheckDiagnostic::reportWarning(
-              DE, Tok.getLocation(), AutocheckWarnings::directiveErrorUsed);
+        if (AD.IsEnabled(AutocheckWarnings::directiveErrorUsed))
+          AD.reportWarning(Tok.getLocation(),
+                           AutocheckWarnings::directiveErrorUsed);
         break;
       case clang::tok::pp_include: {
-        if (checkIncludeDirectiveRestrictedChar(Context,
+        if (checkIncludeDirectiveRestrictedChar(AD.GetContext(),
                                                 RemainingTokens.slice(2), SM))
-          AutocheckDiagnostic::reportWarning(
-              DE, Tok.getLocation(),
-              AutocheckWarnings::includeDirectiveRestrictedChar);
+          AD.reportWarning(Tok.getLocation(),
+                           AutocheckWarnings::includeDirectiveRestrictedChar);
         break;
       }
       default:
@@ -508,9 +494,9 @@ void RunRawLexer(const clang::CompilerInstance &CI, clang::FileID FID) {
     // This is implemented in the raw lexer pass to be able to detect whether
     // multiple UCNs are consecutive or separated by whitespace or comments.
     unsigned TokensToSkip = 0;
-    if (checkNonUniversalNames(Context, RemainingTokens, SM, TokensToSkip)) {
-      AutocheckDiagnostic::reportWarning(DE, Tok.getLocation(),
-                                         AutocheckWarnings::nonUniversalNames);
+    if (checkNonUniversalNames(AD.GetContext(), RemainingTokens, SM,
+                               TokensToSkip)) {
+      AD.reportWarning(Tok.getLocation(), AutocheckWarnings::nonUniversalNames);
       i += TokensToSkip;
     }
   }

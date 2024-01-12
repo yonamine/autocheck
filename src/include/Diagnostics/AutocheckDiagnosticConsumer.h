@@ -27,7 +27,7 @@ namespace autocheck {
 
 class AutocheckDiagnosticConsumer : public clang::DiagnosticConsumer {
 public:
-  AutocheckDiagnosticConsumer(clang::DiagnosticsEngine &Diags);
+  AutocheckDiagnosticConsumer(AutocheckDiagnostic &AD);
 
   void BeginSourceFile(const clang::LangOptions &LangOpts,
                        const clang::Preprocessor *PP = nullptr) override;
@@ -41,13 +41,12 @@ private:
   template <typename... ArgsType>
   void EmitDiag(AutocheckWarnings Warning, const clang::SourceLocation &Loc,
                 ArgsType &&...Args) {
-    Diags.Clear();
-    AutocheckDiagnostic::reportWarning(Diags, Loc, Warning,
-                                       std::forward<ArgsType>(Args)...);
+    AD.GetDiagnostics().Clear();
+    AD.reportWarning(Loc, Warning, std::forward<ArgsType>(Args)...);
   }
 
 private:
-  clang::DiagnosticsEngine &Diags;
+  AutocheckDiagnostic &AD;
   clang::DiagnosticConsumer *Client;
   std::unique_ptr<clang::DiagnosticConsumer> ClientOwner;
 };

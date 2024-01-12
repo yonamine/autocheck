@@ -42,6 +42,8 @@
 
 namespace autocheck {
 
+class AutocheckDiagnostic;
+
 /// Storage class for types of usage of a variable.
 class Usage {
 public:
@@ -250,9 +252,9 @@ public:
 
 /// Main visitor for loop related rules.
 class ForLoopVisitor : public clang::RecursiveASTVisitor<ForLoopVisitor> {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
-  AutocheckContext &Context;
+  
   VarDeclPtrMap ControlVariables;
   VarDeclPtrMap CounterVariables;
   VarDeclPtrMap NonCounterVariables;
@@ -268,7 +270,7 @@ class ForLoopVisitor : public clang::RecursiveASTVisitor<ForLoopVisitor> {
   bool WarnLoopCounterIllModified = false;
 
 public:
-  explicit ForLoopVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC);
+  explicit ForLoopVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC);
 
   void run(clang::TranslationUnitDecl *TUD);
   bool TraverseDecl(clang::Decl *D);

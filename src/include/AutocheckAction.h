@@ -15,16 +15,18 @@
 #ifndef AUTOCHECK_ACTION_H
 #define AUTOCHECK_ACTION_H
 
-#include "AutocheckContext.h"
-#include "Lex/AutocheckPPCallbacks.h"
+#include "Diagnostics/AutocheckDiagnostic.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendAction.h"
 
 namespace autocheck {
 
+class AutocheckContext;
+class AutocheckPPCallbacks;
+
 class AutocheckAction : public clang::FrontendAction {
 public:
-  AutocheckAction();
+  AutocheckAction(const AutocheckContext &Context);
 
   bool usesPreprocessorOnly() const override;
 
@@ -38,7 +40,10 @@ protected:
                     llvm::StringRef InFile) override;
 
 private:
-  AutocheckContext &Context;
+  const AutocheckContext &Context;
+  std::unique_ptr<AutocheckDiagnostic> AD;
+
+  // Preprocessor callbacks. Owned by the preprocessor.
   AutocheckPPCallbacks *PPCallbacks;
 };
 

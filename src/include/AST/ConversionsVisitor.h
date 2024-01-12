@@ -47,13 +47,14 @@
 #define AST_CONVERSIONS_VISITOR_H
 
 #include "AutocheckContext.h"
-#include "Diagnostics/AutocheckDiagnostic.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "llvm/ADT/SmallSet.h"
 #include <forward_list>
 
 namespace autocheck {
+
+class AutocheckDiagnostic;
 
 /// Common interface for all conversion related visitors.
 class ConversionsVisitorInterface {
@@ -79,13 +80,13 @@ public:
 /// operators &&, ||, !, the equality operators == and ! =, the unary &
 /// operator, and the conditional operator.
 class InvalidBoolExpressionVisitor : public ConversionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
   llvm::SmallSet<clang::UnaryOperator::Opcode, 2> AllowedUnaryOps;
   llvm::SmallSet<clang::BinaryOperator::Opcode, 5> AllowedBinaryOps;
 
 public:
-  explicit InvalidBoolExpressionVisitor(clang::DiagnosticsEngine &DE);
+  explicit InvalidBoolExpressionVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
@@ -100,13 +101,13 @@ private:
 /// operator [ ], the assignment operator =, the equality operators == and ! =,
 /// the unary & operator, and the relational operators <, <=, >, >=.
 class InvalidEnumExpressionVisitor : public ConversionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   llvm::SmallSet<clang::UnaryOperator::Opcode, 1> AllowedUnaryOps;
   llvm::SmallSet<clang::BinaryOperator::Opcode, 7> AllowedBinaryOps;
   llvm::SmallSet<clang::OverloadedOperatorKind, 9> AllowedOperators;
 
 public:
-  explicit InvalidEnumExpressionVisitor(clang::DiagnosticsEngine &DE);
+  explicit InvalidEnumExpressionVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
@@ -121,14 +122,14 @@ private:
 /// operands to built-in operators other than the assignment operator =, the
 /// equality operators == and ! =, and the unary & operator.
 class InvalidCharExpressionVisitor : public ConversionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
   llvm::SmallSet<clang::UnaryOperator::Opcode, 1> AllowedUnaryOps;
   llvm::SmallSet<clang::BinaryOperator::Opcode, 3> AllowedBinaryOps;
   llvm::SmallSet<clang::BinaryOperator::Opcode, 4> ExceptionOps;
 
 public:
-  explicit InvalidCharExpressionVisitor(clang::DiagnosticsEngine &DE,
+  explicit InvalidCharExpressionVisitor(AutocheckDiagnostic &AD,
                                         clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -145,10 +146,10 @@ private:
 /// [M5-0-5] There shall be no implicit floating-integral conversions.
 class ImplicitFloatIntegralConversionVisitor
     : public ConversionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit ImplicitFloatIntegralConversionVisitor(clang::DiagnosticsEngine &DE);
+  explicit ImplicitFloatIntegralConversionVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitImplicitCastExpr(const clang::ImplicitCastExpr *ICE) override;
@@ -158,11 +159,11 @@ public:
 /// the size of the underlying type.
 class ImplicitSizeReductionConversionVisitor
     : public ConversionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &ASTCtx;
 
 public:
-  explicit ImplicitSizeReductionConversionVisitor(clang::DiagnosticsEngine &DE,
+  explicit ImplicitSizeReductionConversionVisitor(AutocheckDiagnostic &AD,
                                                   clang::ASTContext &ASTCtx);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -178,11 +179,11 @@ private:
 /// immediately cast to the underlying type of the operand.
 class ImplicitBitwiseResultConversionVisitor
     : public ConversionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &ASTCtx;
 
 public:
-  explicit ImplicitBitwiseResultConversionVisitor(clang::DiagnosticsEngine &DE,
+  explicit ImplicitBitwiseResultConversionVisitor(AutocheckDiagnostic &AD,
                                                   clang::ASTContext &ASTCtx);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -198,11 +199,11 @@ private:
 /// [M5-2-12] An identifier with array type passed as a function argument shall
 /// not decay to a pointer.
 class ArrayDecaysToPointerVisitor : public ConversionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &ASTCtx;
 
 public:
-  explicit ArrayDecaysToPointerVisitor(clang::DiagnosticsEngine &DE,
+  explicit ArrayDecaysToPointerVisitor(AutocheckDiagnostic &AD,
                                        clang::ASTContext &ASTCtx);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -222,10 +223,10 @@ private:
 
 /// [M4-10-1] NULL shall not be used as an integer value.
 class NullToIntegerValueVisitor : public ConversionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit NullToIntegerValueVisitor(clang::DiagnosticsEngine &DE);
+  explicit NullToIntegerValueVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCastExpr(const clang::CastExpr *CE) override;
@@ -233,10 +234,10 @@ public:
 
 /// [M4-10-2] Literal zero (0) shall not be used as the null-pointer-constant.
 class ZeroToNullPointerVisitor : public ConversionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit ZeroToNullPointerVisitor(clang::DiagnosticsEngine &DE);
+  explicit ZeroToNullPointerVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCastExpr(const clang::CastExpr *CE) override;
@@ -244,10 +245,10 @@ public:
 
 /// [A4-10-1] Only nullptr literal shall be used as the null-pointer-constant.
 class NullptrOnlyNullPtrConstVisitor : public ConversionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit NullptrOnlyNullPtrConstVisitor(clang::DiagnosticsEngine &DE);
+  explicit NullptrOnlyNullPtrConstVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCastExpr(const clang::CastExpr *CE) override;
@@ -255,10 +256,10 @@ public:
 
 /// [M5-2-9] A cast shall not convert a pointer type to an integral type.
 class CastPtrToIntegralVisitor : public ConversionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit CastPtrToIntegralVisitor(clang::DiagnosticsEngine &DE);
+  explicit CastPtrToIntegralVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCastExpr(const clang::CastExpr *CE) override;
@@ -267,10 +268,10 @@ public:
 /// [A5-2-3] A cast shall not remove any const or volatile qualification from
 /// the type of a pointer or reference.
 class CVDiscardCastVisitor : public ConversionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit CVDiscardCastVisitor(clang::DiagnosticsEngine &DE);
+  explicit CVDiscardCastVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXConstCastExpr(const clang::CXXConstCastExpr *CCCE) override;
@@ -279,12 +280,12 @@ public:
 /// [M5-0-4] An implicit integral conversion shall not change the signedness of
 /// the underlying type.
 class ImpcastChangesSignednessVisitor : public ConversionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   const clang::ASTContext &AC;
   llvm::SmallVector<bool, 4> IsInsideSyntacticILEForm;
 
 public:
-  explicit ImpcastChangesSignednessVisitor(clang::DiagnosticsEngine &DE,
+  explicit ImpcastChangesSignednessVisitor(AutocheckDiagnostic &AD,
                                            const clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -298,13 +299,12 @@ public:
 /// Runs all Conversion Visitors with one AST traversal.
 class ConversionsVisitor
     : public clang::RecursiveASTVisitor<ConversionsVisitor> {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
   std::forward_list<std::unique_ptr<ConversionsVisitorInterface>> AllVisitors;
 
 public:
-  explicit ConversionsVisitor(clang::DiagnosticsEngine &DE,
-                              clang::ASTContext &AC);
+  explicit ConversionsVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC);
   void run(clang::TranslationUnitDecl *TUD);
   bool TraverseDecl(clang::Decl *D);
   bool TraverseInitListExpr(clang::InitListExpr *ILE);

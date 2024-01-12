@@ -13,17 +13,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "Diagnostics/AutocheckDiagnostic.h"
-
 #include "AutocheckContext.h"
 #include "clang/Basic/SourceManager.h"
-#include "llvm/ADT/SmallSet.h"
 #include <sstream>
 #include <utility>
 
 namespace autocheck {
-
-// List of diagnostic emitted event listeners.
-static llvm::SmallSet<DiagListener *, 1> Listeners = {};
 
 // List of warning messages and rule ids indexed by AutocheckWarnings enum
 // value.
@@ -33,11 +28,6 @@ const DiagnosticInfo DiagnosticMessages[]{
 #define NOTE(ENUM, MESSAGE) {MESSAGE, "", clang::DiagnosticIDs::Level::Note},
 #include "Diagnostics/AutocheckWarnings.def"
 };
-
-WarningRepeatChecker &WarningRepeatChecker::getWarningRepeatChecker() {
-  static WarningRepeatChecker warningRepeatChecker;
-  return warningRepeatChecker;
-}
 
 WarningRepeatChecker::WarningRepeatChecker() {
   PreviousLineNumbers = std::unordered_map<AutocheckWarnings, unsigned>({
@@ -126,60 +116,56 @@ void WarningCounter::resetLimitPair() {
 bool WarningCounter::limitReached() const { return Limits.LimitReached; }
 bool WarningCounter::limitExceeded() const { return Limits.LimitExceeded; }
 
-bool appropriateHeaderLocation(clang::DiagnosticsEngine &DE,
+bool appropriateHeaderLocation(AutocheckDiagnostic &AD,
                                const clang::SourceLocation &Loc) {
-  return !Loc.isInvalid() && !((!AutocheckContext::Get().CheckSystemHeaders &&
-                                DE.getSourceManager().isInSystemHeader(Loc)) ||
-                               (AutocheckContext::Get().DontCheckHeaders &&
-                                !DE.getSourceManager().isInMainFile(Loc)));
+  const clang::SourceManager &SM = AD.GetSourceManager();
+  return !Loc.isInvalid() &&
+         !((!AD.GetContext().CheckSystemHeaders && SM.isInSystemHeader(Loc)) ||
+           (AD.GetContext().DontCheckHeaders && !SM.isInMainFile(Loc)));
 }
 
-bool appropriateLineLocation(clang::DiagnosticsEngine &DE,
-                             const clang::SourceLocation &Loc) {
-  if (AutocheckContext::Get().CheckBetweenLines.empty()) {
+static bool appropriateLineLocation(AutocheckDiagnostic &AD,
+                                    const clang::SourceLocation &Loc) {
+  if (AD.GetContext().CheckBetweenLines.empty()) {
     return true;
   }
 
-  static const uint32_t FromLine = static_cast<uint32_t>(
-      std::stoi(AutocheckContext::Get().CheckBetweenLines[0]));
+  static const uint32_t FromLine =
+      static_cast<uint32_t>(std::stoi(AD.GetContext().CheckBetweenLines[0]));
 
-  static const uint32_t ToLine = static_cast<uint32_t>(
-      std::stoi(AutocheckContext::Get().CheckBetweenLines[1]));
+  static const uint32_t ToLine =
+      static_cast<uint32_t>(std::stoi(AD.GetContext().CheckBetweenLines[1]));
 
-  return DE.getSourceManager().getSpellingLineNumber(Loc) >= FromLine &&
-         DE.getSourceManager().getSpellingLineNumber(Loc) <= ToLine &&
-         DE.getSourceManager().isInMainFile(Loc);
+  const clang::SourceManager &SM = AD.GetSourceManager();
+  return SM.getSpellingLineNumber(Loc) >= FromLine &&
+         SM.getSpellingLineNumber(Loc) <= ToLine && SM.isInMainFile(Loc);
 }
 
-bool appropriateLocation(clang::DiagnosticsEngine &DE,
+bool appropriateLocation(AutocheckDiagnostic &AD,
                          const clang::SourceLocation &Loc) {
-  return !Loc.isInvalid() && (appropriateHeaderLocation(DE, Loc) &&
-                              appropriateLineLocation(DE, Loc));
+  return !Loc.isInvalid() && (appropriateHeaderLocation(AD, Loc) &&
+                              appropriateLineLocation(AD, Loc));
 }
 
-bool shouldIgnoreMacroExpansions(clang::DiagnosticsEngine &DE,
+bool shouldIgnoreMacroExpansions(AutocheckDiagnostic &AD,
                                  const clang::SourceLocation &SL) {
-  return AutocheckContext::Get().DontCheckMacroExpansions &&
-         DE.getSourceManager().isMacroBodyExpansion(SL);
-}
-
-WarningCounter &getWarningCounter() {
-  static WarningCounter WarningCount(AutocheckContext::Get().WarningLimit);
-  return WarningCount;
+  return AD.GetContext().DontCheckMacroExpansions &&
+         AD.GetSourceManager().isMacroBodyExpansion(SL);
 }
 
 AutocheckDiagnosticBuilder::AutocheckDiagnosticBuilder(
-    clang::DiagnosticBuilder &DB, clang::DiagnosticsEngine &DE,
+    clang::DiagnosticBuilder &DB, AutocheckDiagnostic &AD,
     const clang::SourceLocation &Loc, AutocheckWarnings Warning,
     clang::DiagnosticIDs::Level Level)
-    : DiagnosticBuilder(DB), DE(DE), Warning(Warning), ReportWarning(true) {
-  WarningCounter &WarningCount = getWarningCounter();
+    : DiagnosticBuilder(DB), DE(AD.GetDiagnostics()), Warning(Warning),
+      ReportWarning(true) {
+  WarningCounter &WarningCount = AD.Counter;
   WarningCount.resetLimitPair();
-  if (!appropriateLocation(DE, Loc)) {
+  if (!appropriateLocation(AD, Loc)) {
     ReportWarning = false;
     return;
   }
-  if (shouldIgnoreMacroExpansions(DE, Loc)) {
+  if (shouldIgnoreMacroExpansions(AD, Loc)) {
     ReportWarning = false;
     return;
   }
@@ -188,10 +174,10 @@ AutocheckDiagnosticBuilder::AutocheckDiagnosticBuilder(
     ReportWarning = false;
     return;
   }
-  WarningRepeatChecker &warningRepeatChecker =
-      WarningRepeatChecker::getWarningRepeatChecker();
-  if (warningRepeatChecker.shouldControl(Warning)) {
-    if (warningRepeatChecker.updateLineNumber(DE, Loc, Warning)
+
+  WarningRepeatChecker &WarningRepeatChecker = AD.RepeatChecker;
+  if (WarningRepeatChecker.shouldControl(Warning)) {
+    if (WarningRepeatChecker.updateLineNumber(DE, Loc, Warning)
             .isAlreadyEmitted()) {
       ReportWarning = false;
       return;
@@ -204,7 +190,7 @@ AutocheckDiagnosticBuilder::AutocheckDiagnosticBuilder(
 
   // Notify observers when a warning is emitted.
   if (ReportWarning && Level == clang::DiagnosticIDs::Level::Warning) {
-    std::for_each(Listeners.begin(), Listeners.end(),
+    std::for_each(AD.Listeners.begin(), AD.Listeners.end(),
                   [&Warning, Loc](DiagListener *L) {
                     L->OnDiagnosticEmitted(Warning, Loc);
                   });
@@ -219,13 +205,16 @@ AutocheckDiagnosticBuilder::~AutocheckDiagnosticBuilder() {
   }
 }
 
-AutocheckWarnings AutocheckDiagnostic::getLatestWarning() {
-  return getWarningCounter().Warning;
+AutocheckDiagnostic::AutocheckDiagnostic(const AutocheckContext &Context,
+                                         clang::DiagnosticsEngine &DE)
+    : Context(Context), DE(DE), Counter(Context.WarningLimit) {}
+
+AutocheckWarnings AutocheckDiagnostic::getLatestWarning() const {
+  return Counter.Warning;
 }
 
 AutocheckDiagnosticBuilder
-AutocheckDiagnostic::Diag(clang::DiagnosticsEngine &DE,
-                          const clang::SourceLocation &Loc,
+AutocheckDiagnostic::Diag(const clang::SourceLocation &Loc,
                           AutocheckWarnings Warning) {
   int DiagID = static_cast<int>(Warning);
   const DiagnosticInfo &DiagInfo = DiagnosticMessages[DiagID];
@@ -237,15 +226,15 @@ AutocheckDiagnostic::Diag(clang::DiagnosticsEngine &DE,
       DE.getDiagnosticIDs()->getCustomDiagID(DiagInfo.Level, DiagMessage.str());
 
   clang::DiagnosticBuilder DB = DE.Report(Loc, ID);
-  return AutocheckDiagnosticBuilder(DB, DE, Loc, Warning, DiagInfo.Level);
+  return AutocheckDiagnosticBuilder(DB, *this, Loc, Warning, DiagInfo.Level);
 }
 
 void AutocheckDiagnostic::addArgsToDiagBuilder(AutocheckDiagnosticBuilder &DB) {
 }
 
 bool AutocheckDiagnostic::AddDiagListener(DiagListener *DL) {
-  const auto result = Listeners.insert(DL);
-  return result.second;
+  const auto Result = Listeners.insert(DL);
+  return Result.second;
 }
 
 bool AutocheckDiagnostic::RemoveDiagListener(DiagListener *DL) {
@@ -255,6 +244,20 @@ bool AutocheckDiagnostic::RemoveDiagListener(DiagListener *DL) {
 const DiagnosticInfo &
 AutocheckDiagnostic::GetDiagInfo(AutocheckWarnings Warning) {
   return DiagnosticMessages[static_cast<int>(Warning)];
+}
+
+const AutocheckContext &AutocheckDiagnostic::GetContext() const {
+  return Context;
+}
+
+bool AutocheckDiagnostic::IsEnabled(AutocheckWarnings Warning) const {
+  return Context.isEnabled(Warning);
+}
+
+clang::DiagnosticsEngine &AutocheckDiagnostic::GetDiagnostics() { return DE; }
+
+clang::SourceManager &AutocheckDiagnostic::GetSourceManager() const {
+  return DE.getSourceManager();
 }
 
 } // namespace autocheck

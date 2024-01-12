@@ -55,9 +55,8 @@ bool CVI::VisitDeclRefExpr(const clang::DeclRefExpr *) { return true; }
 
 /* DerivedFromVirtualVisitor */
 
-DerivedFromVirtualVisitor::DerivedFromVirtualVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+DerivedFromVirtualVisitor::DerivedFromVirtualVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool DerivedFromVirtualVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::derivedFromVirtual);
@@ -69,8 +68,8 @@ bool DerivedFromVirtualVisitor::VisitCXXRecordDecl(
     // Get all virtual base classes and report a warning message for each.
     const auto &End = CRD->vbases_end();
     for (auto It = CRD->vbases_begin(); It != End; ++It) {
-      if (AutocheckDiagnostic::reportWarning(
-              DE, CRD->getBeginLoc(), AutocheckWarnings::derivedFromVirtual)
+      if (AD.reportWarning(CRD->getBeginLoc(),
+                           AutocheckWarnings::derivedFromVirtual)
               .limitReached())
         return false;
     }
@@ -82,8 +81,8 @@ bool DerivedFromVirtualVisitor::VisitCXXRecordDecl(
 /* Implementation of VirtualFuncSpecifierVisitor */
 
 VirtualFuncSpecifierVisitor::VirtualFuncSpecifierVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool VirtualFuncSpecifierVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -101,9 +100,8 @@ bool VirtualFuncSpecifierVisitor::VisitCXXMethodDecl(
         (IsMarkedFinal && (IsMarkedVirtual || IsMarkedOverride)) ||
         (IsMarkedOverride && (IsMarkedVirtual || IsMarkedFinal)) ||
         !(IsMarkedOverride || IsMarkedVirtual || IsMarkedFinal)) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, CMD->getBeginLoc(),
-                  AutocheckWarnings::virtualFuncSpecifier)
+      return !AD.reportWarning(CMD->getBeginLoc(),
+                               AutocheckWarnings::virtualFuncSpecifier)
                   .limitReached();
     }
   }
@@ -114,8 +112,8 @@ bool VirtualFuncSpecifierVisitor::VisitCXXMethodDecl(
 /* Implementation of OverrideFuncSpecifierVisitor */
 
 OverrideFuncSpecifierVisitor::OverrideFuncSpecifierVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool OverrideFuncSpecifierVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -132,9 +130,8 @@ bool OverrideFuncSpecifierVisitor::VisitCXXMethodDecl(
     if (CMD->size_overridden_methods() &&
         ((IsMarkedFinal && IsMarkedOverride) ||
          !(IsMarkedFinal || IsMarkedOverride))) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, CMD->getBeginLoc(),
-                  AutocheckWarnings::overrideFuncSpecifier)
+      return !AD.reportWarning(CMD->getBeginLoc(),
+                               AutocheckWarnings::overrideFuncSpecifier)
                   .limitReached();
     }
   }
@@ -145,8 +142,8 @@ bool OverrideFuncSpecifierVisitor::VisitCXXMethodDecl(
 /* Implementation of VirtualMethodFinalClassVisitor */
 
 VirtualMethodFinalClassVisitor::VirtualMethodFinalClassVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool VirtualMethodFinalClassVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -159,9 +156,8 @@ bool VirtualMethodFinalClassVisitor::VisitCXXRecordDecl(
     if (isMethodOrClassFinal(CRD))
       for (const auto &M : CRD->methods())
         if (M->isUserProvided() && M->isVirtual() && !isMethodOrClassFinal(M)) {
-          if (AutocheckDiagnostic::reportWarning(
-                  DE, M->getBeginLoc(),
-                  AutocheckWarnings::virtualMethodFinalClass)
+          if (AD.reportWarning(M->getBeginLoc(),
+                               AutocheckWarnings::virtualMethodFinalClass)
                   .limitReached())
             return false;
         }
@@ -172,8 +168,8 @@ bool VirtualMethodFinalClassVisitor::VisitCXXRecordDecl(
 
 /* Implementation of PureFuncOverrideVisitor */
 
-PureFuncOverrideVisitor::PureFuncOverrideVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+PureFuncOverrideVisitor::PureFuncOverrideVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool PureFuncOverrideVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::pureFuncOverride);
@@ -184,8 +180,8 @@ bool PureFuncOverrideVisitor::VisitCXXMethodDecl(
   if (CMD->isPure())
     for (const auto &M : CMD->overridden_methods())
       if (!M->isPure()) {
-        if (AutocheckDiagnostic::reportWarning(
-                DE, CMD->getBeginLoc(), AutocheckWarnings::pureFuncOverride)
+        if (AD.reportWarning(CMD->getBeginLoc(),
+                             AutocheckWarnings::pureFuncOverride)
                 .limitReached())
           return false;
       }
@@ -194,8 +190,8 @@ bool PureFuncOverrideVisitor::VisitCXXMethodDecl(
 
 /* Implementation of MemberDataPrivateVisitor */
 
-MemberDataPrivateVisitor::MemberDataPrivateVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+MemberDataPrivateVisitor::MemberDataPrivateVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool MemberDataPrivateVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::memberDataPrivate);
@@ -208,8 +204,8 @@ bool MemberDataPrivateVisitor::VisitCXXRecordDecl(
       const auto &Fields = CRD->fields();
       for (const auto &F : Fields)
         if (F->getAccess() != clang::AccessSpecifier::AS_private) {
-          if (AutocheckDiagnostic::reportWarning(
-                  DE, F->getBeginLoc(), AutocheckWarnings::memberDataPrivate)
+          if (AD.reportWarning(F->getBeginLoc(),
+                               AutocheckWarnings::memberDataPrivate)
                   .limitReached())
             return false;
         }
@@ -221,8 +217,7 @@ bool MemberDataPrivateVisitor::VisitCXXRecordDecl(
 
 /* Implementation of NonPODAsClassVisitor */
 
-NonPODAsClassVisitor::NonPODAsClassVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+NonPODAsClassVisitor::NonPODAsClassVisitor(AutocheckDiagnostic &AD) : AD(AD) {}
 
 bool NonPODAsClassVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::nonPodAsClass);
@@ -231,8 +226,8 @@ bool NonPODAsClassVisitor::isFlagPresent(const AutocheckContext &Context) {
 bool NonPODAsClassVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) {
   if (CRD->getDefinition()) {
     if (!CRD->isPOD() && !CRD->isClass()) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, CRD->getBeginLoc(), AutocheckWarnings::nonPodAsClass)
+      return !AD.reportWarning(CRD->getBeginLoc(),
+                               AutocheckWarnings::nonPodAsClass)
                   .limitReached();
     }
   }
@@ -242,8 +237,7 @@ bool NonPODAsClassVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) {
 
 /* Implementation of ExplicitCtorsVisitor */
 
-ExplicitCtorsVisitor::ExplicitCtorsVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+ExplicitCtorsVisitor::ExplicitCtorsVisitor(AutocheckDiagnostic &AD) : AD(AD) {}
 
 bool ExplicitCtorsVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::explicitCtors);
@@ -258,9 +252,8 @@ bool ExplicitCtorsVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) {
         if (C->getMinRequiredArguments() == 1) {
           const auto P = C->parameters()[0];
           if (P->getType()->isFundamentalType()) {
-            return !AutocheckDiagnostic::reportWarning(
-                        DE, CRD->getBeginLoc(),
-                        AutocheckWarnings::explicitCtors)
+            return !AD.reportWarning(CRD->getBeginLoc(),
+                                     AutocheckWarnings::explicitCtors)
                         .limitReached();
           }
         }
@@ -274,8 +267,8 @@ bool ExplicitCtorsVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) {
 /* Implementation of FinalClassDestructorVisitor */
 
 FinalClassDestructorVisitor::FinalClassDestructorVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool FinalClassDestructorVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -294,17 +287,15 @@ bool FinalClassDestructorVisitor::VisitCXXRecordDecl(
 
   if (CRD->getDefinition()) {
     if (CRD->hasSimpleDestructor()) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, CRD->getBeginLoc(),
-                  AutocheckWarnings::finalClassDestructor)
+      return !AD.reportWarning(CRD->getBeginLoc(),
+                               AutocheckWarnings::finalClassDestructor)
                   .limitReached();
     }
     if (const clang::CXXDestructorDecl *CDD = CRD->getDestructor()) {
       if ((CDD->getAccess() == clang::AccessSpecifier::AS_public) &&
           !CDD->isVirtual()) {
-        return !AutocheckDiagnostic::reportWarning(
-                    DE, CRD->getBeginLoc(),
-                    AutocheckWarnings::finalClassDestructor)
+        return !AD.reportWarning(CRD->getBeginLoc(),
+                                 AutocheckWarnings::finalClassDestructor)
                     .limitReached();
       }
     }
@@ -315,8 +306,8 @@ bool FinalClassDestructorVisitor::VisitCXXRecordDecl(
 
 /* Implementation of RelOpBoolValueVisitor */
 
-RelOpBoolValueVisitor::RelOpBoolValueVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+RelOpBoolValueVisitor::RelOpBoolValueVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool RelOpBoolValueVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::relOpBoolValue);
@@ -333,8 +324,8 @@ bool RelOpBoolValueVisitor::VisitCXXMethodDecl(
   case clang::OverloadedOperatorKind::OO_EqualEqual:
   case clang::OverloadedOperatorKind::OO_ExclaimEqual:
     if (!CMD->getReturnType()->isBooleanType()) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, CMD->getBeginLoc(), AutocheckWarnings::relOpBoolValue)
+      return !AD.reportWarning(CMD->getBeginLoc(),
+                               AutocheckWarnings::relOpBoolValue)
                   .limitReached();
     }
     break;
@@ -348,8 +339,8 @@ bool RelOpBoolValueVisitor::VisitCXXMethodDecl(
 /* Implementation of ImplicitConversionOpVisitor */
 
 ImplicitConversionOpVisitor::ImplicitConversionOpVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool ImplicitConversionOpVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -359,8 +350,8 @@ bool ImplicitConversionOpVisitor::isFlagPresent(
 bool ImplicitConversionOpVisitor::VisitCXXConversionDecl(
     const clang::CXXConversionDecl *CCD) {
   if (!CCD->isExplicit()) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, CCD->getBeginLoc(), AutocheckWarnings::implicitConversionOp)
+    return !AD.reportWarning(CCD->getBeginLoc(),
+                             AutocheckWarnings::implicitConversionOp)
                 .limitReached();
   }
   return true;
@@ -368,8 +359,8 @@ bool ImplicitConversionOpVisitor::VisitCXXConversionDecl(
 
 /* Implementation of ConverionOpUsedVisitor */
 
-ConverionOpUsedVisitor::ConverionOpUsedVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+ConverionOpUsedVisitor::ConverionOpUsedVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool ConverionOpUsedVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::conversionOpUsed);
@@ -377,16 +368,16 @@ bool ConverionOpUsedVisitor::isFlagPresent(const AutocheckContext &Context) {
 
 bool ConverionOpUsedVisitor::VisitCXXConversionDecl(
     const clang::CXXConversionDecl *CCD) {
-  return !AutocheckDiagnostic::reportWarning(
-              DE, CCD->getBeginLoc(), AutocheckWarnings::conversionOpUsed)
+  return !AD.reportWarning(CCD->getBeginLoc(),
+                           AutocheckWarnings::conversionOpUsed)
               .limitReached();
 }
 
 /* Implementation of SubscriptOperatorOverloadVisitor */
 
 SubscriptOperatorOverloadVisitor::SubscriptOperatorOverloadVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool SubscriptOperatorOverloadVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -406,18 +397,16 @@ bool SubscriptOperatorOverloadVisitor::VisitCXXRecordDecl(
     }
   }
   if (NonConst)
-    return !AutocheckDiagnostic::reportWarning(
-                DE, NonConst->getBeginLoc(),
-                AutocheckWarnings::subscriptOpOverload)
+    return !AD.reportWarning(NonConst->getBeginLoc(),
+                             AutocheckWarnings::subscriptOpOverload)
                 .limitReached();
   return true;
 }
 
 /* Implementation of UnusedPrivateMethodVisitor */
 
-UnusedPrivateMethodVisitor::UnusedPrivateMethodVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE), CurrentMethod(nullptr) {}
+UnusedPrivateMethodVisitor::UnusedPrivateMethodVisitor(AutocheckDiagnostic &AD)
+    : AD(AD), CurrentMethod(nullptr) {}
 
 bool UnusedPrivateMethodVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -442,9 +431,9 @@ bool UnusedPrivateMethodVisitor::PostTraverseDecl(clang::Decl *D) {
 
 void UnusedPrivateMethodVisitor::PostWork() {
   for (const clang::CXXMethodDecl *CMD : PrivateMethods) {
-    if (AutocheckDiagnostic::reportWarning(
-            DE, CMD->getLocation(), AutocheckWarnings::unusedFunctionOrMethod,
-            1, CMD->getNameInfo().getName())
+    if (AD.reportWarning(CMD->getLocation(),
+                         AutocheckWarnings::unusedFunctionOrMethod, 1,
+                         CMD->getNameInfo().getName())
             .limitReached())
       break;
   }
@@ -549,9 +538,8 @@ bool CheckReturnType(std::set<const clang::Type *> FieldTypes,
   return false;
 }
 
-NonConstReturnedFromConst::NonConstReturnedFromConst(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+NonConstReturnedFromConst::NonConstReturnedFromConst(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool NonConstReturnedFromConst::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::nonConstReturnedFromConst);
@@ -574,9 +562,8 @@ bool NonConstReturnedFromConst::VisitCXXRecordDecl(
     // is in the set of the basic types of all class-data, than report warning -
     // otherwise, don't. This is a heuristic to avoid false positives.
     if (CheckReturnType(ClassDataTypes, T)) {
-      if (AutocheckDiagnostic::reportWarning(
-              DE, CMD->getBeginLoc(),
-              AutocheckWarnings::nonConstReturnedFromConst)
+      if (AD.reportWarning(CMD->getBeginLoc(),
+                           AutocheckWarnings::nonConstReturnedFromConst)
               .limitReached())
         return false;
     }
@@ -639,8 +626,8 @@ static bool hasNoexceptSwapFunctionCall(const clang::Stmt *Body) {
 }
 
 CopyAndMoveAssignmentNoSwapVisitor::CopyAndMoveAssignmentNoSwapVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool CopyAndMoveAssignmentNoSwapVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -662,18 +649,17 @@ bool CopyAndMoveAssignmentNoSwapVisitor::VisitCXXMethodDecl(
   const clang::Stmt *Body = Definition->getBody();
 
   if (!hasNoexceptSwapFunctionCall(Body))
-    return !AutocheckDiagnostic::reportWarning(
-                DE, CMD->getBeginLoc(),
-                AutocheckWarnings::swapNotInCopyAndMoveAssignment)
+    return !AD.reportWarning(CMD->getBeginLoc(),
+                             AutocheckWarnings::swapNotInCopyAndMoveAssignment)
                 .limitReached();
   return true;
 }
 
 /* Implementation of UnionsUsedVisitor */
 
-UnionsUsedVisitor::UnionsUsedVisitor(clang::DiagnosticsEngine &DE,
+UnionsUsedVisitor::UnionsUsedVisitor(AutocheckDiagnostic &AD,
                                      clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    : AD(AD), AC(AC) {}
 
 bool UnionsUsedVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::unionsUsed);
@@ -693,15 +679,13 @@ bool UnionsUsedVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *D) {
     // In the C++ Standard Library (C++17) tagged unions are not allowed
     // since std::variant is available.
     if (AC.getLangOpts().CPlusPlus17) {
-      return !AutocheckDiagnostic::reportWarning(DE, D->getBeginLoc(),
-                                                 AutocheckWarnings::unionsUsed)
+      return !AD.reportWarning(D->getBeginLoc(), AutocheckWarnings::unionsUsed)
                   .limitReached();
     }
     const clang::CXXRecordDecl *RD =
         llvm::dyn_cast_if_present<clang::CXXRecordDecl>(D->getParent());
     if (!RD || !RD->isStruct()) {
-      return !AutocheckDiagnostic::reportWarning(DE, D->getBeginLoc(),
-                                                 AutocheckWarnings::unionsUsed)
+      return !AD.reportWarning(D->getBeginLoc(), AutocheckWarnings::unionsUsed)
                   .limitReached();
     }
     int NumEnumDecl = 0;
@@ -721,8 +705,7 @@ bool UnionsUsedVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *D) {
         IsTaggedUnion = true;
     }
     if (!IsTaggedUnion) {
-      return !AutocheckDiagnostic::reportWarning(DE, D->getBeginLoc(),
-                                                 AutocheckWarnings::unionsUsed)
+      return !AD.reportWarning(D->getBeginLoc(), AutocheckWarnings::unionsUsed)
                   .limitReached();
     }
   }
@@ -730,6 +713,10 @@ bool UnionsUsedVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *D) {
 }
 
 /* Implementation of ChangedDefaultArgumentsVisitor */
+
+ChangedDefaultArgumentsVisitor::ChangedDefaultArgumentsVisitor(
+    AutocheckDiagnostic &AD, clang::ASTContext &ASTCtx)
+    : AD(AD), ASTCtx(ASTCtx) {}
 
 bool ChangedDefaultArgumentsVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -892,8 +879,7 @@ bool ChangedDefaultArgumentsVisitor::VisitCXXMethodDecl(
   }
 
   for (const auto &Location : Locations) {
-    if (AutocheckDiagnostic::reportWarning(
-            DE, Location, AutocheckWarnings::changedDefaultArguments)
+    if (AD.reportWarning(Location, AutocheckWarnings::changedDefaultArguments)
             .limitReached())
       return false;
   }
@@ -904,8 +890,8 @@ bool ChangedDefaultArgumentsVisitor::VisitCXXMethodDecl(
 /* Implementation of ForbiddenOperatorOverloadVisitor */
 
 ForbiddenOperatorOverloadVisitor::ForbiddenOperatorOverloadVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool ForbiddenOperatorOverloadVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -919,9 +905,8 @@ bool ForbiddenOperatorOverloadVisitor::VisitCXXMethodDecl(
     case clang::OO_Comma:
     case clang::OO_AmpAmp:
     case clang::OO_PipePipe:
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, CMD->getLocation(),
-                  AutocheckWarnings::commaAndOrOpsOverloaded)
+      return !AD.reportWarning(CMD->getLocation(),
+                               AutocheckWarnings::commaAndOrOpsOverloaded)
                   .limitReached();
     default:
       return true;
@@ -933,8 +918,8 @@ bool ForbiddenOperatorOverloadVisitor::VisitCXXMethodDecl(
 /* Implementation of UnaryAmpOperatorOverloadVisitor */
 
 UnaryAmpOperatorOverloadVisitor::UnaryAmpOperatorOverloadVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool UnaryAmpOperatorOverloadVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -945,8 +930,8 @@ bool UnaryAmpOperatorOverloadVisitor::VisitFunctionDecl(
     const clang::FunctionDecl *FD) {
   if (FD->isOverloadedOperator() &&
       (FD->getOverloadedOperator() == clang::OO_Amp)) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, FD->getLocation(), AutocheckWarnings::unaryAmpOpOverloaded)
+    return !AD.reportWarning(FD->getLocation(),
+                             AutocheckWarnings::unaryAmpOpOverloaded)
                 .limitReached();
   }
   return true;
@@ -954,11 +939,10 @@ bool UnaryAmpOperatorOverloadVisitor::VisitFunctionDecl(
 
 /* Implementation of AssignmentOpVisitor */
 
-AssignmentOpVisitor::AssignmentOpVisitor(clang::DiagnosticsEngine &DE,
-                                         const AutocheckContext &Context)
-    : DE(DE), Context(Context),
-      CheckRefQual(Context.isEnabled(AutocheckWarnings::assignmentOpRefQual)),
-      CheckVirtual(Context.isEnabled(AutocheckWarnings::assignmentOpVirtual)) {}
+AssignmentOpVisitor::AssignmentOpVisitor(AutocheckDiagnostic &AD)
+    : AD(AD),
+      CheckRefQual(AD.IsEnabled(AutocheckWarnings::assignmentOpRefQual)),
+      CheckVirtual(AD.IsEnabled(AutocheckWarnings::assignmentOpVirtual)) {}
 
 bool AssignmentOpVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::assignmentOpRefQual) ||
@@ -979,16 +963,14 @@ bool AssignmentOpVisitor::VisitCXXMethodDecl(const clang::CXXMethodDecl *MD) {
   case clang::OO_LessLessEqual:
   case clang::OO_GreaterGreaterEqual:
     if (CheckRefQual && (MD->getRefQualifier() != clang::RQ_LValue)) {
-      CheckRefQual =
-          !AutocheckDiagnostic::reportWarning(
-               DE, MD->getLocation(), AutocheckWarnings::assignmentOpRefQual)
-               .limitReached();
+      CheckRefQual = !AD.reportWarning(MD->getLocation(),
+                                       AutocheckWarnings::assignmentOpRefQual)
+                          .limitReached();
     }
     if (CheckVirtual && MD->isVirtual()) {
-      CheckVirtual =
-          !AutocheckDiagnostic::reportWarning(
-               DE, MD->getLocation(), AutocheckWarnings::assignmentOpVirtual)
-               .limitReached();
+      CheckVirtual = !AD.reportWarning(MD->getLocation(),
+                                       AutocheckWarnings::assignmentOpVirtual)
+                          .limitReached();
     }
     break;
   default:
@@ -1000,8 +982,8 @@ bool AssignmentOpVisitor::VisitCXXMethodDecl(const clang::CXXMethodDecl *MD) {
 
 /* Implementation of ProperStructureVisitor */
 
-ProperStructureVisitor::ProperStructureVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+ProperStructureVisitor::ProperStructureVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool ProperStructureVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::properStructure);
@@ -1017,8 +999,8 @@ bool ProperStructureVisitor::VisitCXXRecordDecl(
     // This check is done before (2) so that no implicit method can trigger a
     // warning for (2) which might confuse the user.
     if (!CRD->bases().empty()) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, CRD->getBeginLoc(), AutocheckWarnings::properStructure, 3)
+      return !AD.reportWarning(CRD->getBeginLoc(),
+                               AutocheckWarnings::properStructure, 3)
                   .limitReached();
     }
 
@@ -1030,15 +1012,15 @@ bool ProperStructureVisitor::VisitCXXRecordDecl(
                     [](const clang::CXXMethodDecl *CMD) {
                       return !CMD->isImplicit();
                     })) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, CRD->getBeginLoc(), AutocheckWarnings::properStructure, 1)
+      return !AD.reportWarning(CRD->getBeginLoc(),
+                               AutocheckWarnings::properStructure, 1)
                   .limitReached();
     }
 
     // (1) provide only public data members.
     if (CRD->hasPrivateFields() || CRD->hasProtectedFields()) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, CRD->getBeginLoc(), AutocheckWarnings::properStructure, 0)
+      return !AD.reportWarning(CRD->getBeginLoc(),
+                               AutocheckWarnings::properStructure, 0)
                   .limitReached();
     }
   }
@@ -1052,12 +1034,11 @@ bool ProperStructureVisitor::VisitCXXRecordDecl(
         BaseSpec.getType()->getAsCXXRecordDecl();
 
     if (BaseDecl && BaseDecl->isStruct()) {
-      bool stopVisitor =
-          AutocheckDiagnostic::reportWarning(
-              DE, CRD->getBeginLoc(), AutocheckWarnings::properStructure, 2)
-              .limitReached();
-      AutocheckDiagnostic::reportWarning(
-          DE, BaseDecl->getBeginLoc(), AutocheckWarnings::noteProperStructure);
+      bool stopVisitor = AD.reportWarning(CRD->getBeginLoc(),
+                                          AutocheckWarnings::properStructure, 2)
+                             .limitReached();
+      AD.reportWarning(BaseDecl->getBeginLoc(),
+                       AutocheckWarnings::noteProperStructure);
       return !stopVisitor;
     }
   }
@@ -1067,8 +1048,8 @@ bool ProperStructureVisitor::VisitCXXRecordDecl(
 
 /* Implementation of BaseDestructorVisitor */
 
-BaseDestructorVisitor::BaseDestructorVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+BaseDestructorVisitor::BaseDestructorVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool BaseDestructorVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::baseDestructor);
@@ -1099,26 +1080,23 @@ bool BaseDestructorVisitor::VisitCXXRecordDecl(
           continue;
 
         // Every other type of destructor is not allowed.
-        bool stopVisitor =
-            AutocheckDiagnostic::reportWarning(
-                DE, CRD->getBeginLoc(), AutocheckWarnings::baseDestructor)
-                .limitReached();
-        AutocheckDiagnostic::reportWarning(
-            DE, Dtor->getBeginLoc(), AutocheckWarnings::noteBaseDestructor,
-            Dtor->isImplicit());
+        bool stopVisitor = AD.reportWarning(CRD->getBeginLoc(),
+                                            AutocheckWarnings::baseDestructor)
+                               .limitReached();
+        AD.reportWarning(Dtor->getBeginLoc(),
+                         AutocheckWarnings::noteBaseDestructor,
+                         Dtor->isImplicit());
         if (stopVisitor)
           return false;
         continue;
       }
 
       if (BaseDecl->hasSimpleDestructor()) {
-        bool stopVisitor =
-            AutocheckDiagnostic::reportWarning(
-                DE, CRD->getBeginLoc(), AutocheckWarnings::baseDestructor)
-                .limitReached();
-        AutocheckDiagnostic::reportWarning(
-            DE, BaseDecl->getBeginLoc(), AutocheckWarnings::noteBaseDestructor,
-            true);
+        bool stopVisitor = AD.reportWarning(CRD->getBeginLoc(),
+                                            AutocheckWarnings::baseDestructor)
+                               .limitReached();
+        AD.reportWarning(BaseDecl->getBeginLoc(),
+                         AutocheckWarnings::noteBaseDestructor, true);
         if (stopVisitor)
           return false;
         continue;
@@ -1131,62 +1109,62 @@ bool BaseDestructorVisitor::VisitCXXRecordDecl(
 
 /* Implementation of ClassesVisitor */
 
-ClassesVisitor::ClassesVisitor(clang::DiagnosticsEngine &DE,
+ClassesVisitor::ClassesVisitor(AutocheckDiagnostic &AD,
                                clang::ASTContext &ASTCtx)
-    : DE(DE) {
-  const AutocheckContext &Context = AutocheckContext::Get();
+    : AD(AD) {
+  const AutocheckContext &Context = AD.GetContext();
   if (DerivedFromVirtualVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<DerivedFromVirtualVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<DerivedFromVirtualVisitor>(AD));
   if (VirtualFuncSpecifierVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<VirtualFuncSpecifierVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<VirtualFuncSpecifierVisitor>(AD));
   if (OverrideFuncSpecifierVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<OverrideFuncSpecifierVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<OverrideFuncSpecifierVisitor>(AD));
   if (VirtualMethodFinalClassVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<VirtualMethodFinalClassVisitor>(DE));
+        std::make_unique<VirtualMethodFinalClassVisitor>(AD));
   if (PureFuncOverrideVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<PureFuncOverrideVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<PureFuncOverrideVisitor>(AD));
   if (MemberDataPrivateVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<MemberDataPrivateVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<MemberDataPrivateVisitor>(AD));
   if (NonPODAsClassVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<NonPODAsClassVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<NonPODAsClassVisitor>(AD));
   if (ExplicitCtorsVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<ExplicitCtorsVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<ExplicitCtorsVisitor>(AD));
   if (FinalClassDestructorVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<FinalClassDestructorVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<FinalClassDestructorVisitor>(AD));
   if (RelOpBoolValueVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<RelOpBoolValueVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<RelOpBoolValueVisitor>(AD));
   if (ImplicitConversionOpVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<ImplicitConversionOpVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<ImplicitConversionOpVisitor>(AD));
   if (ConverionOpUsedVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<ConverionOpUsedVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<ConverionOpUsedVisitor>(AD));
   if (SubscriptOperatorOverloadVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<SubscriptOperatorOverloadVisitor>(DE));
+        std::make_unique<SubscriptOperatorOverloadVisitor>(AD));
   if (UnusedPrivateMethodVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<UnusedPrivateMethodVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<UnusedPrivateMethodVisitor>(AD));
   if (NonConstReturnedFromConst::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<NonConstReturnedFromConst>(DE));
+    AllVisitors.push_front(std::make_unique<NonConstReturnedFromConst>(AD));
   if (CopyAndMoveAssignmentNoSwapVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<CopyAndMoveAssignmentNoSwapVisitor>(DE));
+        std::make_unique<CopyAndMoveAssignmentNoSwapVisitor>(AD));
   if (UnionsUsedVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<UnionsUsedVisitor>(DE, ASTCtx));
+    AllVisitors.push_front(std::make_unique<UnionsUsedVisitor>(AD, ASTCtx));
   if (ChangedDefaultArgumentsVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ChangedDefaultArgumentsVisitor>(DE, ASTCtx));
+        std::make_unique<ChangedDefaultArgumentsVisitor>(AD, ASTCtx));
   if (ForbiddenOperatorOverloadVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ForbiddenOperatorOverloadVisitor>(DE));
+        std::make_unique<ForbiddenOperatorOverloadVisitor>(AD));
   if (UnaryAmpOperatorOverloadVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<UnaryAmpOperatorOverloadVisitor>(DE));
+        std::make_unique<UnaryAmpOperatorOverloadVisitor>(AD));
   if (AssignmentOpVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<AssignmentOpVisitor>(DE, Context));
+    AllVisitors.push_front(std::make_unique<AssignmentOpVisitor>(AD));
   if (ProperStructureVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<ProperStructureVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<ProperStructureVisitor>(AD));
   if (BaseDestructorVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<BaseDestructorVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<BaseDestructorVisitor>(AD));
 }
 
 void ClassesVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -1203,7 +1181,7 @@ bool ClassesVisitor::TraverseDecl(clang::Decl *D) {
 
   clang::SourceLocation Loc = D->getBeginLoc();
 
-  if (Loc.isInvalid() || appropriateHeaderLocation(DE, Loc)) {
+  if (Loc.isInvalid() || appropriateHeaderLocation(AD, Loc)) {
     AllVisitors.remove_if([D](std::unique_ptr<ClassesVisitorInterface> &V) {
       return !V->PreTraverseDecl(D);
     });

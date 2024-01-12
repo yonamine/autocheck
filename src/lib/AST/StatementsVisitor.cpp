@@ -39,10 +39,9 @@ bool SVI::VisitSwitchStmt(const clang::SwitchStmt *) { return true; }
 
 /* Implementation of IfElseIfTerminatedVisitor */
 
-IfElseIfTerminatedVisitor::IfElseIfTerminatedVisitor(
-    clang::DiagnosticsEngine &DE, const AutocheckContext &Context,
-    clang::ASTContext &AC)
-    : DE(DE), Context(Context), AC(AC) {}
+IfElseIfTerminatedVisitor::IfElseIfTerminatedVisitor(AutocheckDiagnostic &AD,
+                                                     clang::ASTContext &AC)
+    : AD(AD), AC(AC) {}
 
 bool IfElseIfTerminatedVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::ifElseIfTerminated);
@@ -64,8 +63,8 @@ bool IfElseIfTerminatedVisitor::VisitIfStmt(const clang::IfStmt *IS) {
   while (CurrentIfStmt) {
     ElseStmt = CurrentIfStmt->getElse();
     if (!ElseStmt) {
-      if (AutocheckDiagnostic::reportWarning(
-              DE, IS->getIfLoc(), AutocheckWarnings::ifElseIfTerminated)
+      if (AD.reportWarning(IS->getIfLoc(),
+                           AutocheckWarnings::ifElseIfTerminated)
               .limitReached())
         return false;
       break;
@@ -78,10 +77,9 @@ bool IfElseIfTerminatedVisitor::VisitIfStmt(const clang::IfStmt *IS) {
 
 /* Implementation of GotoLabelBlockVisitor */
 
-GotoLabelBlockVisitor::GotoLabelBlockVisitor(clang::DiagnosticsEngine &DE,
-                                             const AutocheckContext &Context,
+GotoLabelBlockVisitor::GotoLabelBlockVisitor(AutocheckDiagnostic &AD,
                                              clang::ASTContext &AC)
-    : DE(DE), Context(Context), AC(AC) {}
+    : AD(AD), AC(AC) {}
 
 bool GotoLabelBlockVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::gotoLabelBlock);
@@ -89,8 +87,8 @@ bool GotoLabelBlockVisitor::isFlagPresent(const AutocheckContext &Context) {
 
 bool GotoLabelBlockVisitor::VisitGotoStmt(const clang::GotoStmt *GS) {
   if (!getGotoParent(GS, GS->getLabel()->getStmt())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, GS->getGotoLoc(), AutocheckWarnings::gotoLabelBlock)
+    return !AD.reportWarning(GS->getGotoLoc(),
+                             AutocheckWarnings::gotoLabelBlock)
                 .limitReached();
   }
   return true;
@@ -119,10 +117,9 @@ GotoLabelBlockVisitor::getGotoParent(const clang::Stmt *S,
 
 /* Implementation of SwitchStmtDefaultClause */
 
-SwitchStmtDefaultClause::SwitchStmtDefaultClause(
-    clang::DiagnosticsEngine &DE, const AutocheckContext &Context,
-    clang::ASTContext &AC)
-    : DE(DE), Context(Context), AC(AC) {}
+SwitchStmtDefaultClause::SwitchStmtDefaultClause(AutocheckDiagnostic &AD,
+                                                 clang::ASTContext &AC)
+    : AD(AD), AC(AC) {}
 
 bool SwitchStmtDefaultClause::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::switchStmtDefaultClause);
@@ -164,8 +161,8 @@ bool SwitchStmtDefaultClause::PostTraverseStmt(clang::Stmt *S) {
     // was not seen in the switch statement which does not cover all enum
     // cases, report a warning message.
     if (!SD.Valid || (!SD.SS->isAllEnumCasesCovered() && !SD.DefaultStmtSeen)) {
-      if (AutocheckDiagnostic::reportWarning(
-              DE, S->getBeginLoc(), AutocheckWarnings::switchStmtDefaultClause)
+      if (AD.reportWarning(S->getBeginLoc(),
+                           AutocheckWarnings::switchStmtDefaultClause)
               .limitReached())
         return false;
     }
@@ -181,10 +178,9 @@ bool SwitchStmtDefaultClause::PostTraverseStmt(clang::Stmt *S) {
 /* Implementation of DoWhileUsedVisitor */
 
 DoWhileUsedVisitor::DoWhileUsedVisitor(
-    clang::DiagnosticsEngine &DE, const AutocheckContext &Context,
-    clang::ASTContext &AC,
+    AutocheckDiagnostic &AD, clang::ASTContext &AC,
     const llvm::SmallSet<clang::SourceLocation, 0> &DoWhileMacroLocations)
-    : DE(DE), Context(Context), AC(AC) {
+    : AD(AD), AC(AC) {
   for (const clang::SourceLocation &Loc : DoWhileMacroLocations) {
     DoWhileMacros.insert(AC.getFullLoc(Loc).getSpellingLoc());
   }
@@ -200,15 +196,14 @@ bool DoWhileUsedVisitor::VisitDoStmt(const clang::DoStmt *DS) {
     if (FSC == DSEndLoc)
       return true;
   }
-  return !AutocheckDiagnostic::reportWarning(DE, DS->getBeginLoc(),
-                                             AutocheckWarnings::doWhileUsed)
+  return !AD.reportWarning(DS->getBeginLoc(), AutocheckWarnings::doWhileUsed)
               .limitReached();
 }
 
 /* Implementation of BodyCompoundStmtVisitor */
 
-BodyCompoundStmtVisitor::BodyCompoundStmtVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+BodyCompoundStmtVisitor::BodyCompoundStmtVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool BodyCompoundStmtVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::notCompoundStatement);
@@ -216,8 +211,8 @@ bool BodyCompoundStmtVisitor::isFlagPresent(const AutocheckContext &Context) {
 
 bool BodyCompoundStmtVisitor::VisitDoStmt(const clang::DoStmt *DS) {
   if (!llvm::dyn_cast_if_present<clang::CompoundStmt>(DS->getBody())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, DS->getBeginLoc(), AutocheckWarnings::notCompoundStatement)
+    return !AD.reportWarning(DS->getBeginLoc(),
+                             AutocheckWarnings::notCompoundStatement)
                 .limitReached();
   }
   return true;
@@ -225,8 +220,8 @@ bool BodyCompoundStmtVisitor::VisitDoStmt(const clang::DoStmt *DS) {
 
 bool BodyCompoundStmtVisitor::VisitWhileStmt(const clang::WhileStmt *WS) {
   if (!llvm::dyn_cast_if_present<clang::CompoundStmt>(WS->getBody())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, WS->getBeginLoc(), AutocheckWarnings::notCompoundStatement)
+    return !AD.reportWarning(WS->getBeginLoc(),
+                             AutocheckWarnings::notCompoundStatement)
                 .limitReached();
   }
   return true;
@@ -234,8 +229,8 @@ bool BodyCompoundStmtVisitor::VisitWhileStmt(const clang::WhileStmt *WS) {
 
 bool BodyCompoundStmtVisitor::VisitSwitchStmt(const clang::SwitchStmt *SS) {
   if (!llvm::dyn_cast_if_present<clang::CompoundStmt>(SS->getBody())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, SS->getBeginLoc(), AutocheckWarnings::notCompoundStatement)
+    return !AD.reportWarning(SS->getBeginLoc(),
+                             AutocheckWarnings::notCompoundStatement)
                 .limitReached();
   }
   return true;
@@ -243,8 +238,8 @@ bool BodyCompoundStmtVisitor::VisitSwitchStmt(const clang::SwitchStmt *SS) {
 
 bool BodyCompoundStmtVisitor::VisitForStmt(const clang::ForStmt *FS) {
   if (!llvm::dyn_cast_if_present<clang::CompoundStmt>(FS->getBody())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, FS->getBeginLoc(), AutocheckWarnings::notCompoundStatement)
+    return !AD.reportWarning(FS->getBeginLoc(),
+                             AutocheckWarnings::notCompoundStatement)
                 .limitReached();
   }
   return true;
@@ -253,9 +248,8 @@ bool BodyCompoundStmtVisitor::VisitForStmt(const clang::ForStmt *FS) {
 bool BodyCompoundStmtVisitor::VisitCXXForRangeStmt(
     const clang::CXXForRangeStmt *CFRS) {
   if (!llvm::dyn_cast_if_present<clang::CompoundStmt>(CFRS->getBody())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, CFRS->getBeginLoc(),
-                AutocheckWarnings::notCompoundStatement)
+    return !AD.reportWarning(CFRS->getBeginLoc(),
+                             AutocheckWarnings::notCompoundStatement)
                 .limitReached();
   }
   return true;
@@ -263,8 +257,7 @@ bool BodyCompoundStmtVisitor::VisitCXXForRangeStmt(
 
 /* Implementation of GotoBackJumpVisitor */
 
-GotoBackJumpVisitor::GotoBackJumpVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+GotoBackJumpVisitor::GotoBackJumpVisitor(AutocheckDiagnostic &AD) : AD(AD) {}
 
 bool GotoBackJumpVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::gotoBackJump);
@@ -274,10 +267,9 @@ bool GotoBackJumpVisitor::VisitGotoStmt(const clang::GotoStmt *GS) {
   // A label is always in the same function as a goto pointing to it, so we only
   // need to check their relative locations.
   clang::BeforeThanCompare<clang::SourceLocation> isBefore(
-      DE.getSourceManager());
+      AD.GetSourceManager());
   if (isBefore(GS->getLabel()->getLocation(), GS->getGotoLoc())) {
-    return !AutocheckDiagnostic::reportWarning(DE, GS->getBeginLoc(),
-                                               AutocheckWarnings::gotoBackJump)
+    return !AD.reportWarning(GS->getBeginLoc(), AutocheckWarnings::gotoBackJump)
                 .limitReached();
   }
 
@@ -286,27 +278,24 @@ bool GotoBackJumpVisitor::VisitGotoStmt(const clang::GotoStmt *GS) {
 
 /* Implementation of StatementsVisitor */
 
-StatementsVisitor::StatementsVisitor(clang::DiagnosticsEngine &DE,
+StatementsVisitor::StatementsVisitor(AutocheckDiagnostic &AD,
                                      clang::ASTContext &AC,
                                      const AutocheckPPCallbacks &Callbacks)
-    : DE(DE) {
-  const AutocheckContext &Context = AutocheckContext::Get();
+    : AD(AD) {
+  const AutocheckContext &Context = AD.GetContext();
   if (IfElseIfTerminatedVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(
-        std::make_unique<IfElseIfTerminatedVisitor>(DE, Context, AC));
+    AllVisitors.push_front(std::make_unique<IfElseIfTerminatedVisitor>(AD, AC));
   if (GotoLabelBlockVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(
-        std::make_unique<GotoLabelBlockVisitor>(DE, Context, AC));
+    AllVisitors.push_front(std::make_unique<GotoLabelBlockVisitor>(AD, AC));
   if (SwitchStmtDefaultClause::isFlagPresent(Context))
-    AllVisitors.push_front(
-        std::make_unique<SwitchStmtDefaultClause>(DE, Context, AC));
+    AllVisitors.push_front(std::make_unique<SwitchStmtDefaultClause>(AD, AC));
   if (DoWhileUsedVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<DoWhileUsedVisitor>(
-        DE, Context, AC, Callbacks.getDoWhileMacros()));
+        AD, AC, Callbacks.getDoWhileMacros()));
   if (BodyCompoundStmtVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<BodyCompoundStmtVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<BodyCompoundStmtVisitor>(AD));
   if (GotoBackJumpVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<GotoBackJumpVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<GotoBackJumpVisitor>(AD));
 }
 
 void StatementsVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -320,7 +309,7 @@ bool StatementsVisitor::TraverseDecl(clang::Decl *D) {
 
   clang::SourceLocation Loc = D->getBeginLoc();
 
-  if (Loc.isInvalid() || appropriateHeaderLocation(DE, Loc)) {
+  if (Loc.isInvalid() || appropriateHeaderLocation(AD, Loc)) {
     RecursiveASTVisitor<StatementsVisitor>::TraverseDecl(D);
   }
   return true;

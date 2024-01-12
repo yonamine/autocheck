@@ -16,16 +16,17 @@
 #define STATIC_ANALYZER_ANALYSIS_DIAG_CONSUMER_H
 
 #include "clang/Analysis/PathDiagnostic.h"
-#include "clang/Basic/Diagnostic.h"
 #include "llvm/ADT/StringRef.h"
 #include <vector>
 
 namespace autocheck {
 
+class AutocheckDiagnostic;
+
 class AutocheckAnalysisDiagConsumer
     : public clang::ento::PathDiagnosticConsumer {
 public:
-  AutocheckAnalysisDiagConsumer(clang::DiagnosticsEngine &DE);
+  AutocheckAnalysisDiagConsumer(AutocheckDiagnostic &AD);
 
   llvm::StringRef getName() const;
 
@@ -37,7 +38,7 @@ public:
                        FilesMade *FilesMade) override;
 
 private:
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 };
 
 } // namespace autocheck

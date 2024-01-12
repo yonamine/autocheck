@@ -37,9 +37,9 @@ bool TVI::VisitCXXTypeidExpr(const clang::CXXTypeidExpr *) { return true; }
 
 /* Implementation of CharStorageVisitor */
 
-CharStorageVisitor::CharStorageVisitor(clang::DiagnosticsEngine &DE,
+CharStorageVisitor::CharStorageVisitor(AutocheckDiagnostic &AD,
                                        clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    : AD(AD), AC(AC) {}
 
 bool CharStorageVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::charStorage);
@@ -49,9 +49,8 @@ bool CharStorageVisitor::VisitImplicitCastExpr(
     const clang::ImplicitCastExpr *ICE) {
   if (ICE->getCastKind() == clang::CK_IntegralCast &&
       isPlainChar(ICE->getType())) {
-    return !AutocheckDiagnostic::reportWarning(DE, ICE->getBeginLoc(),
-                                               AutocheckWarnings::charStorage,
-                                               ICE->getSourceRange())
+    return !AD.reportWarning(ICE->getBeginLoc(), AutocheckWarnings::charStorage,
+                             ICE->getSourceRange())
                 .limitReached();
   }
   return true;
@@ -64,9 +63,9 @@ bool CharStorageVisitor::isPlainChar(const clang::QualType &Type) const {
 
 /* Implementation of SignCharStorageVisitor */
 
-SignCharStorageVisitor::SignCharStorageVisitor(clang::DiagnosticsEngine &DE,
+SignCharStorageVisitor::SignCharStorageVisitor(AutocheckDiagnostic &AD,
                                                clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    : AD(AD), AC(AC) {}
 
 bool SignCharStorageVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::signCharStorage);
@@ -77,9 +76,9 @@ bool SignCharStorageVisitor::VisitImplicitCastExpr(
   if (ICE->getCastKind() == clang::CK_IntegralCast &&
       isUnsignedOrSignedChar(ICE->getType()) &&
       isPlainChar(ICE->getSubExpr()->getType())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, ICE->getBeginLoc(), AutocheckWarnings::signCharStorage,
-                ICE->getSourceRange())
+    return !AD.reportWarning(ICE->getBeginLoc(),
+                             AutocheckWarnings::signCharStorage,
+                             ICE->getSourceRange())
                 .limitReached();
   }
 
@@ -102,8 +101,8 @@ bool SignCharStorageVisitor::isUnsignedOrSignedChar(
 
 /* Implementation of ConditionNotBoolVisitor */
 
-ConditionNotBoolVisitor::ConditionNotBoolVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE), IsBefore(DE.getSourceManager()) {}
+ConditionNotBoolVisitor::ConditionNotBoolVisitor(AutocheckDiagnostic &AD)
+    : AD(AD), IsBefore(AD.GetSourceManager()) {}
 
 bool ConditionNotBoolVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::contiditionNotBool);
@@ -140,10 +139,9 @@ bool ConditionNotBoolVisitor::VisitImplicitCastExpr(
        !IsBefore(ConditionSourceRange.getEnd(), ICE->getBeginLoc())))
     if ((ICE->getCastKind() == clang::CastKind::CK_IntegralToBoolean) &&
         !ICE->isPartOfExplicitCast())
-      if (!DE.getSourceManager().isInSystemHeader(ICE->getBeginLoc())) {
-        return !AutocheckDiagnostic::reportWarning(
-                    DE, ICE->getBeginLoc(),
-                    AutocheckWarnings::contiditionNotBool)
+      if (!AD.GetSourceManager().isInSystemHeader(ICE->getBeginLoc())) {
+        return !AD.reportWarning(ICE->getBeginLoc(),
+                                 AutocheckWarnings::contiditionNotBool)
                     .limitReached();
       }
 
@@ -157,9 +155,9 @@ void ConditionNotBoolVisitor::diagnoseCondition(clang::Expr *Condition) {
 
 /* Implementation of TypeWchartVisitor */
 
-TypeWchartVisitor::TypeWchartVisitor(clang::DiagnosticsEngine &DE,
+TypeWchartVisitor::TypeWchartVisitor(AutocheckDiagnostic &AD,
                                      clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    : AD(AD), AC(AC) {}
 
 bool TypeWchartVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::typeWchartUsed);
@@ -168,8 +166,8 @@ bool TypeWchartVisitor::isFlagPresent(const AutocheckContext &Context) {
 bool TypeWchartVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
   if (TL.getType()->isWideCharType() &&
       TL.getType().getDesugaredType(AC).getAsString() == "wchar_t") {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, TL.getBeginLoc(), AutocheckWarnings::typeWchartUsed)
+    return !AD.reportWarning(TL.getBeginLoc(),
+                             AutocheckWarnings::typeWchartUsed)
                 .limitReached();
   }
   return true;
@@ -177,9 +175,9 @@ bool TypeWchartVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
 
 /* Implementation of CStyleArrayVisitor */
 
-CStyleArrayVisitor::CStyleArrayVisitor(clang::DiagnosticsEngine &DE,
+CStyleArrayVisitor::CStyleArrayVisitor(AutocheckDiagnostic &AD,
                                        clang::ASTContext &AC)
-    : DE(DE), AC(AC), IgnoredTypeLoc() {}
+    : AD(AD), AC(AC), IgnoredTypeLoc() {}
 
 bool CStyleArrayVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::cStyleArrayUsed);
@@ -194,10 +192,9 @@ bool CStyleArrayVisitor::VisitVarDecl(const clang::VarDecl *VD) {
 
 bool CStyleArrayVisitor::VisitCXXNewExpr(const clang::CXXNewExpr *NE) {
   if (NE->isArray()) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE,
-                NE->getAllocatedTypeSourceInfo()->getTypeLoc().getBeginLoc(),
-                AutocheckWarnings::cStyleArrayUsed)
+    return !AD.reportWarning(
+                  NE->getAllocatedTypeSourceInfo()->getTypeLoc().getBeginLoc(),
+                  AutocheckWarnings::cStyleArrayUsed)
                 .limitReached();
   }
   return true;
@@ -225,8 +222,8 @@ bool CStyleArrayVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
     if (llvm::dyn_cast_if_present<clang::ArrayType>(AT->getElementType()))
       return true;
 
-    return !AutocheckDiagnostic::reportWarning(
-                DE, TL.getBeginLoc(), AutocheckWarnings::cStyleArrayUsed)
+    return !AD.reportWarning(TL.getBeginLoc(),
+                             AutocheckWarnings::cStyleArrayUsed)
                 .limitReached();
   }
 
@@ -235,9 +232,9 @@ bool CStyleArrayVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
 
 /* Implementation of BoolVectorUsedVisitor */
 
-BoolVectorUsedVisitor::BoolVectorUsedVisitor(clang::DiagnosticsEngine &DE,
+BoolVectorUsedVisitor::BoolVectorUsedVisitor(AutocheckDiagnostic &AD,
                                              clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    : AD(AD), AC(AC) {}
 
 bool BoolVectorUsedVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::boolVectorSpecializationUsed);
@@ -261,11 +258,10 @@ bool BoolVectorUsedVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
   if (Type &&
       TL.getType().getDesugaredType(AC).getAsString() ==
           "class std::vector<_Bool>" &&
-      DE.getSourceManager().isInSystemHeader(
+      AD.GetSourceManager().isInSystemHeader(
           TL.getType()->getAsRecordDecl()->getLocation())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, TL.getBeginLoc(),
-                AutocheckWarnings::boolVectorSpecializationUsed)
+    return !AD.reportWarning(TL.getBeginLoc(),
+                             AutocheckWarnings::boolVectorSpecializationUsed)
                 .limitReached();
   }
 
@@ -274,9 +270,9 @@ bool BoolVectorUsedVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
 
 /* Implementation of TypeLongDoubleVisitor */
 
-TypeLongDoubleVisitor::TypeLongDoubleVisitor(clang::DiagnosticsEngine &DE,
+TypeLongDoubleVisitor::TypeLongDoubleVisitor(AutocheckDiagnostic &AD,
                                              clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    : AD(AD), AC(AC) {}
 
 bool TypeLongDoubleVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::longDoubleUsed);
@@ -296,8 +292,8 @@ bool TypeLongDoubleVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
 
   if (TL.getType()->isBuiltinType() && TL.getType()->isFloatingType() &&
       TL.getType().getDesugaredType(AC).getAsString() == "long double") {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, TL.getBeginLoc(), AutocheckWarnings::longDoubleUsed)
+    return !AD.reportWarning(TL.getBeginLoc(),
+                             AutocheckWarnings::longDoubleUsed)
                 .limitReached();
   }
 
@@ -306,9 +302,8 @@ bool TypeLongDoubleVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
 
 /* Implementation of AutoPtrVisitor */
 
-AutoPtrVisitor::AutoPtrVisitor(clang::DiagnosticsEngine &DE,
-                               clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+AutoPtrVisitor::AutoPtrVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC)
+    : AD(AD), AC(AC) {}
 
 bool AutoPtrVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::typeAutoPtrUsed);
@@ -332,10 +327,10 @@ bool AutoPtrVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
   if (Type &&
       llvm::StringRef(TL.getType().getDesugaredType(AC).getAsString())
           .starts_with("class std::auto_ptr<") &&
-      DE.getSourceManager().isInSystemHeader(
+      AD.GetSourceManager().isInSystemHeader(
           TL.getType()->getAsRecordDecl()->getLocation())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, TL.getBeginLoc(), AutocheckWarnings::typeAutoPtrUsed)
+    return !AD.reportWarning(TL.getBeginLoc(),
+                             AutocheckWarnings::typeAutoPtrUsed)
                 .limitReached();
   }
 
@@ -344,9 +339,9 @@ bool AutoPtrVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
 
 /* Implementation of DecltypeTypeidVisitor */
 
-DecltypeTypeidVisitor::DecltypeTypeidVisitor(clang::DiagnosticsEngine &DE,
+DecltypeTypeidVisitor::DecltypeTypeidVisitor(AutocheckDiagnostic &AD,
                                              clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    : AD(AD), AC(AC) {}
 
 bool DecltypeTypeidVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::lambdaDecltypeTypeid);
@@ -394,9 +389,8 @@ bool DecltypeTypeidVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
   if (const clang::DecltypeType *DTT =
           llvm::dyn_cast_if_present<clang::DecltypeType>(TL.getTypePtr()))
     if (IsLambda(GetVarDecl(GetDRE(DTT->getUnderlyingExpr()))))
-      if (AutocheckDiagnostic::reportWarning(
-              DE, DTT->getUnderlyingExpr()->getBeginLoc(),
-              AutocheckWarnings::lambdaDecltypeTypeid)
+      if (AD.reportWarning(DTT->getUnderlyingExpr()->getBeginLoc(),
+                           AutocheckWarnings::lambdaDecltypeTypeid)
               .limitReached())
         return false;
   return true;
@@ -405,9 +399,8 @@ bool DecltypeTypeidVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
 bool DecltypeTypeidVisitor::VisitCXXTypeidExpr(
     const clang::CXXTypeidExpr *CTE) {
   if (IsLambda(GetVarDecl(GetDRE(CTE->getExprOperand())))) {
-    if (AutocheckDiagnostic::reportWarning(
-            DE, CTE->getExprOperand()->getBeginLoc(),
-            AutocheckWarnings::lambdaDecltypeTypeid)
+    if (AD.reportWarning(CTE->getExprOperand()->getBeginLoc(),
+                         AutocheckWarnings::lambdaDecltypeTypeid)
             .limitReached())
       return false;
   }
@@ -416,27 +409,27 @@ bool DecltypeTypeidVisitor::VisitCXXTypeidExpr(
 
 /* Implementation of TypesVisitor */
 
-TypesVisitor::TypesVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
-    : DE(DE) {
-  const AutocheckContext &Context = AutocheckContext::Get();
+TypesVisitor::TypesVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC)
+    : AD(AD) {
+  const AutocheckContext &Context = AD.GetContext();
   if (CharStorageVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<CharStorageVisitor>(DE, AC));
+    AllVisitors.push_front(std::make_unique<CharStorageVisitor>(AD, AC));
   if (SignCharStorageVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<SignCharStorageVisitor>(DE, AC));
+    AllVisitors.push_front(std::make_unique<SignCharStorageVisitor>(AD, AC));
   if (ConditionNotBoolVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<ConditionNotBoolVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<ConditionNotBoolVisitor>(AD));
   if (TypeWchartVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<TypeWchartVisitor>(DE, AC));
+    AllVisitors.push_front(std::make_unique<TypeWchartVisitor>(AD, AC));
   if (BoolVectorUsedVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<BoolVectorUsedVisitor>(DE, AC));
+    AllVisitors.push_front(std::make_unique<BoolVectorUsedVisitor>(AD, AC));
   if (CStyleArrayVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<CStyleArrayVisitor>(DE, AC));
+    AllVisitors.push_front(std::make_unique<CStyleArrayVisitor>(AD, AC));
   if (TypeLongDoubleVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<TypeLongDoubleVisitor>(DE, AC));
+    AllVisitors.push_front(std::make_unique<TypeLongDoubleVisitor>(AD, AC));
   if (AutoPtrVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<AutoPtrVisitor>(DE, AC));
+    AllVisitors.push_front(std::make_unique<AutoPtrVisitor>(AD, AC));
   if (DecltypeTypeidVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<DecltypeTypeidVisitor>(DE, AC));
+    AllVisitors.push_front(std::make_unique<DecltypeTypeidVisitor>(AD, AC));
 }
 
 void TypesVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -450,7 +443,7 @@ bool TypesVisitor::TraverseDecl(clang::Decl *D) {
 
   clang::SourceLocation Loc = D->getBeginLoc();
 
-  if (Loc.isInvalid() || appropriateHeaderLocation(DE, Loc)) {
+  if (Loc.isInvalid() || appropriateHeaderLocation(AD, Loc)) {
     clang::RecursiveASTVisitor<TypesVisitor>::TraverseDecl(D);
   }
   return true;

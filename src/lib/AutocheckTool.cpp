@@ -19,6 +19,8 @@
 using namespace clang::tooling;
 using namespace llvm;
 
+namespace autocheck {
+
 static ArgumentsAdjuster
 getBuiltinWarningAdjuster(const autocheck::AutocheckContext &Context) {
   return [&Context](const CommandLineArguments &Args, StringRef /*unused*/) {
@@ -104,11 +106,10 @@ ArgumentsAdjuster getResourceDirAdjuster(const char *ExecPath) {
       ArgumentInsertPosition::BEGIN);
 }
 
-AutocheckTool::AutocheckTool(clang::tooling::CompilationDatabase &CD,
+AutocheckTool::AutocheckTool(const AutocheckContext &Context,
+                             clang::tooling::CompilationDatabase &CD,
                              const std::string &SourceFile)
-    : Tool(CD, {SourceFile}) {
-  autocheck::AutocheckContext &Context = autocheck::AutocheckContext::Get();
-
+    : Context(Context), Tool(CD, {SourceFile}) {
   // Set up built-in warning flags.
   Tool.appendArgumentsAdjuster(getBuiltinWarningAdjuster(Context));
 }
@@ -122,6 +123,20 @@ void AutocheckTool::setDiagnosticConsumer(
   Tool.setDiagnosticConsumer(DiagConsumer);
 }
 
+class AutocheckActionFactory : public FrontendActionFactory {
+public:
+  AutocheckActionFactory(const AutocheckContext &Context) : Context(Context) {}
+
+  std::unique_ptr<clang::FrontendAction> create() override {
+    return std::make_unique<AutocheckAction>(Context);
+  }
+
+private:
+  const AutocheckContext &Context;
+};
+
 int AutocheckTool::run() {
-  return Tool.run(newFrontendActionFactory<autocheck::AutocheckAction>().get());
+  return Tool.run(std::make_unique<AutocheckActionFactory>(Context).get());
 }
+
+} // namespace autocheck

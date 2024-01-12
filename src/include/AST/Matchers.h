@@ -27,14 +27,16 @@
 
 namespace autocheck {
 
+class AutocheckDiagnostic;
+
 /// [A0-1-2] The value returned by a function having a non-void return type that
 /// is not an overloaded operator shall be used.
 namespace UnusedReturnMatcher {
 class Callback : public clang::ast_matchers::MatchFinder::MatchCallback {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  Callback(clang::DiagnosticsEngine &DE);
+  Callback(AutocheckDiagnostic &AD);
   virtual void
   run(const clang::ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -47,10 +49,10 @@ bool isFlagPresent(const AutocheckContext &Context);
 /// Note: This matcher is taken from clang-tidy
 namespace SelfAssignmentMatcher {
 class Callback : public clang::ast_matchers::MatchFinder::MatchCallback {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  Callback(clang::DiagnosticsEngine &DE);
+  Callback(AutocheckDiagnostic &AD);
   virtual void
   run(const clang::ast_matchers::MatchFinder::MatchResult &Result) override;
 };

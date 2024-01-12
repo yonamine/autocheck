@@ -48,6 +48,8 @@
 
 namespace autocheck {
 
+class AutocheckDiagnostic;
+
 /// Common interface for all AutosarLexicalRules visitors.
 class LexicalRulesVisitorInterface {
 public:
@@ -88,14 +90,11 @@ public:
 /// [M2-13-3] A "U" suffix shall be applied to all octal or hexadecimal integer
 /// literals of unsigned type.
 class UnsignedLiterals : public LexicalRulesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
-  const AutocheckContext &Context;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit UnsignedLiterals(clang::DiagnosticsEngine &DE,
-                            const AutocheckContext &Context,
-                            clang::ASTContext &AC);
+  explicit UnsignedLiterals(AutocheckDiagnostic &AD, clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitIntegerLiteral(const clang::IntegerLiteral *IL) override;
@@ -112,8 +111,7 @@ typedef llvm::SmallSet<std::string, 0> IdentifierSet;
 
 /// [M2-10-1] Different identifiers shall be typographically unambiguous.
 class SimilarIdentifiersVisitor : public LexicalRulesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
-  const AutocheckContext &Context;
+  AutocheckDiagnostic &AD;
   clang::SourceManager &SM;
 
 private:
@@ -183,8 +181,7 @@ private:
   IdScopes Scopes; /// Stack of scopes.
 
 public:
-  explicit SimilarIdentifiersVisitor(clang::DiagnosticsEngine &DE,
-                                     const AutocheckContext &Context);
+  explicit SimilarIdentifiersVisitor(AutocheckDiagnostic &AD);
 
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -318,8 +315,7 @@ typedef std::map<std::string, clang::SourceLocation> TrackingSet;
 /// function or enumerator declaration in the same scope.
 class ShadowClassOrEnumVisitor : public LexicalRulesVisitorInterface {
 private:
-  clang::DiagnosticsEngine &DE;
-  const AutocheckContext &Context;
+  AutocheckDiagnostic &AD;
 
   /// By using qualified names (such as qual1::qual2::name) we can use same
   /// identifiers sets on all scope levels.
@@ -328,8 +324,7 @@ private:
   TrackingSet UsedEnums;
 
 public:
-  explicit ShadowClassOrEnumVisitor(clang::DiagnosticsEngine &DE,
-                                    const AutocheckContext &Context);
+  explicit ShadowClassOrEnumVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
@@ -351,14 +346,12 @@ private:
 /// [A3-9-1] Fixed width integer types from <cstdint>, indicating the size and
 /// signedness, shall be used in place of the basic numerical types.
 class FixedWidthIntegerTypesVisitor : public LexicalRulesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
-  const AutocheckContext &Context;
+  AutocheckDiagnostic &AD;
   clang::SourceLocation PreviousWarningLocation;
   clang::SourceLocation MainReturnTypeLoc;
 
 public:
-  explicit FixedWidthIntegerTypesVisitor(clang::DiagnosticsEngine &DE,
-                                         const AutocheckContext &Context);
+  explicit FixedWidthIntegerTypesVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   /// Visits all types except ones in enum declarations.
@@ -379,15 +372,13 @@ private:
 /// by itself; it may be followed by a comment, provided that the first
 /// character following the null statement is a white-space character.
 class NullStmtNotAloneVisitor : public LexicalRulesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
-  const AutocheckContext &Context;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
   clang::SourceManager &SM;
   const clang::LangOptions &LO;
 
 public:
-  explicit NullStmtNotAloneVisitor(clang::DiagnosticsEngine &DE,
-                                   const AutocheckContext &Context,
+  explicit NullStmtNotAloneVisitor(AutocheckDiagnostic &AD,
                                    clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -397,13 +388,11 @@ public:
 /// [M7-3-6] Using-directives and using-declarations (excluding class scope or
 /// function scope using-declarations) shall not be used in header files.
 class UsingInsideHeaderVisitor : public LexicalRulesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
-  const AutocheckContext &Context;
+  AutocheckDiagnostic &AD;
   llvm::SmallVector<clang::Decl *, 8> ScopeStack;
 
 public:
-  explicit UsingInsideHeaderVisitor(clang::DiagnosticsEngine &DE,
-                                    const AutocheckContext &Context);
+  explicit UsingInsideHeaderVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool PreTraverseDecl(clang::Decl *D) override;
@@ -416,8 +405,7 @@ public:
 /// [A7-1-7] Each expression statement and identifier declaration shall be
 /// placed on a separate line.
 class SeparateLineStatementVisitor : public LexicalRulesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
-  const AutocheckContext &Context;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
   clang::SourceManager &SM;
 
@@ -425,8 +413,7 @@ class SeparateLineStatementVisitor : public LexicalRulesVisitorInterface {
   clang::SourceLocation previousWarning;
 
 public:
-  explicit SeparateLineStatementVisitor(clang::DiagnosticsEngine &DE,
-                                        const AutocheckContext &Context,
+  explicit SeparateLineStatementVisitor(AutocheckDiagnostic &AD,
                                         clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -447,11 +434,11 @@ public:
 /// [A5-1-3] Parameter list (possibly empty) shall be included in every lambda
 /// expression.
 class LambdaDeclaratorVisitor : public LexicalRulesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit LambdaDeclaratorVisitor(clang::DiagnosticsEngine &DE,
+  explicit LambdaDeclaratorVisitor(AutocheckDiagnostic &AD,
                                    clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -462,10 +449,10 @@ public:
 // statement. The else keyword shall be followed by either a compound statement,
 // or another if statement.
 class IfElseCompoundStmtVisitor : public LexicalRulesVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit IfElseCompoundStmtVisitor(clang::DiagnosticsEngine &DE);
+  explicit IfElseCompoundStmtVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitIfStmt(const clang::IfStmt *IS) override;
@@ -476,13 +463,12 @@ public:
 /// all Lexical Rule Visitors with one AST traversal.
 class LexicalRulesVisitor
     : public clang::RecursiveASTVisitor<LexicalRulesVisitor> {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
   std::forward_list<std::unique_ptr<LexicalRulesVisitorInterface>> AllVisitors;
 
 public:
-  explicit LexicalRulesVisitor(clang::DiagnosticsEngine &DE,
-                               clang::ASTContext &AC);
+  explicit LexicalRulesVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC);
   void run(clang::TranslationUnitDecl *TUD);
 
   bool TraverseDecl(clang::Decl *D);
