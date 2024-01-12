@@ -27,6 +27,7 @@
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
 #include "Export/DiagExporter.h"
 #include "Lex/AutocheckLex.h"
+#include "StaticAnalyzer/AnalysisDiagConsumer.h"
 #include "StaticAnalyzer/DivZeroChecker.h"
 #include "StaticAnalyzer/RecursionChecker.h"
 #include "StaticAnalyzer/UnreachableCodeChecker.h"
@@ -153,9 +154,16 @@ void AutocheckAction::ExecuteAction() {
 std::unique_ptr<clang::ASTConsumer>
 AutocheckAction::CreateASTConsumer(clang::CompilerInstance &CI,
                                    llvm::StringRef InFile) {
-  // Run static analysis checks:
+  // Disable the default analysis diagnostics consumer.
+  CI.getAnalyzerOpts()->AnalysisDiagOpt = clang::AnalysisDiagClients::PD_NONE;
+
+  // Set up an analysis consumer.
   std::unique_ptr<clang::ento::AnalysisASTConsumer> AnalysisConsumer =
       clang::ento::CreateAnalysisConsumer(CI);
+  AnalysisConsumer->AddDiagnosticConsumer(
+      new AutocheckAnalysisDiagConsumer(CI.getDiagnostics()));
+
+  // Register and enable static analysis checks.
   AnalysisConsumer->AddCheckerRegistrationFn(
       [](clang::ento::CheckerRegistry &Registry) {
         Registry.addChecker<DivZeroChecker>("autosar.DivZeroChecker",

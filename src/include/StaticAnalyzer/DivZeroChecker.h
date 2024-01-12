@@ -31,6 +31,9 @@ class DivZeroChecker : public clang::ento::Checker<
   mutable std::unique_ptr<clang::ento::BuiltinBug> BT;
 
 public:
+  void reportBug(clang::ento::CheckerContext &C,
+                 clang::SourceLocation Loc) const;
+
   void checkPreStmt(const clang::BinaryOperator *B,
                     clang::ento::CheckerContext &C) const;
 };

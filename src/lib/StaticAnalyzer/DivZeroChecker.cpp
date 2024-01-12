@@ -19,6 +19,20 @@
 
 namespace autocheck {
 
+void DivZeroChecker::reportBug(clang::ento::CheckerContext &C,
+                               clang::SourceLocation Loc) const {
+  const auto &DiagInfo =
+      AutocheckDiagnostic::GetDiagInfo(AutocheckWarnings::divByZero);
+  if (!BT)
+    BT.reset(
+        new clang::ento::BuiltinBug(this, DiagInfo.Rule, DiagInfo.Message));
+
+  auto R = std::make_unique<clang::ento::BasicBugReport>(
+      *BT, DiagInfo.Message,
+      clang::ento::PathDiagnosticLocation(Loc, C.getSourceManager()));
+  C.emitReport(std::move(R));
+}
+
 void DivZeroChecker::checkPreStmt(const clang::BinaryOperator *B,
                                   clang::ento::CheckerContext &C) const {
   // If std::endl is found in code checkPreStmt will be called
@@ -45,9 +59,7 @@ void DivZeroChecker::checkPreStmt(const clang::BinaryOperator *B,
   // Divide-by-undefined handled in the generic checking for uses of
   // undefined values.
   if (!DV) {
-    AutocheckDiagnostic::reportWarning(
-        C.getAnalysisManager().getASTContext().getDiagnostics(),
-        B->getRHS()->getExprLoc(), AutocheckWarnings::divByZero);
+    reportBug(C, B->getRHS()->getExprLoc());
     return;
   }
 
@@ -59,17 +71,13 @@ void DivZeroChecker::checkPreStmt(const clang::BinaryOperator *B,
   // Definite division by zero.
   if (!stateNotZero) {
     assert(stateZero);
-    AutocheckDiagnostic::reportWarning(
-        C.getAnalysisManager().getASTContext().getDiagnostics(),
-        B->getRHS()->getExprLoc(), AutocheckWarnings::divByZero);
+    reportBug(C, B->getRHS()->getExprLoc());
     return;
   }
 
   // Possible division by zero.
   if (stateNotZero && stateZero) {
-    AutocheckDiagnostic::reportWarning(
-        C.getAnalysisManager().getASTContext().getDiagnostics(),
-        B->getRHS()->getExprLoc(), AutocheckWarnings::divByZero);
+    reportBug(C, B->getRHS()->getExprLoc());
     return;
   }
 

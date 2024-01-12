@@ -16,6 +16,7 @@
 #define STATIC_ANALYZER_UNREACHABLE_CODE_CHECKER_H
 
 #include "clang/Basic/Diagnostic.h"
+#include "clang/StaticAnalyzer/Core/BugReporter/BugType.h"
 #include "clang/StaticAnalyzer/Core/Checker.h"
 #include "clang/StaticAnalyzer/Core/PathSensitive/ExplodedGraph.h"
 #include "llvm/ADT/SmallSet.h"
@@ -25,11 +26,15 @@ namespace autocheck {
 class UnreachableCodeChecker
     : public clang::ento::Checker<clang::ento::check::EndAnalysis> {
 public:
+  void reportBug(clang::ento::BugReporter &C, clang::SourceLocation Loc) const;
+
   void checkEndAnalysis(clang::ento::ExplodedGraph &G,
                         clang::ento::BugReporter &B,
                         clang::ento::ExprEngine &Eng) const;
 
 private:
+  mutable std::unique_ptr<clang::ento::BuiltinBug> BT;
+
   typedef llvm::SmallSet<unsigned, 32> CFGBlocksSet;
 
   static inline const clang::Stmt *
