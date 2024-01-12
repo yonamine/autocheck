@@ -40,6 +40,7 @@ add_clang_library(libautocheck
     "lib/AST/Matchers.cpp"
     "lib/AST/TemplatesVisitor.cpp"
     "lib/AST/SideEffectChecker.cpp"
+    "lib/StaticAnalyzer/AnalysisDiagConsumer.cpp"
     "lib/StaticAnalyzer/DivZeroChecker.cpp"
     "lib/StaticAnalyzer/RecursionChecker.cpp"
     "lib/StaticAnalyzer/UnreachableCodeChecker.cpp"

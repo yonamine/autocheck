@@ -23,9 +23,8 @@
 namespace autocheck {
 
 AutocheckDiagnosticConsumer::AutocheckDiagnosticConsumer(
-    clang::DiagnosticsEngine &Diags)
-    : Diags(Diags), Client(Diags.getClient()), ClientOwner(Diags.takeClient()) {
-}
+    AutocheckDiagnostic &AD)
+    : AD(AD), Client(AD.GetDiagnostics().getClient()), ClientOwner(AD.GetDiagnostics().takeClient()) {}
 
 void AutocheckDiagnosticConsumer::BeginSourceFile(
     const clang::LangOptions &LangOpts, const clang::Preprocessor *PP) {
@@ -65,8 +64,7 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
         reinterpret_cast<clang::NamedDecl *>(Info.getRawArg(0));
 
     // Emit only one of unusedFunctionOrMethod or unusedFunction.
-    if (AutocheckContext::Get().isEnabled(
-            AutocheckWarnings::unusedFunctionOrMethod)) {
+    if (AD.IsEnabled(AutocheckWarnings::unusedFunctionOrMethod)) {
       EmitDiag(AutocheckWarnings::unusedFunctionOrMethod, Info.getLocation(), 0,
                Name);
     } else {
@@ -84,8 +82,7 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
         reinterpret_cast<clang::NamedDecl *>(Info.getRawArg(1));
 
     // Emit only one of unusedFunctionOrMethod or unusedFunction.
-    if (AutocheckContext::Get().isEnabled(
-            AutocheckWarnings::unusedFunctionOrMethod)) {
+    if (AD.IsEnabled(AutocheckWarnings::unusedFunctionOrMethod)) {
       EmitDiag(AutocheckWarnings::unusedFunctionOrMethod, Info.getLocation(), 0,
                Name);
     } else {
@@ -163,8 +160,7 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
   case clang::diag::note_throw_in_dtor:
   case clang::diag::note_throw_in_function:
     // This should only be emitted after throw in noexcept warning.
-    if (AutocheckDiagnostic::getLatestWarning() !=
-        AutocheckWarnings::throwInNoexceptFunc)
+    if (AD.getLatestWarning() != AutocheckWarnings::throwInNoexceptFunc)
       return;
     break;
   case clang::diag::warn_ret_stack_addr_ref:
@@ -236,7 +232,7 @@ void AutocheckDiagnosticConsumer::HandleDiagnostic(
   // TODO: Add getter for type of the last emitted warning to check when
   // emitting a note.
   case clang::diag::warn_falloff_noreturn_function:
-    if (AutocheckContext::Get().isEnabled(AutocheckWarnings::invalidNoreturn))
+    if (AD.IsEnabled(AutocheckWarnings::invalidNoreturn))
       EmitDiag(AutocheckWarnings::invalidNoreturn, Info.getLocation());
     return;
   case clang::diag::ext_delete_void_ptr_operand:

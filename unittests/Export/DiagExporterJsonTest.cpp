@@ -32,11 +32,13 @@ protected:
   clang::FileSystemOptions Opts;
   clang::FileManager FM;
   clang::SourceManager SM;
+  AutocheckContext AC;
+  AutocheckDiagnostic AD;
 
   JsonExportTest()
       : Diags(new clang::DiagnosticIDs(), new clang::DiagnosticOptions,
               new clang::IgnoringDiagConsumer()),
-        FM(Opts), SM(Diags, FM) {
+        FM(Opts), SM(Diags, FM), AC(), AD(AC, Diags) {
     const char *Source = "";
     std::unique_ptr<llvm::MemoryBuffer> Buf =
         llvm::MemoryBuffer::getMemBuffer(Source);
@@ -66,7 +68,7 @@ TEST_F(JsonExportTest, exportEmpty) {
   llvm::sys::path::append(OutputPath, "exportEmpty.json");
 
   // Run exporter.
-  DiagExporterJson JsonExporter(OutputPath, SM);
+  DiagExporterJson JsonExporter(AD, OutputPath, SM);
   JsonExporter.Open();
   JsonExporter.Close();
 
@@ -123,7 +125,7 @@ TEST_F(JsonExportTest, exportSummary) {
   llvm::sys::path::append(OutputPath, "exportSummary.json");
 
   // Run exporter.
-  DiagExporterJson JsonExporter(OutputPath, SM, false);
+  DiagExporterJson JsonExporter(AD, OutputPath, SM, false);
   JsonExporter.Open();
   JsonExporter.Close();
 
@@ -162,11 +164,10 @@ TEST_F(JsonExportTest, exportDiagnostic) {
   llvm::sys::path::append(OutputPath, "exportDiagnostic.json");
 
   // Run exporter.
-  DiagExporterJson JsonExporter(OutputPath, SM);
+  DiagExporterJson JsonExporter(AD, OutputPath, SM);
   JsonExporter.Open();
-  AutocheckDiagnostic::reportWarning(
-      Diags, SM.getLocForStartOfFile(SM.getMainFileID()),
-      AutocheckWarnings::unreachableCode);
+  AD.reportWarning(SM.getLocForStartOfFile(SM.getMainFileID()),
+                   AutocheckWarnings::unreachableCode);
   JsonExporter.Close();
 
   // Parse exported json.

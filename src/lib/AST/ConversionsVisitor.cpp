@@ -53,8 +53,8 @@ bool CVI::VisitCXXConstCastExpr(const clang::CXXConstCastExpr *) {
 /* Implementation of InvalidBoolExpressionVisitor */
 
 InvalidBoolExpressionVisitor::InvalidBoolExpressionVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {
+    AutocheckDiagnostic &AD)
+    : AD(AD) {
   AllowedUnaryOps.insert(clang::UO_LNot);
   AllowedUnaryOps.insert(clang::UO_AddrOf);
 
@@ -74,9 +74,9 @@ bool InvalidBoolExpressionVisitor::VisitBinaryOperator(
     const clang::BinaryOperator *BO) {
   if ((isExprBooleanType(BO->getLHS()) || isExprBooleanType(BO->getRHS())) &&
       !AllowedBinaryOps.contains(BO->getOpcode())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, BO->getOperatorLoc(),
-                AutocheckWarnings::invalidBoolExpression, BO->getSourceRange())
+    return !AD.reportWarning(BO->getOperatorLoc(),
+                             AutocheckWarnings::invalidBoolExpression,
+                             BO->getSourceRange())
                 .limitReached();
   }
 
@@ -87,9 +87,9 @@ bool InvalidBoolExpressionVisitor::VisitUnaryOperator(
     const clang::UnaryOperator *UO) {
   if (isExprBooleanType(UO->getSubExpr()) &&
       !AllowedUnaryOps.contains(UO->getOpcode())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, UO->getOperatorLoc(),
-                AutocheckWarnings::invalidBoolExpression, UO->getSourceRange())
+    return !AD.reportWarning(UO->getOperatorLoc(),
+                             AutocheckWarnings::invalidBoolExpression,
+                             UO->getSourceRange())
                 .limitReached();
   }
 
@@ -105,8 +105,8 @@ bool InvalidBoolExpressionVisitor::isExprBooleanType(
 /* Implementation of InvalidEnumExpressionVisitor */
 
 InvalidEnumExpressionVisitor::InvalidEnumExpressionVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {
+    AutocheckDiagnostic &AD)
+    : AD(AD) {
   AllowedUnaryOps.insert(clang::UO_AddrOf);
 
   AllowedBinaryOps.insert(clang::BO_EQ);
@@ -138,9 +138,9 @@ bool InvalidEnumExpressionVisitor::VisitBinaryOperator(
   if ((isExprEnumerationType(BO->getLHS()) ||
        isExprEnumerationType(BO->getRHS())) &&
       !AllowedBinaryOps.contains(BO->getOpcode())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, BO->getOperatorLoc(),
-                AutocheckWarnings::invalidEnumExpression, BO->getSourceRange())
+    return !AD.reportWarning(BO->getOperatorLoc(),
+                             AutocheckWarnings::invalidEnumExpression,
+                             BO->getSourceRange())
                 .limitReached();
   }
   return true;
@@ -150,9 +150,9 @@ bool InvalidEnumExpressionVisitor::VisitUnaryOperator(
     const clang::UnaryOperator *UO) {
   if (isExprEnumerationType(UO->getSubExpr()) &&
       !AllowedUnaryOps.contains(UO->getOpcode())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, UO->getOperatorLoc(),
-                AutocheckWarnings::invalidEnumExpression, UO->getSourceRange())
+    return !AD.reportWarning(UO->getOperatorLoc(),
+                             AutocheckWarnings::invalidEnumExpression,
+                             UO->getSourceRange())
                 .limitReached();
   }
   return true;
@@ -167,9 +167,9 @@ bool InvalidEnumExpressionVisitor::VisitCXXOperatorCallExpr(
       break;
     }
   if (hasEnumerationType && !AllowedOperators.contains(E->getOperator())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, E->getOperatorLoc(),
-                AutocheckWarnings::invalidEnumExpression, E->getSourceRange())
+    return !AD.reportWarning(E->getOperatorLoc(),
+                             AutocheckWarnings::invalidEnumExpression,
+                             E->getSourceRange())
                 .limitReached();
   }
   return true;
@@ -183,8 +183,8 @@ bool InvalidEnumExpressionVisitor::isExprEnumerationType(
 /* Implementation of InvalidCharExpressionVisitor */
 
 InvalidCharExpressionVisitor::InvalidCharExpressionVisitor(
-    clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
-    : DE(DE), AC(AC) {
+    AutocheckDiagnostic &AD, clang::ASTContext &AC)
+    : AD(AD), AC(AC) {
   AllowedUnaryOps.insert(clang::UO_AddrOf);
 
   AllowedBinaryOps.insert(clang::BO_Assign);
@@ -240,9 +240,9 @@ bool InvalidCharExpressionVisitor::VisitBinaryOperator(
         return true;
     }
 
-    return !AutocheckDiagnostic::reportWarning(
-                DE, BO->getOperatorLoc(),
-                AutocheckWarnings::invalidCharExpression, BO->getSourceRange())
+    return !AD.reportWarning(BO->getOperatorLoc(),
+                             AutocheckWarnings::invalidCharExpression,
+                             BO->getSourceRange())
                 .limitReached();
   }
   return true;
@@ -252,9 +252,9 @@ bool InvalidCharExpressionVisitor::VisitUnaryOperator(
     const clang::UnaryOperator *UO) {
   if (isExprCharType(UO->getSubExpr()) &&
       !AllowedUnaryOps.contains(UO->getOpcode())) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, UO->getOperatorLoc(),
-                AutocheckWarnings::invalidCharExpression, UO->getSourceRange())
+    return !AD.reportWarning(UO->getOperatorLoc(),
+                             AutocheckWarnings::invalidCharExpression,
+                             UO->getSourceRange())
                 .limitReached();
   }
   return true;
@@ -288,8 +288,8 @@ bool InvalidCharExpressionVisitor::isIntLessThan10(const clang::Expr *E) const {
 /* Implementation of ImplicitFloatIntegralConversionVisitor */
 
 ImplicitFloatIntegralConversionVisitor::ImplicitFloatIntegralConversionVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool ImplicitFloatIntegralConversionVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -304,10 +304,10 @@ bool ImplicitFloatIntegralConversionVisitor::VisitImplicitCastExpr(
     const clang::CastKind &Kind = ICE->getCastKind();
     if (Kind == clang::CK_FloatingToIntegral ||
         Kind == clang::CK_IntegralToFloating) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, ICE->getBeginLoc(),
-                  AutocheckWarnings::implicitFloatIntegralConversion,
-                  ICE->getSourceRange())
+      return !AD.reportWarning(
+                    ICE->getBeginLoc(),
+                    AutocheckWarnings::implicitFloatIntegralConversion,
+                    ICE->getSourceRange())
                   .limitReached();
     }
   }
@@ -317,8 +317,8 @@ bool ImplicitFloatIntegralConversionVisitor::VisitImplicitCastExpr(
 /* Implementation of ImplicitSizeReductionConversionVisitor */
 
 ImplicitSizeReductionConversionVisitor::ImplicitSizeReductionConversionVisitor(
-    clang::DiagnosticsEngine &DE, clang::ASTContext &ASTCtx)
-    : DE(DE), ASTCtx(ASTCtx) {}
+    AutocheckDiagnostic &AD, clang::ASTContext &ASTCtx)
+    : AD(AD), ASTCtx(ASTCtx) {}
 
 bool ImplicitSizeReductionConversionVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -334,10 +334,10 @@ bool ImplicitSizeReductionConversionVisitor::VisitImplicitCastExpr(
     const clang::CastKind Kind = ICE->getCastKind();
     if (Kind == clang::CK_IntegralCast || Kind == clang::CK_FloatingCast) {
       if (isReducedSizeFromSubExpr(ICE)) {
-        return !AutocheckDiagnostic::reportWarning(
-                    DE, ICE->getBeginLoc(),
-                    AutocheckWarnings::implicitSizeReductionConversion,
-                    ICE->getSourceRange())
+        return !AD.reportWarning(
+                      ICE->getBeginLoc(),
+                      AutocheckWarnings::implicitSizeReductionConversion,
+                      ICE->getSourceRange())
                     .limitReached();
       }
     }
@@ -354,8 +354,8 @@ bool ImplicitSizeReductionConversionVisitor::isReducedSizeFromSubExpr(
 /* Implementation of ImplicitBitwiseResultConversionVisitor */
 
 ImplicitBitwiseResultConversionVisitor::ImplicitBitwiseResultConversionVisitor(
-    clang::DiagnosticsEngine &DE, clang::ASTContext &ASTCtx)
-    : DE(DE), ASTCtx(ASTCtx) {}
+    AutocheckDiagnostic &AD, clang::ASTContext &ASTCtx)
+    : AD(AD), ASTCtx(ASTCtx) {}
 
 bool ImplicitBitwiseResultConversionVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -370,10 +370,10 @@ bool ImplicitBitwiseResultConversionVisitor::VisitUnaryOperator(
     // Check if underlying type is unsigned char or unsigned short and if this
     // expression is not being explicitly cast.
     if (isUnsignedCharOrShort(Type) && !isBeingExplicityCastToType(UO, Type)) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, UO->getOperatorLoc(),
-                  AutocheckWarnings::implicitBitwiseResultConversion,
-                  UO->getSourceRange())
+      return !AD.reportWarning(
+                    UO->getOperatorLoc(),
+                    AutocheckWarnings::implicitBitwiseResultConversion,
+                    UO->getSourceRange())
                   .limitReached();
     }
   }
@@ -388,10 +388,10 @@ bool ImplicitBitwiseResultConversionVisitor::VisitBinaryOperator(
     // Check if underlying type is unsigned char or unsigned short and if this
     // expression is not being explicitly cast.
     if (isUnsignedCharOrShort(Type) && !isBeingExplicityCastToType(BO, Type)) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, BO->getOperatorLoc(),
-                  AutocheckWarnings::implicitBitwiseResultConversion,
-                  BO->getSourceRange())
+      return !AD.reportWarning(
+                    BO->getOperatorLoc(),
+                    AutocheckWarnings::implicitBitwiseResultConversion,
+                    BO->getSourceRange())
                   .limitReached();
     }
   }
@@ -427,8 +427,8 @@ bool ImplicitBitwiseResultConversionVisitor::isBeingExplicityCastToType(
 /* Implementation of ArrayDecaysToPointerVisitor */
 
 ArrayDecaysToPointerVisitor::ArrayDecaysToPointerVisitor(
-    clang::DiagnosticsEngine &DE, clang::ASTContext &ASTCtx)
-    : DE(DE), ASTCtx(ASTCtx) {}
+    AutocheckDiagnostic &AD, clang::ASTContext &ASTCtx)
+    : AD(AD), ASTCtx(ASTCtx) {}
 
 bool ArrayDecaysToPointerVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -473,11 +473,10 @@ bool ArrayDecaysToPointerVisitor::checkArgument(const clang::Expr *Arg) const {
         if (llvm::dyn_cast_if_present<const clang::StringLiteral>(*IChild))
           return true;
       }
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, Arg->getBeginLoc(),
-                  AutocheckWarnings::arrayDecaysToPointer, 0,
-                  SubExpr->getType().getAsString(),
-                  ICE->getType().getAsString())
+      return !AD.reportWarning(Arg->getBeginLoc(),
+                               AutocheckWarnings::arrayDecaysToPointer, 0,
+                               SubExpr->getType().getAsString(),
+                               ICE->getType().getAsString())
                   .limitReached();
     }
   return true;
@@ -504,8 +503,8 @@ bool ArrayDecaysToPointerVisitor::VisitArraySubscriptExpr(
   if (!ArrayIndex->isValueDependent() &&
       ArrayIndex->EvaluateKnownConstInt(ASTCtx).getExtValue() == 0)
     return true;
-  return !AutocheckDiagnostic::reportWarning(
-              DE, ASE->getEndLoc(), AutocheckWarnings::arrayDecaysToPointer, 1)
+  return !AD.reportWarning(ASE->getEndLoc(),
+                           AutocheckWarnings::arrayDecaysToPointer, 1)
               .limitReached();
 }
 
@@ -554,18 +553,17 @@ bool ArrayDecaysToPointerVisitor::checkDecayToBaseClassPtr(
     return true;
   if (SE->getCastKind() != clang::CastKind::CK_ArrayToPointerDecay)
     return true;
-  return !AutocheckDiagnostic::reportWarning(
-              DE, ICE->getBeginLoc(), AutocheckWarnings::arrayDecaysToPointer,
-              2, SE->getSubExpr()->getType().getAsString(),
-              ICE->getType().getAsString())
+  return !AD.reportWarning(ICE->getBeginLoc(),
+                           AutocheckWarnings::arrayDecaysToPointer, 2,
+                           SE->getSubExpr()->getType().getAsString(),
+                           ICE->getType().getAsString())
               .limitReached();
 }
 
 /* Implementation of NullToIntegerValueVisitor */
 
-NullToIntegerValueVisitor::NullToIntegerValueVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+NullToIntegerValueVisitor::NullToIntegerValueVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool NullToIntegerValueVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::nullToIntegerValue);
@@ -578,8 +576,7 @@ bool NullToIntegerValueVisitor::VisitCastExpr(const clang::CastExpr *CE) {
     return true;
   if (CE->getCastKind() == clang::CK_IntegralCast)
     if (llvm::dyn_cast_if_present<clang::GNUNullExpr>(SE)) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, Loc, AutocheckWarnings::nullToIntegerValue)
+      return !AD.reportWarning(Loc, AutocheckWarnings::nullToIntegerValue)
                   .limitReached();
     }
   return true;
@@ -587,8 +584,8 @@ bool NullToIntegerValueVisitor::VisitCastExpr(const clang::CastExpr *CE) {
 
 /* Implementation of ZeroToNullPointerVisitor */
 
-ZeroToNullPointerVisitor::ZeroToNullPointerVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+ZeroToNullPointerVisitor::ZeroToNullPointerVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool ZeroToNullPointerVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::zeroToNullPointer);
@@ -601,8 +598,7 @@ bool ZeroToNullPointerVisitor::VisitCastExpr(const clang::CastExpr *CE) {
     return true;
   if (CE->getCastKind() == clang::CK_NullToPointer)
     if (llvm::dyn_cast_if_present<clang::IntegerLiteral>(SE)) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, Loc, AutocheckWarnings::zeroToNullPointer)
+      return !AD.reportWarning(Loc, AutocheckWarnings::zeroToNullPointer)
                   .limitReached();
     }
   return true;
@@ -611,8 +607,8 @@ bool ZeroToNullPointerVisitor::VisitCastExpr(const clang::CastExpr *CE) {
 /* Implementation of NullptrOnlyNullPtrConstVisitor */
 
 NullptrOnlyNullPtrConstVisitor::NullptrOnlyNullPtrConstVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool NullptrOnlyNullPtrConstVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -626,8 +622,7 @@ bool NullptrOnlyNullPtrConstVisitor::VisitCastExpr(const clang::CastExpr *CE) {
     return true;
   if (CE->getCastKind() == clang::CK_NullToPointer)
     if (!llvm::dyn_cast_if_present<clang::CXXNullPtrLiteralExpr>(SE)) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, Loc, AutocheckWarnings::nullptrOnlyNullPtrConst)
+      return !AD.reportWarning(Loc, AutocheckWarnings::nullptrOnlyNullPtrConst)
                   .limitReached();
     }
   return true;
@@ -635,8 +630,8 @@ bool NullptrOnlyNullPtrConstVisitor::VisitCastExpr(const clang::CastExpr *CE) {
 
 /* Implementation of CastPtrToIntegralVisitor */
 
-CastPtrToIntegralVisitor::CastPtrToIntegralVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+CastPtrToIntegralVisitor::CastPtrToIntegralVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool CastPtrToIntegralVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::castPtrToIntegralType);
@@ -644,8 +639,8 @@ bool CastPtrToIntegralVisitor::isFlagPresent(const AutocheckContext &Context) {
 
 bool CastPtrToIntegralVisitor::VisitCastExpr(const clang::CastExpr *CE) {
   if (CE->getCastKind() == clang::CK_PointerToIntegral) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, CE->getBeginLoc(), AutocheckWarnings::castPtrToIntegralType)
+    return !AD.reportWarning(CE->getBeginLoc(),
+                             AutocheckWarnings::castPtrToIntegralType)
                 .limitReached();
   }
   return true;
@@ -653,8 +648,7 @@ bool CastPtrToIntegralVisitor::VisitCastExpr(const clang::CastExpr *CE) {
 
 /* Implementation of CVDiscardCastVisitor */
 
-CVDiscardCastVisitor::CVDiscardCastVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+CVDiscardCastVisitor::CVDiscardCastVisitor(AutocheckDiagnostic &AD) : AD(AD) {}
 
 bool CVDiscardCastVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::castRemovesQual);
@@ -696,13 +690,12 @@ bool CVDiscardCastVisitor::VisitCXXConstCastExpr(
     Qualifiers = 2;
 
   if (Qualifiers != -1) {
-    bool stopVisitor =
-        AutocheckDiagnostic::reportWarning(DE, CCCE->getBeginLoc(),
-                                           AutocheckWarnings::castRemovesQual)
-            .limitReached();
+    bool stopVisitor = AD.reportWarning(CCCE->getBeginLoc(),
+                                        AutocheckWarnings::castRemovesQual)
+                           .limitReached();
 
-    AutocheckDiagnostic::reportWarning(
-        DE, CCCE->getBeginLoc(), AutocheckWarnings::noteCastRemovesQual, 0,
+    AD.reportWarning(
+        CCCE->getBeginLoc(), AutocheckWarnings::noteCastRemovesQual, 0,
         CCCE->getSubExpr()->getType(), CCCE->getType(), Qualifiers);
 
     return !stopVisitor;
@@ -714,8 +707,8 @@ bool CVDiscardCastVisitor::VisitCXXConstCastExpr(
 /* Implementation of ImpcastChangesSignednessVisitor */
 
 ImpcastChangesSignednessVisitor::ImpcastChangesSignednessVisitor(
-    clang::DiagnosticsEngine &DE, const clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    AutocheckDiagnostic &AD, const clang::ASTContext &AC)
+    : AD(AD), AC(AC) {}
 
 bool ImpcastChangesSignednessVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -755,13 +748,13 @@ bool ImpcastChangesSignednessVisitor::VisitImplicitCastExpr(
       ICE->getType()->isUnsignedIntegerType() !=
           ICE->getSubExpr()->getType()->isUnsignedIntegerType()) {
     bool stopVisitor =
-        AutocheckDiagnostic::reportWarning(
-            DE, ICE->getBeginLoc(), AutocheckWarnings::impcastChangesSignedness)
+        AD.reportWarning(ICE->getBeginLoc(),
+                         AutocheckWarnings::impcastChangesSignedness)
             .limitReached();
 
     const clang::PrintingPolicy &Policy = AC.getPrintingPolicy();
-    AutocheckDiagnostic::reportWarning(
-        DE, ICE->getBeginLoc(), AutocheckWarnings::noteImpcastChangesSignedness,
+    AD.reportWarning(
+        ICE->getBeginLoc(), AutocheckWarnings::noteImpcastChangesSignedness,
         clang::TypeName::getFullyQualifiedName(ICE->getSubExpr()->getType(), AC,
                                                Policy),
         clang::TypeName::getFullyQualifiedName(ICE->getType(), AC, Policy));
@@ -774,43 +767,43 @@ bool ImpcastChangesSignednessVisitor::VisitImplicitCastExpr(
 
 /* Implementation of ConversionsVisitor */
 
-ConversionsVisitor::ConversionsVisitor(clang::DiagnosticsEngine &DE,
+ConversionsVisitor::ConversionsVisitor(AutocheckDiagnostic &AD,
                                        clang::ASTContext &AC)
-    : DE(DE) {
-  const AutocheckContext &Context = AutocheckContext::Get();
+    : AD(AD) {
+  const AutocheckContext &Context = AD.GetContext();
   if (InvalidBoolExpressionVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<InvalidBoolExpressionVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<InvalidBoolExpressionVisitor>(AD));
   if (InvalidEnumExpressionVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<InvalidEnumExpressionVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<InvalidEnumExpressionVisitor>(AD));
   if (InvalidCharExpressionVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<InvalidCharExpressionVisitor>(DE, AC));
+        std::make_unique<InvalidCharExpressionVisitor>(AD, AC));
   if (ImplicitFloatIntegralConversionVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ImplicitFloatIntegralConversionVisitor>(DE));
+        std::make_unique<ImplicitFloatIntegralConversionVisitor>(AD));
   if (ImplicitSizeReductionConversionVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ImplicitSizeReductionConversionVisitor>(DE, AC));
+        std::make_unique<ImplicitSizeReductionConversionVisitor>(AD, AC));
   if (ImplicitBitwiseResultConversionVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ImplicitBitwiseResultConversionVisitor>(DE, AC));
+        std::make_unique<ImplicitBitwiseResultConversionVisitor>(AD, AC));
   if (ArrayDecaysToPointerVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ArrayDecaysToPointerVisitor>(DE, AC));
+        std::make_unique<ArrayDecaysToPointerVisitor>(AD, AC));
   if (NullToIntegerValueVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<NullToIntegerValueVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<NullToIntegerValueVisitor>(AD));
   if (ZeroToNullPointerVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<ZeroToNullPointerVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<ZeroToNullPointerVisitor>(AD));
   if (NullptrOnlyNullPtrConstVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<NullptrOnlyNullPtrConstVisitor>(DE));
+        std::make_unique<NullptrOnlyNullPtrConstVisitor>(AD));
   if (CastPtrToIntegralVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<CastPtrToIntegralVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<CastPtrToIntegralVisitor>(AD));
   if (CVDiscardCastVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<CVDiscardCastVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<CVDiscardCastVisitor>(AD));
   if (ImpcastChangesSignednessVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ImpcastChangesSignednessVisitor>(DE, AC));
+        std::make_unique<ImpcastChangesSignednessVisitor>(AD, AC));
 }
 
 void ConversionsVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -824,7 +817,7 @@ bool ConversionsVisitor::TraverseDecl(clang::Decl *D) {
 
   clang::SourceLocation Loc = D->getBeginLoc();
 
-  if (Loc.isInvalid() || appropriateHeaderLocation(DE, Loc)) {
+  if (Loc.isInvalid() || appropriateHeaderLocation(AD, Loc)) {
     clang::RecursiveASTVisitor<ConversionsVisitor>::TraverseDecl(D);
   }
   return true;
@@ -836,7 +829,7 @@ bool ConversionsVisitor::TraverseInitListExpr(clang::InitListExpr *ILE) {
 
   clang::SourceLocation Loc = ILE->getBeginLoc();
 
-  if (Loc.isInvalid() || appropriateHeaderLocation(DE, Loc)) {
+  if (Loc.isInvalid() || appropriateHeaderLocation(AD, Loc)) {
     AllVisitors.remove_if(
         [ILE](std::unique_ptr<ConversionsVisitorInterface> &V) {
           return !V->PreTraverseInitListExpr(ILE);

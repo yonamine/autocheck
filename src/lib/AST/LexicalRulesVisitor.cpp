@@ -63,10 +63,9 @@ bool LVI::VisitDecl(const clang::Decl *) { return true; }
 
 /* Implementation of UnsignedLiterals */
 
-UnsignedLiterals::UnsignedLiterals(clang::DiagnosticsEngine &DE,
-                                   const AutocheckContext &Context,
+UnsignedLiterals::UnsignedLiterals(AutocheckDiagnostic &AD,
                                    clang::ASTContext &AC)
-    : DE(DE), Context(Context), AC(AC) {}
+    : AD(AD), AC(AC) {}
 
 bool UnsignedLiterals::VisitIntegerLiteral(const clang::IntegerLiteral *IL) {
   clang::SourceLocation Loc = IL->getBeginLoc();
@@ -105,8 +104,7 @@ bool UnsignedLiterals::VisitIntegerLiteral(const clang::IntegerLiteral *IL) {
       return true;
 
     // Signed literal is used as unsigned.
-    return !AutocheckDiagnostic::reportWarning(
-                DE, Loc, AutocheckWarnings::unsignedLiteralSuffix)
+    return !AD.reportWarning(Loc, AutocheckWarnings::unsignedLiteralSuffix)
                 .limitReached();
   }
   return true;
@@ -119,9 +117,9 @@ bool UnsignedLiterals::isFlagPresent(const AutocheckContext &Context) {
 bool UnsignedLiterals::isIntegerLiteralOctalorHexadecimal(
     const clang::IntegerLiteral *IL) const {
   const char FirstChar =
-      DE.getSourceManager().getCharacterData(IL->getBeginLoc())[0];
+      AD.GetSourceManager().getCharacterData(IL->getBeginLoc())[0];
   const char SecondChar =
-      DE.getSourceManager().getCharacterData(IL->getBeginLoc())[1];
+      AD.GetSourceManager().getCharacterData(IL->getBeginLoc())[1];
   return (FirstChar == '0' && SecondChar != 'b' && SecondChar != 'B');
 }
 
@@ -164,9 +162,8 @@ inline bool SimilarIdentifiersVisitor::IdScopes::isInSourceRange(
 
 /* Implementation of SimilarIdentifiersVisitor */
 
-SimilarIdentifiersVisitor::SimilarIdentifiersVisitor(
-    clang::DiagnosticsEngine &DE, const AutocheckContext &Context)
-    : DE(DE), Context(Context), SM(DE.getSourceManager()), Scopes(SM) {}
+SimilarIdentifiersVisitor::SimilarIdentifiersVisitor(AutocheckDiagnostic &AD)
+    : AD(AD), SM(AD.GetSourceManager()), Scopes(SM) {}
 
 bool SimilarIdentifiersVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::similarIdentifiers);
@@ -438,10 +435,11 @@ bool SimilarIdentifiersVisitor::checkIdentifierVector(
     const clang::SourceLocation &Loc) {
   for (const auto &It : Vec) {
     if (typographicallySimilar(It.first, Id)) {
-      bool stopVisitor = AutocheckDiagnostic::reportWarning(
-                             DE, Loc, AutocheckWarnings::similarIdentifiers)
-                             .limitReached();
-      DE.Report(It.second, clang::diag::note_previous_definition);
+      bool stopVisitor =
+          AD.reportWarning(Loc, AutocheckWarnings::similarIdentifiers)
+              .limitReached();
+      AD.GetDiagnostics().Report(It.second,
+                                 clang::diag::note_previous_definition);
       if (stopVisitor)
         return false;
       // Only one warning per identifier is reported.
@@ -473,11 +471,11 @@ bool SimilarIdentifiersVisitor::checkSubClassIndentifiers(
                                                  End = BaseClass->method_end();
            It != End; ++It) {
         if (typographicallySimilar((*It)->getNameAsString(), Name)) {
-          bool stopVisitor = AutocheckDiagnostic::reportWarning(
-                                 DE, Loc, AutocheckWarnings::similarIdentifiers)
-                                 .limitReached();
-          DE.Report((*It)->getBeginLoc(),
-                    clang::diag::note_previous_definition);
+          bool stopVisitor =
+              AD.reportWarning(Loc, AutocheckWarnings::similarIdentifiers)
+                  .limitReached();
+          AD.GetDiagnostics().Report((*It)->getBeginLoc(),
+                                     clang::diag::note_previous_definition);
           if (stopVisitor)
             return false;
         }
@@ -486,11 +484,11 @@ bool SimilarIdentifiersVisitor::checkSubClassIndentifiers(
                                              End = BaseClass->field_end();
            It != End; ++It) {
         if (typographicallySimilar((*It)->getNameAsString(), Name)) {
-          bool stopVisitor = AutocheckDiagnostic::reportWarning(
-                                 DE, Loc, AutocheckWarnings::similarIdentifiers)
-                                 .limitReached();
-          DE.Report((*It)->getBeginLoc(),
-                    clang::diag::note_previous_definition);
+          bool stopVisitor =
+              AD.reportWarning(Loc, AutocheckWarnings::similarIdentifiers)
+                  .limitReached();
+          AD.GetDiagnostics().Report((*It)->getBeginLoc(),
+                                     clang::diag::note_previous_definition);
           if (stopVisitor)
             return false;
         }
@@ -548,9 +546,8 @@ bool SimilarIdentifiersVisitor::typographicallySimilar(
 
 /* Implementation of ShadowClassOrEnumVisitor */
 
-ShadowClassOrEnumVisitor::ShadowClassOrEnumVisitor(
-    clang::DiagnosticsEngine &DE, const AutocheckContext &Context)
-    : DE(DE), Context(Context) {}
+ShadowClassOrEnumVisitor::ShadowClassOrEnumVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool ShadowClassOrEnumVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::shadowClassOrEnum);
@@ -613,10 +610,11 @@ bool ShadowClassOrEnumVisitor::checkIfNameIsHidden(
 
   auto It = NameSet.find(Name);
   if (It != NameSet.end()) {
-    bool stopVisitor = AutocheckDiagnostic::reportWarning(
-                           DE, Location, AutocheckWarnings::shadowClassOrEnum)
-                           .limitReached();
-    DE.Report(It->second, clang::diag::note_previous_declaration);
+    bool stopVisitor =
+        AD.reportWarning(Location, AutocheckWarnings::shadowClassOrEnum)
+            .limitReached();
+    AD.GetDiagnostics().Report(It->second,
+                               clang::diag::note_previous_declaration);
     if (stopVisitor)
       return false;
   }
@@ -635,8 +633,8 @@ void ShadowClassOrEnumVisitor::addToSet(const clang::NamedDecl *ND,
 /* Implementation of FixedWidthIntegerTypesVisitor */
 
 FixedWidthIntegerTypesVisitor::FixedWidthIntegerTypesVisitor(
-    clang::DiagnosticsEngine &DE, const AutocheckContext &Context)
-    : DE(DE), Context(Context) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool FixedWidthIntegerTypesVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -691,18 +689,15 @@ bool FixedWidthIntegerTypesVisitor::checkType(
     return true;
 
   PreviousWarningLocation = Loc;
-  return !AutocheckDiagnostic::reportWarning(
-              DE, Loc, AutocheckWarnings::fixedWidthIntegerTypes)
+  return !AD.reportWarning(Loc, AutocheckWarnings::fixedWidthIntegerTypes)
               .limitReached();
 }
 
 /* Implementation of NullStmtNotAloneVisitor */
 
-NullStmtNotAloneVisitor::NullStmtNotAloneVisitor(
-    clang::DiagnosticsEngine &DE, const AutocheckContext &Context,
-    clang::ASTContext &AC)
-    : DE(DE), Context(Context), AC(AC), SM(AC.getSourceManager()),
-      LO(AC.getLangOpts()) {}
+NullStmtNotAloneVisitor::NullStmtNotAloneVisitor(AutocheckDiagnostic &AD,
+                                                 clang::ASTContext &AC)
+    : AD(AD), AC(AC), SM(AD.GetSourceManager()), LO(AC.getLangOpts()) {}
 
 bool NullStmtNotAloneVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::nullStatementNotAlone);
@@ -745,8 +740,8 @@ bool NullStmtNotAloneVisitor::VisitNullStmt(const clang::NullStmt *NS) {
   if (Error)
     return true;
   if (ContentBeforeNullStmt.trim().size() > 0) {
-    if (AutocheckDiagnostic::reportWarning(
-            DE, NS->getSemiLoc(), AutocheckWarnings::nullStatementNotAlone)
+    if (AD.reportWarning(NS->getSemiLoc(),
+                         AutocheckWarnings::nullStatementNotAlone)
             .limitReached())
       return false;
   }
@@ -765,8 +760,8 @@ bool NullStmtNotAloneVisitor::VisitNullStmt(const clang::NullStmt *NS) {
       if (ContentAfterNullStmt[1] == '/' &&
           (ContentAfterNullStmt[2] == '/' || ContentAfterNullStmt[2] == '*'))
         return true;
-    return !AutocheckDiagnostic::reportWarning(
-                DE, NS->getSemiLoc(), AutocheckWarnings::nullStatementNotAlone)
+    return !AD.reportWarning(NS->getSemiLoc(),
+                             AutocheckWarnings::nullStatementNotAlone)
                 .limitReached();
   }
 
@@ -775,9 +770,8 @@ bool NullStmtNotAloneVisitor::VisitNullStmt(const clang::NullStmt *NS) {
 
 /* Implementation of UsingInsideHeaderVisitor */
 
-UsingInsideHeaderVisitor::UsingInsideHeaderVisitor(
-    clang::DiagnosticsEngine &DE, const AutocheckContext &Context)
-    : DE(DE), Context(Context) {}
+UsingInsideHeaderVisitor::UsingInsideHeaderVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool UsingInsideHeaderVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::usingInsideHeader);
@@ -786,9 +780,8 @@ bool UsingInsideHeaderVisitor::isFlagPresent(const AutocheckContext &Context) {
 bool UsingInsideHeaderVisitor::VisitUsingDirectiveDecl(
     const clang::UsingDirectiveDecl *UDD) {
   const clang::SourceLocation &SL = UDD->getUsingLoc();
-  if (!DE.getSourceManager().isInMainFile(SL)) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, SL, AutocheckWarnings::usingInsideHeader)
+  if (!AD.GetSourceManager().isInMainFile(SL)) {
+    return !AD.reportWarning(SL, AutocheckWarnings::usingInsideHeader)
                 .limitReached();
   }
 
@@ -797,9 +790,8 @@ bool UsingInsideHeaderVisitor::VisitUsingDirectiveDecl(
 
 bool UsingInsideHeaderVisitor::VisitUsingDecl(const clang::UsingDecl *UD) {
   const clang::SourceLocation &SL = UD->getUsingLoc();
-  if (ScopeStack.empty() && !DE.getSourceManager().isInMainFile(SL)) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, SL, AutocheckWarnings::usingInsideHeader)
+  if (ScopeStack.empty() && !AD.GetSourceManager().isInMainFile(SL)) {
+    return !AD.reportWarning(SL, AutocheckWarnings::usingInsideHeader)
                 .limitReached();
   }
 
@@ -828,9 +820,8 @@ bool UsingInsideHeaderVisitor::PostTraverseDecl(clang::Decl *D) {
 /* Implementation of SeparateLineStatementVisitor */
 
 SeparateLineStatementVisitor::SeparateLineStatementVisitor(
-    clang::DiagnosticsEngine &DE, const AutocheckContext &Context,
-    clang::ASTContext &AC)
-    : DE(DE), Context(Context), AC(AC), SM(AC.getSourceManager()) {}
+    AutocheckDiagnostic &AD, clang::ASTContext &AC)
+    : AD(AD), AC(AC), SM(AD.GetSourceManager()) {}
 
 bool SeparateLineStatementVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -851,9 +842,8 @@ bool SeparateLineStatementVisitor::VisitDeclStmt(const clang::DeclStmt *DS) {
     for (const auto Decl : DS->getDeclGroup()) {
       if (SM.getSpellingLineNumber(Decl->getLocation()) == previousDeclLine) {
         previousWarning = Decl->getLocation();
-        if (AutocheckDiagnostic::reportWarning(
-                DE, Decl->getLocation(),
-                AutocheckWarnings::separateLineExpressionStatement)
+        if (AD.reportWarning(Decl->getLocation(),
+                             AutocheckWarnings::separateLineExpressionStatement)
                 .limitReached())
           return false;
         break;
@@ -1027,8 +1017,8 @@ bool SeparateLineStatementVisitor::diagnoseSameLine(
     if (SM.getExpansionLineNumber(Prev) == SM.getExpansionLineNumber(Curr) &&
         SM.getFileID(Prev) == SM.getFileID(Curr)) {
       previousWarning = Curr;
-      if (AutocheckDiagnostic::reportWarning(
-              DE, Curr, AutocheckWarnings::separateLineExpressionStatement)
+      if (AD.reportWarning(Curr,
+                           AutocheckWarnings::separateLineExpressionStatement)
               .limitReached())
         return false;
     }
@@ -1052,9 +1042,9 @@ SeparateLineStatementVisitor::getBodyStart(const clang::Stmt *Body) {
 
 /* Implementation of LambdaDeclaratorVisitor */
 
-LambdaDeclaratorVisitor::LambdaDeclaratorVisitor(clang::DiagnosticsEngine &DE,
+LambdaDeclaratorVisitor::LambdaDeclaratorVisitor(AutocheckDiagnostic &AD,
                                                  clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    : AD(AD), AC(AC) {}
 
 bool LambdaDeclaratorVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::lambdaDeclaratorMissing);
@@ -1071,7 +1061,7 @@ bool LambdaDeclaratorVisitor::VisitLambdaExpr(const clang::LambdaExpr *LE) {
     return true;
 
   // Extract the code after the introducer and before the body.
-  const clang::SourceManager &SM = DE.getSourceManager();
+  const clang::SourceManager &SM = AD.GetSourceManager();
   clang::SourceRange DeclaratorRange(
       LE->getIntroducerRange().getEnd().getLocWithOffset(1),
       LE->getBody()->getBeginLoc());
@@ -1080,23 +1070,21 @@ bool LambdaDeclaratorVisitor::VisitLambdaExpr(const clang::LambdaExpr *LE) {
 
   // If the range is too short, report the warning.
   if (DeclaratorFileRange.length() < 2) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, DeclaratorRange.getBegin(),
-                AutocheckWarnings::lambdaDeclaratorMissing)
+    return !AD.reportWarning(DeclaratorRange.getBegin(),
+                             AutocheckWarnings::lambdaDeclaratorMissing)
                 .limitReached();
   }
 
   // Tokenize the declarator range.
   auto tokens = clang::syntax::tokenize(
-      DeclaratorFileRange, DE.getSourceManager(), AC.getLangOpts());
+      DeclaratorFileRange, AD.GetSourceManager(), AC.getLangOpts());
 
   // Manually check for parentheses.
   if (tokens[0].kind() != clang::tok::l_paren ||
       tokens[1].kind() != clang::tok::r_paren ||
       (tokens.size() > 2 && tokens[2].kind() != clang::tok::arrow)) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, DeclaratorRange.getBegin(),
-                AutocheckWarnings::lambdaDeclaratorMissing)
+    return !AD.reportWarning(DeclaratorRange.getBegin(),
+                             AutocheckWarnings::lambdaDeclaratorMissing)
                 .limitReached();
   }
 
@@ -1105,9 +1093,8 @@ bool LambdaDeclaratorVisitor::VisitLambdaExpr(const clang::LambdaExpr *LE) {
 
 /* Implementation of IfElseCompoundStmtVisitor */
 
-IfElseCompoundStmtVisitor::IfElseCompoundStmtVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+IfElseCompoundStmtVisitor::IfElseCompoundStmtVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool IfElseCompoundStmtVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::ifFollowedByCompoundStmt);
@@ -1116,8 +1103,8 @@ bool IfElseCompoundStmtVisitor::isFlagPresent(const AutocheckContext &Context) {
 bool IfElseCompoundStmtVisitor::VisitIfStmt(const clang::IfStmt *IS) {
   // Check compound statement after if.
   if (!llvm::dyn_cast_if_present<clang::CompoundStmt>(IS->getThen())) {
-    if (AutocheckDiagnostic::reportWarning(
-            DE, IS->getIfLoc(), AutocheckWarnings::ifFollowedByCompoundStmt)
+    if (AD.reportWarning(IS->getIfLoc(),
+                         AutocheckWarnings::ifFollowedByCompoundStmt)
             .limitReached())
       return false;
   }
@@ -1126,8 +1113,8 @@ bool IfElseCompoundStmtVisitor::VisitIfStmt(const clang::IfStmt *IS) {
   if (const clang::Stmt *Else = IS->getElse()) {
     if (!llvm::dyn_cast<clang::IfStmt>(Else) &&
         !llvm::dyn_cast<clang::CompoundStmt>(Else)) {
-      if (AutocheckDiagnostic::reportWarning(
-              DE, IS->getElseLoc(), AutocheckWarnings::ifFollowedByCompoundStmt)
+      if (AD.reportWarning(IS->getElseLoc(),
+                           AutocheckWarnings::ifFollowedByCompoundStmt)
               .limitReached())
         return false;
     }
@@ -1138,34 +1125,29 @@ bool IfElseCompoundStmtVisitor::VisitIfStmt(const clang::IfStmt *IS) {
 
 /* LexicalRulesVisitor */
 
-LexicalRulesVisitor::LexicalRulesVisitor(clang::DiagnosticsEngine &DE,
+LexicalRulesVisitor::LexicalRulesVisitor(AutocheckDiagnostic &AD,
                                          clang::ASTContext &AC)
-    : DE(DE) {
-  const AutocheckContext &Context = AutocheckContext::Get();
+    : AD(AD) {
+  const AutocheckContext &Context = AD.GetContext();
   if (NullStmtNotAloneVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(
-        std::make_unique<NullStmtNotAloneVisitor>(DE, Context, AC));
+    AllVisitors.push_front(std::make_unique<NullStmtNotAloneVisitor>(AD, AC));
   if (FixedWidthIntegerTypesVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(
-        std::make_unique<FixedWidthIntegerTypesVisitor>(DE, Context));
+    AllVisitors.push_front(std::make_unique<FixedWidthIntegerTypesVisitor>(AD));
   if (ShadowClassOrEnumVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(
-        std::make_unique<ShadowClassOrEnumVisitor>(DE, Context));
+    AllVisitors.push_front(std::make_unique<ShadowClassOrEnumVisitor>(AD));
   if (SimilarIdentifiersVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(
-        std::make_unique<SimilarIdentifiersVisitor>(DE, Context));
+    AllVisitors.push_front(std::make_unique<SimilarIdentifiersVisitor>(AD));
   if (UnsignedLiterals::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<UnsignedLiterals>(DE, Context, AC));
+    AllVisitors.push_front(std::make_unique<UnsignedLiterals>(AD, AC));
   if (UsingInsideHeaderVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(
-        std::make_unique<UsingInsideHeaderVisitor>(DE, Context));
+    AllVisitors.push_front(std::make_unique<UsingInsideHeaderVisitor>(AD));
   if (SeparateLineStatementVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<SeparateLineStatementVisitor>(DE, Context, AC));
+        std::make_unique<SeparateLineStatementVisitor>(AD, AC));
   if (LambdaDeclaratorVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<LambdaDeclaratorVisitor>(DE, AC));
+    AllVisitors.push_front(std::make_unique<LambdaDeclaratorVisitor>(AD, AC));
   if (IfElseCompoundStmtVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<IfElseCompoundStmtVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<IfElseCompoundStmtVisitor>(AD));
 }
 
 void LexicalRulesVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -1179,7 +1161,7 @@ bool LexicalRulesVisitor::TraverseDecl(clang::Decl *D) {
 
   clang::SourceLocation Loc = D->getBeginLoc();
 
-  if (Loc.isInvalid() || appropriateHeaderLocation(DE, Loc)) {
+  if (Loc.isInvalid() || appropriateHeaderLocation(AD, Loc)) {
     AllVisitors.remove_if(
         [D](std::unique_ptr<LexicalRulesVisitorInterface> &V) {
           return !V->PreTraverseDecl(D);

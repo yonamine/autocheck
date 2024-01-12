@@ -21,15 +21,13 @@ using namespace clang::ast_matchers;
 
 /* Implementation of UnusedReturnMatcher */
 
-UnusedReturnMatcher::Callback::Callback(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+UnusedReturnMatcher::Callback::Callback(AutocheckDiagnostic &AD) : AD(AD) {}
 
 void UnusedReturnMatcher::Callback::run(
     const MatchFinder::MatchResult &Result) {
   const BoundNodes &BN = Result.Nodes;
   if (const clang::CallExpr *CE = BN.getNodeAs<clang::CallExpr>("unusedReturn"))
-    AutocheckDiagnostic::reportWarning(DE, CE->getBeginLoc(),
-                                       AutocheckWarnings::unusedReturnValue);
+    AD.reportWarning(CE->getBeginLoc(), AutocheckWarnings::unusedReturnValue);
 }
 
 StatementMatcher UnusedReturnMatcher::makeMatcher() {
@@ -80,16 +78,14 @@ bool UnusedReturnMatcher::isFlagPresent(const AutocheckContext &Context) {
 
 /* Implementation of SelfAssignmentMatcher */
 
-SelfAssignmentMatcher::Callback::Callback(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+SelfAssignmentMatcher::Callback::Callback(AutocheckDiagnostic &AD) : AD(AD) {}
 
 void SelfAssignmentMatcher::Callback::run(
     const MatchFinder::MatchResult &Result) {
   const auto *MatchedDecl = Result.Nodes.getNodeAs<clang::CXXMethodDecl>(
       "copyOrMoveAssignmentOperator");
-  AutocheckDiagnostic::reportWarning(
-      DE, MatchedDecl->getLocation(),
-      AutocheckWarnings::selfAssignmentUnhandled);
+  AD.reportWarning(MatchedDecl->getLocation(),
+                   AutocheckWarnings::selfAssignmentUnhandled);
 }
 
 DeclarationMatcher SelfAssignmentMatcher::makeMatcher() {

@@ -16,6 +16,7 @@
 #define EXPORT_DIAG_EXPORTER_JSON_H
 
 #include "Diagnostics/AutocheckWarnings.h"
+#include "Diagnostics/AutocheckDiagnostic.h"
 #include "Export/DiagExporter.h"
 #include "clang/Basic/SourceManager.h"
 #include "llvm/ADT/StringRef.h"
@@ -27,7 +28,7 @@ namespace autocheck {
 
 class DiagExporterJson : public DiagExporter {
 public:
-  DiagExporterJson(llvm::StringRef FilePath, clang::SourceManager &SM,
+  DiagExporterJson(AutocheckDiagnostic &AD, llvm::StringRef FilePath, clang::SourceManager &SM,
                    bool FullOutput = true);
 
 protected:

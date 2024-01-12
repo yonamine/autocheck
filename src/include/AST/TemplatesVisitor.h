@@ -32,6 +32,8 @@
 
 namespace autocheck {
 
+class AutocheckDiagnostic;
+
 /// Common interface for all visitors that check template instantiations.
 class TemplateVisitorInterface {
 public:
@@ -43,14 +45,14 @@ public:
 
 /// [A8-4-7] "in" parameters for "cheap to copy" types shall be passed by value.
 class InParametersPassedByValue : public TemplateVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
   bool checkParameter(const clang::ParmVarDecl *PVD,
                       const clang::SourceLocation &InstantiationLoc);
 
 public:
-  explicit InParametersPassedByValue(clang::DiagnosticsEngine &DE,
+  explicit InParametersPassedByValue(AutocheckDiagnostic &AD,
                                      clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -60,12 +62,11 @@ public:
 /// [M15-3-4] Each exception explicitly thrown in the code shall have a handler
 /// of a compatible type in all call paths that could lead to that point.
 class ThrowEscapesVisitor : public TemplateVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::Sema &SemaRef;
 
 public:
-  explicit ThrowEscapesVisitor(clang::DiagnosticsEngine &DE,
-                               clang::Sema &SemaRef);
+  explicit ThrowEscapesVisitor(AutocheckDiagnostic &AD, clang::Sema &SemaRef);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
@@ -74,11 +75,11 @@ public:
 /// [M5-14-1] The right hand operand of a logical &&, || operators shall not
 /// contain side effects.
 class RHSOperandSideEffectVisitor : public TemplateVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit RHSOperandSideEffectVisitor(clang::DiagnosticsEngine &DE,
+  explicit RHSOperandSideEffectVisitor(AutocheckDiagnostic &AD,
                                        clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -90,12 +91,12 @@ public:
 /// appropriate flag is found. Runs all Declaration Visitors with one AST
 /// traversal.
 class TemplatesVisitor : public clang::RecursiveASTVisitor<TemplatesVisitor> {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
   std::forward_list<std::unique_ptr<TemplateVisitorInterface>> AllVisitors;
 
 public:
-  explicit TemplatesVisitor(clang::DiagnosticsEngine &DE, clang::ASTContext &AC,
+  explicit TemplatesVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC,
                             clang::Sema &SemaRef);
   void run(clang::TranslationUnitDecl *TUD);
 

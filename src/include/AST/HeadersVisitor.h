@@ -26,6 +26,8 @@
 
 namespace autocheck {
 
+class AutocheckDiagnostic;
+
 /// Common interface for all header related visitors.
 class HeadersVisitorInterface {
 public:
@@ -66,7 +68,7 @@ class HeadersUnusedVisitor : public HeadersVisitorInterface {
   typedef std::map<const clang::IdentifierInfo *, const clang::SourceLocation>
       IdentifierMap;
 
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   IncludeInfo &IncludeData; /// Include data gathered by PPCallback.
   TrackingSet Typedefs;     /// Set of currently found typedefs
   IdentifierMap CXXRecords; /// Set of currently found CXXRecords (classes,
@@ -79,7 +81,7 @@ class HeadersUnusedVisitor : public HeadersVisitorInterface {
                                     // directives is.
 
 public:
-  explicit HeadersUnusedVisitor(clang::DiagnosticsEngine &DE,
+  explicit HeadersUnusedVisitor(AutocheckDiagnostic &AD,
                                 const AutocheckContext &Context,
                                 IncludeInfo &IncludeData);
 
@@ -148,7 +150,8 @@ private:
   void removeKeywords(std::string &TypeName);
 
   /// Checks if string Str starts with string Start.
-  inline bool startsWith(const std::string &Str, const std::string &Start) const;
+  inline bool startsWith(const std::string &Str,
+                         const std::string &Start) const;
 };
 
 /// Main visitor for header related checks. Makes an instance of every class
@@ -158,7 +161,7 @@ class HeadersVisitor : public clang::RecursiveASTVisitor<HeadersVisitor> {
   std::forward_list<std::unique_ptr<HeadersVisitorInterface>> AllVisitors;
 
 public:
-  explicit HeadersVisitor(clang::DiagnosticsEngine &DE,
+  explicit HeadersVisitor(AutocheckDiagnostic &AD,
                           AutocheckPPCallbacks &Callbacks);
   void run(clang::TranslationUnitDecl *TUD);
 

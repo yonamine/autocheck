@@ -29,16 +29,16 @@ namespace autocheck {
 
 class DiagExporter : public DiagListener {
 public:
-  DiagExporter(llvm::StringRef FilePath, clang::SourceManager &SM,
-               bool FullOutput = true);
+  DiagExporter(AutocheckDiagnostic &AD, llvm::StringRef FilePath,
+               clang::SourceManager &SM, bool FullOutput = true);
   virtual ~DiagExporter();
 
   void Open();
   void Close();
 
   static std::unique_ptr<DiagExporter>
-  GetExporterForPath(llvm::StringRef FilePath, clang::SourceManager &SM,
-                     bool FullOutput = true);
+  GetExporterForPath(AutocheckDiagnostic &AD, llvm::StringRef FilePath,
+                     clang::SourceManager &SM, bool FullOutput = true);
 
 protected:
   struct FileBoundDiagnostic {
@@ -70,6 +70,7 @@ private:
                            const clang::SourceLocation &Loc) override;
 
 protected:
+  AutocheckDiagnostic &AD;
   llvm::StringRef FilePath;
   clang::SourceManager &SM;
   bool FullOutput;

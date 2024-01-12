@@ -778,27 +778,25 @@ bool CheckAssignment::VisitBinaryOperator(const clang::BinaryOperator *BO) {
 
 /* Implementation of ForLoopVisitor */
 
-ForLoopVisitor::ForLoopVisitor(clang::DiagnosticsEngine &DE,
-                               clang::ASTContext &AC)
-    : DE(DE), AC(AC), Context(AutocheckContext::Get()),
-      WarnSingleLoopCounterFloatType(
-          Context.isEnabled(AutocheckWarnings::singleLoopCounterFloatType)),
+ForLoopVisitor::ForLoopVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC)
+    : AD(AD), AC(AC), WarnSingleLoopCounterFloatType(AD.IsEnabled(
+                          AutocheckWarnings::singleLoopCounterFloatType)),
       WarnNonLoopCounterBool(
-          Context.isEnabled(AutocheckWarnings::nonLoopCounterBool)),
+          AD.IsEnabled(AutocheckWarnings::nonLoopCounterBool)),
       WarnContinueStmtWellFormedLoop(
-          Context.isEnabled(AutocheckWarnings::continueStmtWellFormedLoop)),
+          AD.IsEnabled(AutocheckWarnings::continueStmtWellFormedLoop)),
       WarnNonLoopCounterModified(
-          Context.isEnabled(AutocheckWarnings::nonLoopCounterModified)),
+          AD.IsEnabled(AutocheckWarnings::nonLoopCounterModified)),
       WarnLoopCounterModified(
-          Context.isEnabled(AutocheckWarnings::loopCounterModified)),
+          AD.IsEnabled(AutocheckWarnings::loopCounterModified)),
       WarnCondExprIncDecLoop(
-          Context.isEnabled(AutocheckWarnings::condExprIncDecLoop)),
+          AD.IsEnabled(AutocheckWarnings::condExprIncDecLoop)),
       WarnInitIncPartsLoopCounter(
-          Context.isEnabled(AutocheckWarnings::initIncPartsLoopCounter)),
+          AD.IsEnabled(AutocheckWarnings::initIncPartsLoopCounter)),
       WarnContainerLoopIllFormed(
-          Context.isEnabled(AutocheckWarnings::containerLoopIllFormed)),
+          AD.IsEnabled(AutocheckWarnings::containerLoopIllFormed)),
       WarnLoopCounterIllModified(
-          Context.isEnabled(AutocheckWarnings::loopCounterIllModified)) {}
+          AD.IsEnabled(AutocheckWarnings::loopCounterIllModified)) {}
 
 bool ForLoopVisitor::TraverseDecl(clang::Decl *D) {
   if (!D) // Can be null if code had errors.
@@ -806,7 +804,7 @@ bool ForLoopVisitor::TraverseDecl(clang::Decl *D) {
 
   clang::SourceLocation Loc = D->getBeginLoc();
 
-  if (Loc.isInvalid() || appropriateHeaderLocation(DE, Loc)) {
+  if (Loc.isInvalid() || appropriateHeaderLocation(AD, Loc)) {
     clang::RecursiveASTVisitor<ForLoopVisitor>::TraverseDecl(D);
   }
   return true;
@@ -840,11 +838,10 @@ bool ForLoopVisitor::checkNumberOfCountersAndTypes(clang::ForStmt *FS) {
                                            .first->getType()
                                            .getTypePtr()
                                            ->isFloatingType())) {
-    if (Context.isEnabled(AutocheckWarnings::singleLoopCounterFloatType)) {
+    if (AD.IsEnabled(AutocheckWarnings::singleLoopCounterFloatType)) {
       WarnSingleLoopCounterFloatType =
-          !AutocheckDiagnostic::reportWarning(
-               DE, FS->getForLoc(),
-               AutocheckWarnings::singleLoopCounterFloatType)
+          !AD.reportWarning(FS->getForLoc(),
+                            AutocheckWarnings::singleLoopCounterFloatType)
                .limitReached();
     }
     return false;
@@ -866,10 +863,10 @@ bool ForLoopVisitor::checkNonCountersType(clang::ForStmt *FS) {
 
   for (VarDeclPtrUsage ModifiedNonCounter : ModifiedNonCounters) {
     if (!(ModifiedNonCounter.first->getType()->isBooleanType())) {
-      if (Context.isEnabled(AutocheckWarnings::nonLoopCounterBool)) {
+      if (AD.IsEnabled(AutocheckWarnings::nonLoopCounterBool)) {
         WarnNonLoopCounterBool =
-            !AutocheckDiagnostic::reportWarning(
-                 DE, FS->getForLoc(), AutocheckWarnings::nonLoopCounterBool)
+            !AD.reportWarning(FS->getForLoc(),
+                              AutocheckWarnings::nonLoopCounterBool)
                  .limitReached();
       }
       return false;
@@ -884,8 +881,8 @@ void ForLoopVisitor::checkIsLoopWithContinueWellFormed(clang::ForStmt *FS,
                                                        bool LS) {
   if (!LS && !ContinueStmtChecker(FS).TraverseStmt(FS->getBody()))
     WarnContinueStmtWellFormedLoop =
-        !AutocheckDiagnostic::reportWarning(
-             DE, FS->getForLoc(), AutocheckWarnings::continueStmtWellFormedLoop)
+        !AD.reportWarning(FS->getForLoc(),
+                          AutocheckWarnings::continueStmtWellFormedLoop)
              .limitReached();
 }
 
@@ -904,8 +901,8 @@ void ForLoopVisitor::checkIsNonCounterIllModified(clang::ForStmt *FS) {
     if (CondModifiedVars.count(NonCounterVariable.first) ||
         ExprModifiedVars.count(NonCounterVariable.first))
       WarnNonLoopCounterModified =
-          !AutocheckDiagnostic::reportWarning(
-               DE, FS->getForLoc(), AutocheckWarnings::nonLoopCounterModified)
+          !AD.reportWarning(FS->getForLoc(),
+                            AutocheckWarnings::nonLoopCounterModified)
                .limitReached();
 }
 
@@ -935,8 +932,8 @@ void ForLoopVisitor::checkIsCounterIllModified(clang::ForStmt *FS) {
          (CounterVariable.second.hasDerefUsageL1() ||
           CounterVariable.second.hasDerefUsageL2())))
       WarnLoopCounterModified =
-          !AutocheckDiagnostic::reportWarning(
-               DE, FS->getForLoc(), AutocheckWarnings::loopCounterModified)
+          !AD.reportWarning(FS->getForLoc(),
+                            AutocheckWarnings::loopCounterModified)
                .limitReached();
   }
 }
@@ -980,8 +977,8 @@ void ForLoopVisitor::checkIsCounterIncorrectlyUsed(clang::ForStmt *FS) {
       if ((NROCC != NonRelOpComparedCounters.end()) &&
           (NROCC->second == NonIncDecModifiedCounter.second))
         WarnCondExprIncDecLoop =
-            !AutocheckDiagnostic::reportWarning(
-                 DE, FS->getForLoc(), AutocheckWarnings::condExprIncDecLoop)
+            !AD.reportWarning(FS->getForLoc(),
+                              AutocheckWarnings::condExprIncDecLoop)
                  .limitReached();
     }
   }
@@ -1006,11 +1003,9 @@ void ForLoopVisitor::checkLoopActions(clang::ForStmt *FS) {
       bool ExprOK = !ExpressionVariables.count(NCVar.first);
       if (!InitOK || !ExprOK) {
         WarnInitIncPartsLoopCounter =
-            !AutocheckDiagnostic::reportWarning(
-                 DE,
-                 !InitOK ? FS->getInit()->getBeginLoc()
-                         : FS->getInc()->getBeginLoc(),
-                 AutocheckWarnings::initIncPartsLoopCounter)
+            !AD.reportWarning(!InitOK ? FS->getInit()->getBeginLoc()
+                                      : FS->getInc()->getBeginLoc(),
+                              AutocheckWarnings::initIncPartsLoopCounter)
                  .limitReached();
         return;
       }
@@ -1025,17 +1020,15 @@ void ForLoopVisitor::checkLoopActions(clang::ForStmt *FS) {
       }
       if (!InitOK) {
         WarnInitIncPartsLoopCounter =
-            !AutocheckDiagnostic::reportWarning(
-                 DE, FS->getInit()->getBeginLoc(),
-                 AutocheckWarnings::initIncPartsLoopCounter)
+            !AD.reportWarning(FS->getInit()->getBeginLoc(),
+                              AutocheckWarnings::initIncPartsLoopCounter)
                  .limitReached();
         return;
       }
     }
     return;
   }
-  AutocheckDiagnostic::reportWarning(
-      DE, FS->getForLoc(), AutocheckWarnings::initIncPartsLoopCounter);
+  AD.reportWarning(FS->getForLoc(), AutocheckWarnings::initIncPartsLoopCounter);
 }
 
 // [A6-5-1] A for-loop that loops through all elements of the container and does
@@ -1066,8 +1059,8 @@ void ForLoopVisitor::checkContainerLoop(clang::ForStmt *FS) {
     if (CVI.TraverseStmt(FS->getInit()) && CV.TraverseStmt(FS->getInit()) &&
         CV.TraverseStmt(FS->getCond()) && CV.TraverseStmt(FS->getInc())) {
       WarnContainerLoopIllFormed =
-          !AutocheckDiagnostic::reportWarning(
-               DE, FS->getForLoc(), AutocheckWarnings::containerLoopIllFormed)
+          !AD.reportWarning(FS->getForLoc(),
+                            AutocheckWarnings::containerLoopIllFormed)
                .limitReached();
       return;
     }
@@ -1077,8 +1070,8 @@ void ForLoopVisitor::checkContainerLoop(clang::ForStmt *FS) {
     UsedContainerVisitor UCV(AC, FS, UsedCounters);
     if (UCV.TraverseStmt(FS->getBody()))
       WarnContainerLoopIllFormed =
-          !AutocheckDiagnostic::reportWarning(
-               DE, FS->getForLoc(), AutocheckWarnings::containerLoopIllFormed)
+          !AD.reportWarning(FS->getForLoc(),
+                            AutocheckWarnings::containerLoopIllFormed)
                .limitReached();
   }
 }
@@ -1098,8 +1091,8 @@ void ForLoopVisitor::isCounterCorrectlyModified(clang::ForStmt *FS) {
   ModifiedCntVisitor MCV(AC, FS, CounterVariables, ModifiedVars);
   if (!MCV.TraverseStmt(FS->getInc()))
     WarnLoopCounterIllModified =
-        !AutocheckDiagnostic::reportWarning(
-             DE, FS->getForLoc(), AutocheckWarnings::loopCounterIllModified)
+        !AD.reportWarning(FS->getForLoc(),
+                          AutocheckWarnings::loopCounterIllModified)
              .limitReached();
 }
 

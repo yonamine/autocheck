@@ -34,9 +34,9 @@ const std::unordered_set<std::string> ProblematicCHeaders{
     "stdlib.h",    "stdnoreturn.h", "string.h", "tgmath.h",   "threads.h",
     "time.h",      "uchar.h",       "wchar.h",  "wctype.h"};
 
-AutocheckPPCallbacks::AutocheckPPCallbacks(clang::CompilerInstance &CI)
-    : Context(AutocheckContext::Get()), CI(CI), DE(CI.getDiagnostics()),
-      SM(DE.getSourceManager()) {}
+AutocheckPPCallbacks::AutocheckPPCallbacks(AutocheckDiagnostic &AD,
+                                           clang::CompilerInstance &CI)
+    : AD(AD), Context(AD.GetContext()), CI(CI), SM(AD.GetSourceManager()) {}
 
 void AutocheckPPCallbacks::LexedFileChanged(
     clang::FileID FID, clang::PPCallbacks::LexedFileChangeReason Reason,
@@ -58,10 +58,10 @@ void AutocheckPPCallbacks::LexedFileChanged(
     return;
 
   // Perform raw lexer checks.
-  lex::RunRawLexer(CI, FID);
+  lex::RunRawLexer(AD, CI, FID);
 }
 
-static bool checkHeaderExtension(AutocheckContext &Context,
+static bool checkHeaderExtension(const AutocheckContext &Context,
                                  clang::SrcMgr::CharacteristicKind FileType,
                                  const llvm::StringRef &HeaderName) {
   if (!Context.isEnabled(AutocheckWarnings::headerExtension) ||
@@ -120,21 +120,19 @@ void AutocheckPPCallbacks::InclusionDirective(
   llvm::StringRef FullFileName = File->getName();
 
   // Check if this is top level #include.
-  if (appropriateHeaderLocation(DE, HashLoc)) {
+  if (appropriateHeaderLocation(AD, HashLoc)) {
     // [A3-1-2] Header files, that are defined locally in the project, shall
     // have a file name extension of one of: ".h", ".hpp" or ".hxx".
     if (!checkHeaderExtension(Context, FileType, FullFileName)) {
-      AutocheckDiagnostic::reportWarning(DE, HashLoc,
-                                         AutocheckWarnings::headerExtension);
+      AD.reportWarning(HashLoc, AutocheckWarnings::headerExtension);
     }
   }
 
-  if (appropriateHeaderLocation(DE, HashLoc) && IsAngled) {
+  if (appropriateHeaderLocation(AD, HashLoc) && IsAngled) {
     // [A18-0-1] The C library facilities shall only be accessed through C++
     // library headers.
     if (checkCLibHeaderUsed(Context, FileName))
-      AutocheckDiagnostic::reportWarning(DE, HashLoc,
-                                         AutocheckWarnings::clibHeaderUsed);
+      AD.reportWarning(HashLoc, AutocheckWarnings::clibHeaderUsed);
 
     // [M18-7-1] The signal handling facilities of <csignal> shall not be used.
     // [M27-0-1] The stream input/output library <cstdio> shall not be used.
@@ -143,17 +141,13 @@ void AutocheckPPCallbacks::InclusionDirective(
     // [A18-0-3] The library <clocale> (locale.h) and the setlocale function
     // shall not be used.
     if (checkCSignalUsed(Context, FileName))
-      AutocheckDiagnostic::reportWarning(DE, HashLoc,
-                                         AutocheckWarnings::csignalUsed);
+      AD.reportWarning(HashLoc, AutocheckWarnings::csignalUsed);
     else if (checkCStdioUsed(Context, FileName))
-      AutocheckDiagnostic::reportWarning(DE, HashLoc,
-                                         AutocheckWarnings::cstdioUsed);
+      AD.reportWarning(HashLoc, AutocheckWarnings::cstdioUsed);
     else if (checkCTimeUsed(Context, FileName))
-      AutocheckDiagnostic::reportWarning(DE, HashLoc,
-                                         AutocheckWarnings::ctimeUsed);
+      AD.reportWarning(HashLoc, AutocheckWarnings::ctimeUsed);
     else if (checkLocaleHeaderUsed(Context, FileName))
-      AutocheckDiagnostic::reportWarning(DE, HashLoc,
-                                         AutocheckWarnings::localeHeaderUsed);
+      AD.reportWarning(HashLoc, AutocheckWarnings::localeHeaderUsed);
   }
 
   // [A16-2-2] There shall be no unused include directives.
@@ -184,8 +178,7 @@ void AutocheckPPCallbacks::PragmaDirective(
     clang::SourceLocation Loc, clang::PragmaIntroducerKind Introducer) {
   // [A16-7-1] The #pragma directive shall not be used.
   if (Context.isEnabled(AutocheckWarnings::pragmaDirectiveUsed)) {
-    AutocheckDiagnostic::reportWarning(DE, Loc,
-                                       AutocheckWarnings::pragmaDirectiveUsed);
+    AD.reportWarning(Loc, AutocheckWarnings::pragmaDirectiveUsed);
   }
 }
 
@@ -219,7 +212,7 @@ void AutocheckPPCallbacks::MacroExpands(const clang::Token &MacroNameTok,
                                         const clang::MacroArgs *Args) {
   const clang::SourceLocation MacroLoc = Range.getBegin();
 
-  if (appropriateHeaderLocation(DE, MacroLoc)) {
+  if (appropriateHeaderLocation(AD, MacroLoc)) {
     const clang::SourceLocation DefLoc = MD.getMacroInfo()->getDefinitionLoc();
     const llvm::StringRef FullHeaderName = SM.getFilename(DefLoc);
 
@@ -230,20 +223,17 @@ void AutocheckPPCallbacks::MacroExpands(const clang::Token &MacroNameTok,
         MacroNameTok.getIdentifierInfo()->getName().str();
     // [M19-3-1], the error indicator errno shall not be used.
     if (checkErrnoUsed(Context, HeaderName, MacroName)) {
-      AutocheckDiagnostic::reportWarning(DE, MacroLoc,
-                                         AutocheckWarnings::errnoUsed);
+      AD.reportWarning(MacroLoc, AutocheckWarnings::errnoUsed);
     }
     // [M18-2-1] The macro offsetof shall not be used.
     if (checkOffsetofUsed(Context, HeaderName, MacroName)) {
-      AutocheckDiagnostic::reportWarning(DE, MacroLoc,
-                                         AutocheckWarnings::offsetofUsed);
+      AD.reportWarning(MacroLoc, AutocheckWarnings::offsetofUsed);
     }
     // [M17-0-5] The setjmp macro and the longjmp function shall not be used.
     // This checks only for the setjmp macro. The longjump function check is
     // implemented in ExpressionsVisitor.cpp in StdFunctionUsed class.
     if (checkSetjmpUsed(Context, HeaderName, MacroName)) {
-      AutocheckDiagnostic::reportWarning(DE, MacroLoc,
-                                         AutocheckWarnings::setjmpLongjmpUsed);
+      AD.reportWarning(MacroLoc, AutocheckWarnings::setjmpLongjmpUsed);
     }
   }
 
@@ -306,8 +296,7 @@ void AutocheckPPCallbacks::MacroDefined(const clang::Token &MacroNameTok,
          It != End; ++It) {
       const clang::tok::TokenKind &TK = It->getKind();
       if (It->isOneOf(clang::tok::hash, clang::tok::hashhash)) {
-        AutocheckDiagnostic::reportWarning(DE, It->getLocation(),
-                                           AutocheckWarnings::hashhashOpUsed);
+        AD.reportWarning(It->getLocation(), AutocheckWarnings::hashhashOpUsed);
       }
     }
   }
@@ -324,15 +313,15 @@ void AutocheckPPCallbacks::MacroDefined(const clang::Token &MacroNameTok,
       if (TK == clang::tok::hash) {
         HasHash = true;
         if (HasHashHash) {
-          AutocheckDiagnostic::reportWarning(DE, MD->getLocation(),
-                                             AutocheckWarnings::bothHashOpUsed);
+          AD.reportWarning(MD->getLocation(),
+                           AutocheckWarnings::bothHashOpUsed);
           break;
         }
       } else if (TK == clang::tok::hashhash) {
         HasHashHash = true;
         if (HasHash) {
-          AutocheckDiagnostic::reportWarning(DE, MD->getLocation(),
-                                             AutocheckWarnings::bothHashOpUsed);
+          AD.reportWarning(MD->getLocation(),
+                           AutocheckWarnings::bothHashOpUsed);
           break;
         }
       }
@@ -344,8 +333,7 @@ void AutocheckPPCallbacks::MacroDefined(const clang::Token &MacroNameTok,
   // This only handles redefinition of some built-in identifiers. The rest is
   // handled by AutocheckDiagnosticConsumer.
   if (checkReservedIdentifiers(Context, MacroNameTok)) {
-    AutocheckDiagnostic::reportWarning(DE, MD->getLocation(),
-                                       AutocheckWarnings::reservedIdentifiers);
+    AD.reportWarning(MD->getLocation(), AutocheckWarnings::reservedIdentifiers);
   }
 }
 
@@ -355,8 +343,8 @@ void AutocheckPPCallbacks::MacroUndefined(const clang::Token &MacroNameTok,
   // [A17-0-1] Reserved identifiers, macros and functions in the C++ standard
   // library shall not be defined, redefined or undefined.
   if (checkReservedIdentifiers(Context, MacroNameTok)) {
-    AutocheckDiagnostic::reportWarning(DE, MacroNameTok.getLocation(),
-                                       AutocheckWarnings::reservedIdentifiers);
+    AD.reportWarning(MacroNameTok.getLocation(),
+                     AutocheckWarnings::reservedIdentifiers);
   }
 }
 
@@ -369,8 +357,8 @@ void AutocheckPPCallbacks::Defined(const clang::Token &MacroNameTok,
   // compile errors.
   if (Context.isEnabled(AutocheckWarnings::expansionToDefined) &&
       Range.getBegin().isMacroID())
-    AutocheckDiagnostic::reportWarning(DE, MacroNameTok.getLocation(),
-                                       AutocheckWarnings::expansionToDefined);
+    AD.reportWarning(MacroNameTok.getLocation(),
+                     AutocheckWarnings::expansionToDefined);
 }
 
 } // namespace autocheck

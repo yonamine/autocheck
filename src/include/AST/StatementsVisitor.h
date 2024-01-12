@@ -36,6 +36,8 @@
 
 namespace autocheck {
 
+class AutocheckDiagnostic;
+
 /// Common interface for all autocheck statement visitors.
 class StatementsVisitorInterface {
 public:
@@ -62,13 +64,11 @@ public:
 /// [M6-4-2] All if ... else if constructs shall be terminated with an else
 /// clause.
 class IfElseIfTerminatedVisitor : public StatementsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
-  const AutocheckContext &Context;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit IfElseIfTerminatedVisitor(clang::DiagnosticsEngine &DE,
-                                     const AutocheckContext &Context,
+  explicit IfElseIfTerminatedVisitor(AutocheckDiagnostic &AD,
                                      clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -78,16 +78,14 @@ public:
 /// [M6-6-1] Any label referenced by a goto statement shall be declared in the
 /// same block, or in a block enclosing the goto statement.
 class GotoLabelBlockVisitor : public StatementsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
-  const AutocheckContext &Context;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
   const clang::Stmt *getGotoParent(const clang::Stmt *S,
                                    const clang::LabelStmt *LSWanted) const;
 
 public:
-  explicit GotoLabelBlockVisitor(clang::DiagnosticsEngine &DE,
-                                 const AutocheckContext &Context,
+  explicit GotoLabelBlockVisitor(AutocheckDiagnostic &AD,
                                  clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -96,8 +94,7 @@ public:
 
 /// [M6-4-6] The final clause of a switch statement shall be the default-clause.
 class SwitchStmtDefaultClause : public StatementsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
-  const AutocheckContext &Context;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
   /// This structure holds data about a single switch statement.
@@ -114,8 +111,7 @@ class SwitchStmtDefaultClause : public StatementsVisitorInterface {
   llvm::SmallVector<bool, 0> SwitchStmtSeenVector;
 
 public:
-  explicit SwitchStmtDefaultClause(clang::DiagnosticsEngine &DE,
-                                   const AutocheckContext &Context,
+  explicit SwitchStmtDefaultClause(AutocheckDiagnostic &AD,
                                    clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -129,15 +125,13 @@ public:
 /// [A6-5-3] Do statements should not be used.
 class DoWhileUsedVisitor : public StatementsVisitorInterface {
   static bool IsPresentDoWhileFlag;
-  clang::DiagnosticsEngine &DE;
-  const AutocheckContext &Context;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
   llvm::SmallSet<clang::FullSourceLoc, 0> DoWhileMacros;
 
 public:
   explicit DoWhileUsedVisitor(
-      clang::DiagnosticsEngine &DE, const AutocheckContext &Context,
-      clang::ASTContext &AC,
+      AutocheckDiagnostic &AD, clang::ASTContext &AC,
       const llvm::SmallSet<clang::SourceLocation, 0> &DoWhileMacroLocations);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -147,10 +141,10 @@ public:
 /// [M6-3-1] The statement forming the body of a switch, while, do ... while or
 /// for statement shall be a compound statement.
 class BodyCompoundStmtVisitor : public StatementsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit BodyCompoundStmtVisitor(clang::DiagnosticsEngine &DE);
+  explicit BodyCompoundStmtVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitDoStmt(const clang::DoStmt *DS) override;
@@ -163,10 +157,10 @@ public:
 /// [M6-6-2] The goto statement shall jump to a label declared later in the same
 /// function body.
 class GotoBackJumpVisitor : public StatementsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit GotoBackJumpVisitor(clang::DiagnosticsEngine &DE);
+  explicit GotoBackJumpVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitGotoStmt(const clang::GotoStmt *GS) override;
@@ -176,13 +170,12 @@ public:
 /// implement a StatementsVisitorInterface if appropriate flag is found. Runs
 /// all Statement Visitors with one AST traversal.
 class StatementsVisitor : public clang::RecursiveASTVisitor<StatementsVisitor> {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
   std::forward_list<std::unique_ptr<StatementsVisitorInterface>> AllVisitors;
 
 public:
-  explicit StatementsVisitor(clang::DiagnosticsEngine &DE,
-                             clang::ASTContext &AC,
+  explicit StatementsVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC,
                              const AutocheckPPCallbacks &Callbacks);
   void run(clang::TranslationUnitDecl *TUD);
 

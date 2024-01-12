@@ -23,6 +23,20 @@
 
 namespace autocheck {
 
+void UnreachableCodeChecker::reportBug(clang::ento::BugReporter &C,
+                                       clang::SourceLocation Loc) const {
+  const auto &DiagInfo =
+      AutocheckDiagnostic::GetDiagInfo(AutocheckWarnings::unreachableCode);
+  if (!BT)
+    BT.reset(
+        new clang::ento::BuiltinBug(this, DiagInfo.Rule, DiagInfo.Message));
+
+  auto R = std::make_unique<clang::ento::BasicBugReport>(
+      *BT, DiagInfo.Message,
+      clang::ento::PathDiagnosticLocation(Loc, C.getSourceManager()));
+  C.emitReport(std::move(R));
+}
+
 void UnreachableCodeChecker::iterateOverExplodedGraph(
     clang::ento::ExplodedGraph &G,
     llvm::DenseMap<const clang::LocationContext *, CFGBlocksSet> &Reachable)
@@ -113,9 +127,7 @@ void UnreachableCodeChecker::checkEndAnalysis(
                   S, B.getSourceManager(), i->first);
           clang::SourceLocation SL = DL.asLocation();
           if (SL.isValid() && !isDoWhile(CB, i->first))
-            AutocheckDiagnostic::reportWarning(
-                B.getContext().getDiagnostics(), SL,
-                AutocheckWarnings::unreachableCode);
+            reportBug(B, SL);
         }
       }
     }

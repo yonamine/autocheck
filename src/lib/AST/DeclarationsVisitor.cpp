@@ -62,17 +62,16 @@ bool DVI::VisitTranslationUnitDecl(const clang::TranslationUnitDecl *) {
 
 /* Implementation of ASMDeclarationUsedVisitor */
 
-ASMDeclarationUsedVisitor::ASMDeclarationUsedVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+ASMDeclarationUsedVisitor::ASMDeclarationUsedVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool ASMDeclarationUsedVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::asmDeclarationUsed);
 }
 
 bool ASMDeclarationUsedVisitor::VisitGCCAsmStmt(const clang::GCCAsmStmt *GAS) {
-  if (AutocheckDiagnostic::reportWarning(DE, GAS->getBeginLoc(),
-                                         AutocheckWarnings::asmDeclarationUsed)
+  if (AD.reportWarning(GAS->getBeginLoc(),
+                       AutocheckWarnings::asmDeclarationUsed)
           .limitReached())
     return false;
 
@@ -81,8 +80,7 @@ bool ASMDeclarationUsedVisitor::VisitGCCAsmStmt(const clang::GCCAsmStmt *GAS) {
 
 /* Implementation of UnusedGlobalTypedef */
 
-UnusedGlobalTypedef::UnusedGlobalTypedef(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+UnusedGlobalTypedef::UnusedGlobalTypedef(AutocheckDiagnostic &AD) : AD(AD) {}
 
 bool UnusedGlobalTypedef::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::unusedTypedef);
@@ -91,9 +89,8 @@ bool UnusedGlobalTypedef::isFlagPresent(const AutocheckContext &Context) {
 void UnusedGlobalTypedef::PostWork() {
   for (auto *it : GlobalTypedefs) {
     if (!it->isReferenced()) {
-      if (AutocheckDiagnostic::reportWarning(DE, it->getLocation(),
-                                             AutocheckWarnings::unusedTypedef,
-                                             0, it->getDeclName())
+      if (AD.reportWarning(it->getLocation(), AutocheckWarnings::unusedTypedef,
+                           0, it->getDeclName())
               .limitReached())
         break;
     }
@@ -104,7 +101,7 @@ void UnusedGlobalTypedef::PostWork() {
 bool UnusedGlobalTypedef::VisitTypedefNameDecl(
     const clang::TypedefNameDecl *TND) {
   if (TND->getDeclContext()->isFileContext() &&
-      DE.getSourceManager().isInMainFile(TND->getBeginLoc()))
+      AD.GetSourceManager().isInMainFile(TND->getBeginLoc()))
     GlobalTypedefs.push_back(TND);
   return true;
 }
@@ -112,8 +109,8 @@ bool UnusedGlobalTypedef::VisitTypedefNameDecl(
 /* Implementation of VariadicFunctionUsedVisitor */
 
 VariadicFunctionUsedVisitor::VariadicFunctionUsedVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool VariadicFunctionUsedVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -123,8 +120,8 @@ bool VariadicFunctionUsedVisitor::isFlagPresent(
 bool VariadicFunctionUsedVisitor::VisitFunctionDecl(
     const clang::FunctionDecl *FD) {
   if (FD->isVariadic()) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, FD->getBeginLoc(), AutocheckWarnings::variadicFunctionUsed)
+    return !AD.reportWarning(FD->getBeginLoc(),
+                             AutocheckWarnings::variadicFunctionUsed)
                 .limitReached();
   }
   return true;
@@ -133,8 +130,8 @@ bool VariadicFunctionUsedVisitor::VisitFunctionDecl(
 /* Implementation of FunctionRedeclParamsVisitor */
 
 FunctionRedeclParamsVisitor::FunctionRedeclParamsVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool FunctionRedeclParamsVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -154,9 +151,8 @@ bool FunctionRedeclParamsVisitor::VisitFunctionDecl(
         const llvm::StringRef &RedeclParamName = RedeclParams[i]->getName();
         if (!ParamName.empty() && !RedeclParamName.empty() &&
             (ParamName != RedeclParamName)) {
-          if (AutocheckDiagnostic::reportWarning(
-                  DE, It->getBeginLoc(),
-                  AutocheckWarnings::functionRedeclParams)
+          if (AD.reportWarning(It->getBeginLoc(),
+                               AutocheckWarnings::functionRedeclParams)
                   .limitReached())
             return false;
         }
@@ -169,9 +165,9 @@ bool FunctionRedeclParamsVisitor::VisitFunctionDecl(
 
 /* Implementation of AutoVarBracedInitVisitor */
 
-AutoVarBracedInitVisitor::AutoVarBracedInitVisitor(clang::DiagnosticsEngine &DE,
+AutoVarBracedInitVisitor::AutoVarBracedInitVisitor(AutocheckDiagnostic &AD,
                                                    clang::Sema &SemaRef)
-    : DE(DE), SemaRef(SemaRef) {}
+    : AD(AD), SemaRef(SemaRef) {}
 
 bool AutoVarBracedInitVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::autoVarBracedInit);
@@ -190,15 +186,14 @@ bool AutoVarBracedInitVisitor::VisitVarDecl(const clang::VarDecl *VD) {
         return true;
         // Direct list-initialization (e.g. int x {0}).
       } else if (IS == clang::VarDecl::InitializationStyle::ListInit) {
-        return !AutocheckDiagnostic::reportWarning(
-                    DE, VD->getBeginLoc(), AutocheckWarnings::autoVarBracedInit)
+        return !AD.reportWarning(VD->getBeginLoc(),
+                                 AutocheckWarnings::autoVarBracedInit)
                     .limitReached();
         // C-style initialization with assignment (e.g. int x = {0}).
       } else {
         if (SemaRef.isStdInitializerList(InitQualType, nullptr)) {
-          return !AutocheckDiagnostic::reportWarning(
-                      DE, VD->getBeginLoc(),
-                      AutocheckWarnings::autoVarBracedInit)
+          return !AD.reportWarning(VD->getBeginLoc(),
+                                   AutocheckWarnings::autoVarBracedInit)
                       .limitReached();
         }
       }
@@ -210,10 +205,10 @@ bool AutoVarBracedInitVisitor::VisitVarDecl(const clang::VarDecl *VD) {
 
 /* Implementation of VarBracedInitVisitor */
 
-VarBracedInitVisitor::VarBracedInitVisitor(clang::DiagnosticsEngine &DE,
+VarBracedInitVisitor::VarBracedInitVisitor(AutocheckDiagnostic &AD,
                                            clang::ASTContext &AC,
                                            clang::Sema &SemaRef)
-    : DE(DE), AC(AC), SemaRef(SemaRef) {}
+    : AD(AD), AC(AC), SemaRef(SemaRef) {}
 
 bool VarBracedInitVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::nonBracedInit);
@@ -264,8 +259,8 @@ bool VarBracedInitVisitor::VisitVarDecl(const clang::VarDecl *VD) {
           return true;
       }
       if (!AC.getLangOpts().OpenCL) {
-        return !AutocheckDiagnostic::reportWarning(
-                    DE, VD->getLocation(), AutocheckWarnings::nonBracedInit)
+        return !AD.reportWarning(VD->getLocation(),
+                                 AutocheckWarnings::nonBracedInit)
                     .limitReached();
       }
     }
@@ -277,9 +272,8 @@ bool VarBracedInitVisitor::VisitVarDecl(const clang::VarDecl *VD) {
 /* Implementation of CVQualifiersPlacedLeftVisitor */
 
 CVQualifiersPlacedLeftVisitor::CVQualifiersPlacedLeftVisitor(
-    clang::SourceManager &SM, clang::DiagnosticsEngine &DE,
-    clang::Sema &SemaRef)
-    : SM(SM), DE(DE), SemaRef(SemaRef) {}
+    AutocheckDiagnostic &AD, clang::Sema &SemaRef)
+    : AD(AD), SM(AD.GetSourceManager()), SemaRef(SemaRef) {}
 
 bool CVQualifiersPlacedLeftVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -302,8 +296,7 @@ bool CVQualifiersPlacedLeftVisitor::VisitVarDecl(const clang::VarDecl *VD) {
     return true;
 
   if (const clang::TypedefNameDecl *TDND = TDT->getDecl())
-    if (TDND->getBeginLoc().isValid() &&
-        AutocheckContext::Get().CheckSystemHeaders &&
+    if (TDND->getBeginLoc().isValid() && AD.GetContext().CheckSystemHeaders &&
         SM.isInSystemHeader(TDND->getBeginLoc()))
       return true;
 
@@ -320,8 +313,8 @@ bool CVQualifiersPlacedLeftVisitor::VisitVarDecl(const clang::VarDecl *VD) {
     unsigned TypeNamePos = VDData.find(VDTypeNameStripNamespace);
 
     if (ConstPos < TypeNamePos || VolatilePos < TypeNamePos) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, DeclLoc, AutocheckWarnings::cvQualifiersPlacedLeft)
+      return !AD.reportWarning(DeclLoc,
+                               AutocheckWarnings::cvQualifiersPlacedLeft)
                   .limitReached();
     }
   }
@@ -331,8 +324,8 @@ bool CVQualifiersPlacedLeftVisitor::VisitVarDecl(const clang::VarDecl *VD) {
 
 /* Implementation of AssignmentOperatorReturn */
 
-AssignmentOperatorReturn::AssignmentOperatorReturn(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+AssignmentOperatorReturn::AssignmentOperatorReturn(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool AssignmentOperatorReturn::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::assignmentOperatorReturnType);
@@ -410,9 +403,8 @@ bool AssignmentOperatorReturn::VisitCXXMethodDecl(
     return true;
 
   if (isWrongDeclarationReturnType(CMD) || isWrongReturnStmt(CMD)) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, CMD->getBeginLoc(),
-                AutocheckWarnings::assignmentOperatorReturnType)
+    return !AD.reportWarning(CMD->getBeginLoc(),
+                             AutocheckWarnings::assignmentOperatorReturnType)
                 .limitReached();
   }
 
@@ -431,8 +423,8 @@ bool AssignmentOperatorReturn::VisitCXXMethodDecl(
 // make sense in this context.
 
 ConstUnusedForImmutableData::ConstUnusedForImmutableData(
-    clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    AutocheckDiagnostic &AD, clang::ASTContext &AC)
+    : AD(AD), AC(AC) {}
 
 bool ConstUnusedForImmutableData::isFlagPresent(
     const AutocheckContext &Context) {
@@ -442,8 +434,7 @@ bool ConstUnusedForImmutableData::isFlagPresent(
 void ConstUnusedForImmutableData::PostWork() {
   // Any variable not removed by ConstUnusedForImmutableData is immutable.
   for (auto &i : ImmutableVarCandidates) {
-    if (AutocheckDiagnostic::reportWarning(
-            DE, i, AutocheckWarnings::constUnusedForImmutableData)
+    if (AD.reportWarning(i, AutocheckWarnings::constUnusedForImmutableData)
             .limitReached())
       return;
   }
@@ -706,8 +697,8 @@ bool ConstUnusedForImmutableData::VisitCallExpr(const clang::CallExpr *CE) {
 /* Implementation of NSDMIAndConsutructorInitUsed */
 
 NSDMIAndConsutructorInitUsed::NSDMIAndConsutructorInitUsed(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool NSDMIAndConsutructorInitUsed::isFlagPresent(
     const AutocheckContext &Context) {
@@ -727,12 +718,12 @@ bool NSDMIAndConsutructorInitUsed::VisitCXXRecordDecl(
       for (clang::CXXCtorInitializer *init : ctor->inits()) {
         if (init->isMemberInitializer()) {
           if (init->getMember()->getInClassInitializer()) {
-            bool stopVisitor = !AutocheckDiagnostic::reportWarning(
-                                    DE, init->getInit()->getBeginLoc(),
-                                    AutocheckWarnings::nsdmiAndCtorInitUsed)
-                                    .limitReached();
-            AutocheckDiagnostic::reportWarning(
-                DE, init->getMember()->getBeginLoc(),
+            bool stopVisitor =
+                !AD.reportWarning(init->getInit()->getBeginLoc(),
+                                  AutocheckWarnings::nsdmiAndCtorInitUsed)
+                     .limitReached();
+            AD.reportWarning(
+                init->getMember()->getBeginLoc(),
                 AutocheckWarnings::notePreviousMemberInitialization);
             return stopVisitor;
           }
@@ -746,8 +737,8 @@ bool NSDMIAndConsutructorInitUsed::VisitCXXRecordDecl(
 /* Implementation of RandomEngineDefaultInitialized */
 
 RandomEngineDefaultInitialized::RandomEngineDefaultInitialized(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool RandomEngineDefaultInitialized::isFlagPresent(
     const AutocheckContext &Context) {
@@ -763,9 +754,9 @@ bool RandomEngineDefaultInitialized::VisitCXXConstructExpr(
       noteLoc = Arg->getBeginLoc();
       // Default initialization.
       if (Arg->isDefaultArgument()) {
-        return !AutocheckDiagnostic::reportWarning(
-                    DE, CCE->getBeginLoc(),
-                    AutocheckWarnings::randomEngineDefaultInitialized)
+        return !AD.reportWarning(
+                      CCE->getBeginLoc(),
+                      AutocheckWarnings::randomEngineDefaultInitialized)
                     .limitReached();
       }
       if (const clang::CallExpr *CE =
@@ -778,7 +769,7 @@ bool RandomEngineDefaultInitialized::VisitCXXConstructExpr(
           // Allow engine initialization with random_device from <random>
           // header.
           if (Parent->getNameAsString() == randomDeviceName &&
-              DE.getSourceManager().isInSystemHeader(Parent->getLocation())) {
+              AD.GetSourceManager().isInSystemHeader(Parent->getLocation())) {
             return true;
           }
         }
@@ -802,14 +793,13 @@ bool RandomEngineDefaultInitialized::VisitCXXConstructExpr(
     }
     // No argument constructor call is not allowed because seed will be default
     // and unsecure.
-    bool stopVisitor = AutocheckDiagnostic::reportWarning(
-                           DE, CCE->getBeginLoc(),
-                           AutocheckWarnings::randomEngineDefaultInitialized)
-                           .limitReached();
+    bool stopVisitor =
+        AD.reportWarning(CCE->getBeginLoc(),
+                         AutocheckWarnings::randomEngineDefaultInitialized)
+            .limitReached();
     // Report note if there was at least one constructor argument.
     if (noteLoc.isValid())
-      AutocheckDiagnostic::reportWarning(DE, noteLoc,
-                                         AutocheckWarnings::noteUnsafeSeed);
+      AD.reportWarning(noteLoc, AutocheckWarnings::noteUnsafeSeed);
     if (stopVisitor)
       return false;
   }
@@ -827,8 +817,8 @@ bool RandomEngineDefaultInitialized::isAcceptableEngine(
 /* Implementation of BroadScopeIdentifierVisitor */
 
 BroadScopeIdentifierVisitor::BroadScopeIdentifierVisitor(
-    clang::DiagnosticsEngine &DE, clang::ASTContext &ASTCtx)
-    : DE(DE), ASTCtx(ASTCtx) {}
+    AutocheckDiagnostic &AD, clang::ASTContext &ASTCtx)
+    : AD(AD), ASTCtx(ASTCtx) {}
 
 bool BroadScopeIdentifierVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -877,9 +867,8 @@ bool BroadScopeIdentifierVisitor::UpdateStatesOnEndOfScope() {
       // lowered.
       if (State == VarState::ReferencedDeeper ||
           State == VarState::ReferencedDeeperAndResurfaced) {
-        AutocheckDiagnostic::reportWarning(
-            DE, It->first->getLocation(),
-            AutocheckWarnings::broadScopeIdentifier);
+        AD.reportWarning(It->first->getLocation(),
+                         AutocheckWarnings::broadScopeIdentifier);
       }
       It = PotentiallyBadVars.erase(It);
     }
@@ -955,8 +944,8 @@ void BroadScopeIdentifierVisitor::PostWork() {
   // all variables still present in a map are bad and could have been lowered in
   // a more shallow scope.
   for (auto v : PotentiallyBadVars) {
-    if (AutocheckDiagnostic::reportWarning(
-            DE, v.first->getLocation(), AutocheckWarnings::broadScopeIdentifier)
+    if (AD.reportWarning(v.first->getLocation(),
+                         AutocheckWarnings::broadScopeIdentifier)
             .limitReached())
       break;
   }
@@ -1013,9 +1002,9 @@ bool BroadScopeIdentifierVisitor::isNewScope(const clang::Stmt *S) {
 
 /* Implementation of MissingBracesOrEltsVisitor */
 
-MissingBracesOrEltsVisitor::MissingBracesOrEltsVisitor(
-    clang::DiagnosticsEngine &DE, clang::Sema &SemaRef)
-    : DE(DE), SM(DE.getSourceManager()), SemaRef(SemaRef) {}
+MissingBracesOrEltsVisitor::MissingBracesOrEltsVisitor(AutocheckDiagnostic &AD,
+                                                       clang::Sema &SemaRef)
+    : AD(AD), SM(AD.GetSourceManager()), SemaRef(SemaRef) {}
 
 bool MissingBracesOrEltsVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -1176,13 +1165,14 @@ bool MissingBracesOrEltsVisitor::reportMissingEltOrBraces(
                             : SemaRef.getLocForEndOfToken(BadILEEnd);
   auto HelpfulHintLoc = BadILETokenEnd.getLocWithOffset(2);
 
-  return AutocheckDiagnostic::reportWarning(
-             DE, ILI.MissingElt ? BadILETokenEnd : BadILEBegin,
-             AutocheckWarnings::missingBracesOrElements,
-             ILI.BadILE->getSourceRange(),
-             clang::FixItHint::CreateInsertion(BadILEBegin, "{"),
-             clang::FixItHint::CreateInsertion(BadILETokenEnd, "}"),
-             clang::FixItHint::CreateInsertion(HelpfulHintLoc, EltHint.str()))
+  return AD
+      .reportWarning(
+          ILI.MissingElt ? BadILETokenEnd : BadILEBegin,
+          AutocheckWarnings::missingBracesOrElements,
+          ILI.BadILE->getSourceRange(),
+          clang::FixItHint::CreateInsertion(BadILEBegin, "{"),
+          clang::FixItHint::CreateInsertion(BadILETokenEnd, "}"),
+          clang::FixItHint::CreateInsertion(HelpfulHintLoc, EltHint.str()))
       .limitReached();
 }
 
@@ -1249,10 +1239,10 @@ bool MissingBracesOrEltsVisitor::VisitVarDecl(const clang::VarDecl *VD) {
 
 /* Implementation of ConstantInitializer */
 
-ConstantInitializer::ConstantInitializer(clang::DiagnosticsEngine &DE,
+ConstantInitializer::ConstantInitializer(AutocheckDiagnostic &AD,
                                          clang::ASTContext &AC,
                                          clang::Sema &SemaRef)
-    : DE(DE), AC(AC), SemaRef(SemaRef) {}
+    : AD(AD), AC(AC), SemaRef(SemaRef) {}
 
 bool ConstantInitializer::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::constantInitializer);
@@ -1270,18 +1260,17 @@ bool ConstantInitializer::VisitVarDecl(const clang::VarDecl *VD) {
     const clang::Expr *Init = VD->getInit();
     // Check if VD is uninitialized.
     if (!Init && !hasRedeclaration(VD)) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, SemaRef.getLocForEndOfToken(VD->getEndLoc()),
-                  AutocheckWarnings::constantInitializer, VD->getSourceRange())
+      return !AD.reportWarning(SemaRef.getLocForEndOfToken(VD->getEndLoc()),
+                               AutocheckWarnings::constantInitializer,
+                               VD->getSourceRange())
                   .limitReached();
     }
     // Check if VD is initialized, but not constant initialized.
     if (Init && !Init->isValueDependent() &&
         !Init->isConstantInitializer(AC, false)) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, Init->getBeginLoc(),
-                  AutocheckWarnings::constantInitializer,
-                  Init->getSourceRange())
+      return !AD.reportWarning(Init->getBeginLoc(),
+                               AutocheckWarnings::constantInitializer,
+                               Init->getSourceRange())
                   .limitReached();
     }
   }
@@ -1298,8 +1287,8 @@ bool ConstantInitializer::hasRedeclaration(const clang::VarDecl *VD) const {
 /* Implementation of MoreThanTwoLevelsOfPointerIndirection */
 
 MoreThanTwoLevelsOfPointerIndirection::MoreThanTwoLevelsOfPointerIndirection(
-    clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    AutocheckDiagnostic &AD, clang::ASTContext &AC)
+    : AD(AD), AC(AC) {}
 
 bool MoreThanTwoLevelsOfPointerIndirection::isFlagPresent(
     const AutocheckContext &Context) {
@@ -1371,8 +1360,7 @@ bool MoreThanTwoLevelsOfPointerIndirection::checkType(
   if (!hasMoreThanTwoPointerIndirections(QTIndirection))
     return true;
 
-  return !AutocheckDiagnostic::reportWarning(
-              DE, SL, AutocheckWarnings::pointerIndirectionLevels)
+  return !AD.reportWarning(SL, AutocheckWarnings::pointerIndirectionLevels)
               .limitReached();
 }
 
@@ -1526,7 +1514,7 @@ static bool dependentNoexceptFunction(const clang::FunctionDecl *FD) {
   return EST == clang::EST_DependentNoexcept;
 }
 
-NoExceptionVisitor::NoExceptionVisitor(clang::DiagnosticsEngine &DE) : DE(DE) {}
+NoExceptionVisitor::NoExceptionVisitor(AutocheckDiagnostic &AD) : AD(AD) {}
 
 bool NoExceptionVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::throwInNoexceptFunc);
@@ -1540,12 +1528,13 @@ bool NoExceptionVisitor::VisitCallExpr(const clang::CallExpr *CE) {
         (noexceptFunction(CallerFD) || dependentNoexceptFunction(CallerFD)) &&
         !noexceptFunction(FD)) {
       bool stopVisitor =
-          AutocheckDiagnostic::reportWarning(
-              DE, CE->getBeginLoc(), AutocheckWarnings::throwInNoexceptFunc)
+          AD.reportWarning(CE->getBeginLoc(),
+                           AutocheckWarnings::throwInNoexceptFunc)
               .limitReached();
-      AutocheckDiagnostic::reportWarning(
-          DE, CE->getBeginLoc(), AutocheckWarnings::noteThrowInNoexceptFunc, 1);
-      DE.Report(CallerFD->getBeginLoc(), clang::diag::note_throw_in_function);
+      AD.reportWarning(CE->getBeginLoc(),
+                       AutocheckWarnings::noteThrowInNoexceptFunc, 1);
+      AD.GetDiagnostics().Report(CallerFD->getBeginLoc(),
+                                 clang::diag::note_throw_in_function);
 
       if (stopVisitor)
         return false;
@@ -1561,13 +1550,14 @@ bool NoExceptionVisitor::VisitCXXThrowExpr(const clang::CXXThrowExpr *CTE) {
       if (typeNotCaught(CTE->getSubExpr()->getType().getTypePtr(),
                         CXXTryStmtStack)) {
         bool stopVisitor =
-            AutocheckDiagnostic::reportWarning(
-                DE, CTE->getBeginLoc(), AutocheckWarnings::throwInNoexceptFunc)
+            AD.reportWarning(CTE->getBeginLoc(),
+                             AutocheckWarnings::throwInNoexceptFunc)
                 .limitReached();
-        AutocheckDiagnostic::reportWarning(
-            DE, CTE->getBeginLoc(), AutocheckWarnings::noteThrowInNoexceptFunc,
-            0, CallerFD);
-        DE.Report(CallerFD->getBeginLoc(), clang::diag::note_throw_in_function);
+        AD.reportWarning(CTE->getBeginLoc(),
+                         AutocheckWarnings::noteThrowInNoexceptFunc, 0,
+                         CallerFD);
+        AD.GetDiagnostics().Report(CallerFD->getBeginLoc(),
+                                   clang::diag::note_throw_in_function);
         if (stopVisitor)
           return false;
       }
@@ -1608,9 +1598,8 @@ bool NoExceptionVisitor::PostTraverseStmt(clang::Stmt *S) {
 
 /* Implementation of ExitedWithExceptionVisitor */
 
-ExitedWithExceptionVisitor::ExitedWithExceptionVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+ExitedWithExceptionVisitor::ExitedWithExceptionVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool ExitedWithExceptionVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -1689,9 +1678,9 @@ bool ExitedWithExceptionVisitor::VisitCXXThrowExpr(
   if (InFunction) {
     if (typeNotCaught(CTE->getSubExpr()->getType().getTypePtr(),
                       CXXTryStmtStack)) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, CTE->getBeginLoc(),
-                  AutocheckWarnings::ctorsDtorsDeallocMoveSwapNoexcept)
+      return !AD.reportWarning(
+                    CTE->getBeginLoc(),
+                    AutocheckWarnings::ctorsDtorsDeallocMoveSwapNoexcept)
                   .limitReached();
     }
   }
@@ -1700,9 +1689,8 @@ bool ExitedWithExceptionVisitor::VisitCXXThrowExpr(
 
 /* Implementation of MismatchedNewDeleteVisitor */
 
-MismatchedNewDeleteVisitor::MismatchedNewDeleteVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+MismatchedNewDeleteVisitor::MismatchedNewDeleteVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool MismatchedNewDeleteVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -1885,23 +1873,23 @@ MismatchedNewDeleteVisitor::getNewExpr(const clang::Stmt *Init,
 
 bool MismatchedNewDeleteVisitor::reportWarning(const clang::CXXNewExpr *Prev,
                                                const clang::Expr *Curr) {
-  bool LimitReached =
-      AutocheckDiagnostic::reportWarning(DE, Curr->getBeginLoc(),
-                                         AutocheckWarnings::mismatchedNewDelete)
-          .limitReached();
-  AutocheckDiagnostic::reportWarning(
-      DE, Curr->getBeginLoc(), AutocheckWarnings::noteMismatchedNewDelete,
-      llvm::isa<clang::CXXNewExpr>(Curr), !Prev->isArray());
-  DE.Report(Prev->getBeginLoc(), clang::diag::note_allocated_here)
+  bool LimitReached = AD.reportWarning(Curr->getBeginLoc(),
+                                       AutocheckWarnings::mismatchedNewDelete)
+                          .limitReached();
+  AD.reportWarning(Curr->getBeginLoc(),
+                   AutocheckWarnings::noteMismatchedNewDelete,
+                   llvm::isa<clang::CXXNewExpr>(Curr), !Prev->isArray());
+  AD.GetDiagnostics().Report(Prev->getBeginLoc(),
+                             clang::diag::note_allocated_here)
       << !Prev->isArray();
   return !LimitReached;
 }
 
 /* Implementation of CStyleStringUsed */
 
-CStyleStringUsed::CStyleStringUsed(clang::DiagnosticsEngine &DE,
+CStyleStringUsed::CStyleStringUsed(AutocheckDiagnostic &AD,
                                    clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    : AD(AD), AC(AC) {}
 
 bool CStyleStringUsed::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::cStyleStringUsed);
@@ -1917,9 +1905,8 @@ bool CStyleStringUsed::VisitDeclRefExpr(const clang::DeclRefExpr *DRE) {
       if (BOP->isAssignmentOp()) {
         if (llvm::dyn_cast_if_present<clang::StringLiteral>(
                 BOP->getRHS()->IgnoreCasts())) {
-          return !AutocheckDiagnostic::reportWarning(
-                      DE, DRE->getBeginLoc(),
-                      AutocheckWarnings::cStyleStringUsed)
+          return !AD.reportWarning(DRE->getBeginLoc(),
+                                   AutocheckWarnings::cStyleStringUsed)
                       .limitReached();
         }
       }
@@ -1948,8 +1935,8 @@ bool CStyleStringUsed::VisitVarDecl(const clang::VarDecl *VD) {
       // Variable initialized using c-style string.
       if (llvm::dyn_cast_if_present<clang::StringLiteral>(
               VD->getInit()->IgnoreCasts())) {
-        return !AutocheckDiagnostic::reportWarning(
-                    DE, VD->getBeginLoc(), AutocheckWarnings::cStyleStringUsed)
+        return !AD.reportWarning(VD->getBeginLoc(),
+                                 AutocheckWarnings::cStyleStringUsed)
                     .limitReached();
       } // Variable initialized using list initialization.
       else if (const clang::InitListExpr *ILE =
@@ -1965,16 +1952,14 @@ bool CStyleStringUsed::VisitVarDecl(const clang::VarDecl *VD) {
                 llvm::dyn_cast_if_present<clang::CharacterLiteral>(
                     lastElement)) {
           if (CL->getValue() == '\0') {
-            return !AutocheckDiagnostic::reportWarning(
-                        DE, VD->getBeginLoc(),
-                        AutocheckWarnings::cStyleStringUsed)
+            return !AD.reportWarning(VD->getBeginLoc(),
+                                     AutocheckWarnings::cStyleStringUsed)
                         .limitReached();
           }
         } // Checks for strings like char* str{"hi"}.
         else if (llvm::dyn_cast_if_present<clang::StringLiteral>(lastElement)) {
-          return !AutocheckDiagnostic::reportWarning(
-                      DE, VD->getBeginLoc(),
-                      AutocheckWarnings::cStyleStringUsed)
+          return !AD.reportWarning(VD->getBeginLoc(),
+                                   AutocheckWarnings::cStyleStringUsed)
                       .limitReached();
         }
       }
@@ -1995,8 +1980,8 @@ bool CStyleStringUsed::VisitCallExpr(const clang::CallExpr *CE) {
     if (SM.isInSystemHeader(FD->getBeginLoc())) {
       // Prohibit usage of string class's c_str method.
       if (FD->getNameInfo().getAsString() == "c_str") {
-        return !AutocheckDiagnostic::reportWarning(
-                    DE, CE->getBeginLoc(), AutocheckWarnings::cStyleStringUsed)
+        return !AD.reportWarning(CE->getBeginLoc(),
+                                 AutocheckWarnings::cStyleStringUsed)
                     .limitReached();
       }
       // Allow usage of memory manipulation functions since they are working
@@ -2016,9 +2001,8 @@ bool CStyleStringUsed::VisitCallExpr(const clang::CallExpr *CE) {
           auto F = PotentiallyBadVars.find(DRE->getDecl());
           if (F != PotentiallyBadVars.end()) {
             PotentiallyBadVars.erase(DRE->getDecl());
-            return !AutocheckDiagnostic::reportWarning(
-                        DE, DRE->getDecl()->getBeginLoc(),
-                        AutocheckWarnings::cStyleStringUsed)
+            return !AD.reportWarning(DRE->getDecl()->getBeginLoc(),
+                                     AutocheckWarnings::cStyleStringUsed)
                         .limitReached();
           }
         }
@@ -2032,8 +2016,8 @@ bool CStyleStringUsed::VisitCallExpr(const clang::CallExpr *CE) {
 /* Implementation of ExternArrayImplicitSizeVisitor */
 
 ExternArrayImplicitSizeVisitor::ExternArrayImplicitSizeVisitor(
-    clang::DiagnosticsEngine &DE, clang::ASTContext &AC)
-    : DE(DE), AC(AC) {}
+    AutocheckDiagnostic &AD, clang::ASTContext &AC)
+    : AD(AD), AC(AC) {}
 
 bool ExternArrayImplicitSizeVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -2050,9 +2034,8 @@ bool ExternArrayImplicitSizeVisitor::VisitVarDecl(const clang::VarDecl *VD) {
               VD->getType())) {
     // Case 1: The array size is unknown.
     // Example: int a[];
-    return !AutocheckDiagnostic::reportWarning(
-                DE, VD->getLocation(),
-                AutocheckWarnings::externArrayImplicitSize)
+    return !AD.reportWarning(VD->getLocation(),
+                             AutocheckWarnings::externArrayImplicitSize)
                 .limitReached();
   } else if (const clang::ConstantArrayType *CAT =
                  llvm::dyn_cast_if_present<clang::ConstantArrayType>(
@@ -2064,9 +2047,8 @@ bool ExternArrayImplicitSizeVisitor::VisitVarDecl(const clang::VarDecl *VD) {
              ->getTypeLoc()
              .getAs<clang::IncompleteArrayTypeLoc>()
              .isNull()) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, VD->getLocation(),
-                  AutocheckWarnings::externArrayImplicitSize)
+      return !AD.reportWarning(VD->getLocation(),
+                               AutocheckWarnings::externArrayImplicitSize)
                   .limitReached();
     }
   }
@@ -2075,38 +2057,35 @@ bool ExternArrayImplicitSizeVisitor::VisitVarDecl(const clang::VarDecl *VD) {
 
 /* Implementation of TypedefUsedVisitor */
 
-TypedefUsedVisitor::TypedefUsedVisitor(clang::DiagnosticsEngine &DE) : DE(DE) {}
+TypedefUsedVisitor::TypedefUsedVisitor(AutocheckDiagnostic &AD) : AD(AD) {}
 
 bool TypedefUsedVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::typedefUsed);
 }
 
 bool TypedefUsedVisitor::VisitTypedefDecl(const clang::TypedefDecl *TD) {
-  return !AutocheckDiagnostic::reportWarning(DE, TD->getBeginLoc(),
-                                             AutocheckWarnings::typedefUsed)
+  return !AD.reportWarning(TD->getBeginLoc(), AutocheckWarnings::typedefUsed)
               .limitReached();
 }
 
 /* Implementation of FriendDeclUsedVisitor */
 
-FriendDeclUsedVisitor::FriendDeclUsedVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+FriendDeclUsedVisitor::FriendDeclUsedVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool FriendDeclUsedVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::friendUsed);
 }
 
 bool FriendDeclUsedVisitor::VisitFriendDecl(const clang::FriendDecl *FD) {
-  return !AutocheckDiagnostic::reportWarning(DE, FD->getLocation(),
-                                             AutocheckWarnings::friendUsed)
+  return !AD.reportWarning(FD->getLocation(), AutocheckWarnings::friendUsed)
               .limitReached();
 }
 
 /* Implementation of EnumTypeNotDefinedVisitor */
 
-EnumTypeNotDefinedVisitor::EnumTypeNotDefinedVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+EnumTypeNotDefinedVisitor::EnumTypeNotDefinedVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool EnumTypeNotDefinedVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::enumTypeNotDefined);
@@ -2114,8 +2093,8 @@ bool EnumTypeNotDefinedVisitor::isFlagPresent(const AutocheckContext &Context) {
 
 bool EnumTypeNotDefinedVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
   if (!ED->getIntegerTypeSourceInfo()) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, ED->getLocation(), AutocheckWarnings::enumTypeNotDefined)
+    return !AD.reportWarning(ED->getLocation(),
+                             AutocheckWarnings::enumTypeNotDefined)
                 .limitReached();
   }
   return true;
@@ -2123,9 +2102,8 @@ bool EnumTypeNotDefinedVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
 
 /* Implementation of BlockScopeFunctionVisitor */
 
-BlockScopeFunctionVisitor::BlockScopeFunctionVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+BlockScopeFunctionVisitor::BlockScopeFunctionVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool BlockScopeFunctionVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::functionAtBlockScope);
@@ -2134,8 +2112,8 @@ bool BlockScopeFunctionVisitor::isFlagPresent(const AutocheckContext &Context) {
 bool BlockScopeFunctionVisitor::VisitFunctionDecl(
     const clang::FunctionDecl *FD) {
   if (FD->getLexicalDeclContext()->isFunctionOrMethod()) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, FD->getLocation(), AutocheckWarnings::functionAtBlockScope)
+    return !AD.reportWarning(FD->getLocation(),
+                             AutocheckWarnings::functionAtBlockScope)
                 .limitReached();
   }
   return true;
@@ -2144,8 +2122,8 @@ bool BlockScopeFunctionVisitor::VisitFunctionDecl(
 /* Implementation of StaticFunctionRedeclarationVisitor */
 
 StaticFunctionRedeclarationVisitor::StaticFunctionRedeclarationVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool StaticFunctionRedeclarationVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -2172,9 +2150,8 @@ bool StaticFunctionRedeclarationVisitor::VisitFunctionDecl(
     if (It->getLinkageAndVisibility().getLinkage() ==
             clang::Linkage::InternalLinkage &&
         It->getStorageClass() == clang::SC_Static) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, FD->getLocation(),
-                  AutocheckWarnings::staticFunctionRedeclaration)
+      return !AD.reportWarning(FD->getLocation(),
+                               AutocheckWarnings::staticFunctionRedeclaration)
                   .limitReached();
     }
 
@@ -2188,9 +2165,8 @@ bool StaticFunctionRedeclarationVisitor::VisitFunctionDecl(
 
 /* Implementation of EnumDeclaredScopedVisitor */
 
-EnumDeclaredScopedVisitor::EnumDeclaredScopedVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+EnumDeclaredScopedVisitor::EnumDeclaredScopedVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool EnumDeclaredScopedVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::enumNotScopedEnumClass);
@@ -2198,9 +2174,8 @@ bool EnumDeclaredScopedVisitor::isFlagPresent(const AutocheckContext &Context) {
 
 bool EnumDeclaredScopedVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
   if (!ED->isScoped()) {
-    return !AutocheckDiagnostic::reportWarning(
-                DE, ED->getLocation(),
-                AutocheckWarnings::enumNotScopedEnumClass)
+    return !AD.reportWarning(ED->getLocation(),
+                             AutocheckWarnings::enumNotScopedEnumClass)
                 .limitReached();
   }
   return true;
@@ -2208,8 +2183,8 @@ bool EnumDeclaredScopedVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
 
 /* Implementation of EnumConstantInitVisitor */
 
-EnumConstantInitVisitor::EnumConstantInitVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+EnumConstantInitVisitor::EnumConstantInitVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool EnumConstantInitVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::enumeratorInitialization);
@@ -2236,9 +2211,8 @@ bool EnumConstantInitVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
     bool ShouldAllBeInitialized = isInitialized(*Current);
     for (; Current != ED->enumerator_end(); ++Current) {
       if (isInitialized(*Current) != ShouldAllBeInitialized) {
-        return !AutocheckDiagnostic::reportWarning(
-                    DE, ED->getLocation(),
-                    AutocheckWarnings::enumeratorInitialization)
+        return !AD.reportWarning(ED->getLocation(),
+                                 AutocheckWarnings::enumeratorInitialization)
                     .limitReached();
       }
     }
@@ -2248,9 +2222,8 @@ bool EnumConstantInitVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
                     [](const clang::EnumConstantDecl *ECD) {
                       return ECD->getInitExpr() != nullptr;
                     })) {
-      return !AutocheckDiagnostic::reportWarning(
-                  DE, ED->getLocation(),
-                  AutocheckWarnings::enumeratorInitialization)
+      return !AD.reportWarning(ED->getLocation(),
+                               AutocheckWarnings::enumeratorInitialization)
                   .limitReached();
     }
   }
@@ -2260,7 +2233,7 @@ bool EnumConstantInitVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
 
 /* Implementation of MainReusedVisitor */
 
-MainReusedVisitor::MainReusedVisitor(clang::DiagnosticsEngine &DE) : DE(DE) {}
+MainReusedVisitor::MainReusedVisitor(AutocheckDiagnostic &AD) : AD(AD) {}
 
 bool MainReusedVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::identifierMainReused);
@@ -2268,9 +2241,8 @@ bool MainReusedVisitor::isFlagPresent(const AutocheckContext &Context) {
 
 bool MainReusedVisitor::VisitFunctionDecl(const clang::FunctionDecl *FD) {
   if (FD->getIdentifier() && (FD->getName() == "main") && !FD->isMain())
-    return !AutocheckDiagnostic::reportWarning(
-                DE, FD->getNameInfo().getLoc(),
-                AutocheckWarnings::identifierMainReused)
+    return !AD.reportWarning(FD->getNameInfo().getLoc(),
+                             AutocheckWarnings::identifierMainReused)
                 .limitReached();
 
   return true;
@@ -2279,8 +2251,8 @@ bool MainReusedVisitor::VisitFunctionDecl(const clang::FunctionDecl *FD) {
 /* Implementation of UnnamedNamespaceInHeaderVisitor */
 
 UnnamedNamespaceInHeaderVisitor::UnnamedNamespaceInHeaderVisitor(
-    clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+    AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool UnnamedNamespaceInHeaderVisitor::isFlagPresent(
     const AutocheckContext &Context) {
@@ -2290,10 +2262,9 @@ bool UnnamedNamespaceInHeaderVisitor::isFlagPresent(
 bool UnnamedNamespaceInHeaderVisitor::VisitNamespaceDecl(
     const clang::NamespaceDecl *ND) {
   if (ND->isAnonymousNamespace() &&
-      !DE.getSourceManager().isInMainFile(ND->getBeginLoc()))
-    return !AutocheckDiagnostic::reportWarning(
-                DE, ND->getBeginLoc(),
-                AutocheckWarnings::unnamedNamespaceInHeader)
+      !AD.GetSourceManager().isInMainFile(ND->getBeginLoc()))
+    return !AD.reportWarning(ND->getBeginLoc(),
+                             AutocheckWarnings::unnamedNamespaceInHeader)
                 .limitReached();
 
   return true;
@@ -2301,8 +2272,8 @@ bool UnnamedNamespaceInHeaderVisitor::VisitNamespaceDecl(
 
 /* Implementation of UsingDirectiveVisitor */
 
-UsingDirectiveVisitor::UsingDirectiveVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+UsingDirectiveVisitor::UsingDirectiveVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool UsingDirectiveVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::usingDirectiveUsed);
@@ -2310,15 +2281,15 @@ bool UsingDirectiveVisitor::isFlagPresent(const AutocheckContext &Context) {
 
 bool UsingDirectiveVisitor::VisitUsingDirectiveDecl(
     const clang::UsingDirectiveDecl *UDD) {
-  return !AutocheckDiagnostic::reportWarning(
-              DE, UDD->getLocation(), AutocheckWarnings::usingDirectiveUsed)
+  return !AD.reportWarning(UDD->getLocation(),
+                           AutocheckWarnings::usingDirectiveUsed)
               .limitReached();
 }
 
 /* Implementation of GlobalNamespaceVisitor */
 
-GlobalNamespaceVisitor::GlobalNamespaceVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+GlobalNamespaceVisitor::GlobalNamespaceVisitor(AutocheckDiagnostic &AD)
+    : AD(AD) {}
 
 bool GlobalNamespaceVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::globalNamespaceNodes);
@@ -2358,8 +2329,8 @@ bool GlobalNamespaceVisitor::VisitTranslationUnitDecl(
     }
     if (It->getBeginLoc().isInvalid())
       continue;
-    if (AutocheckDiagnostic::reportWarning(
-            DE, It->getBeginLoc(), AutocheckWarnings::globalNamespaceNodes)
+    if (AD.reportWarning(It->getBeginLoc(),
+                         AutocheckWarnings::globalNamespaceNodes)
             .limitReached()) {
       return false;
     }
@@ -2384,8 +2355,7 @@ const std::map<std::string, std::string>
 
 /* Implementation of BitFieldTypeVisitor */
 
-BitFieldTypeVisitor::BitFieldTypeVisitor(clang::DiagnosticsEngine &DE)
-    : DE(DE) {}
+BitFieldTypeVisitor::BitFieldTypeVisitor(AutocheckDiagnostic &AD) : AD(AD) {}
 
 bool BitFieldTypeVisitor::isFlagPresent(const AutocheckContext &Context) {
   return Context.isEnabled(AutocheckWarnings::bitFieldUnsignedIntegral);
@@ -2415,9 +2385,8 @@ static bool isAllowedBitfieldType(const clang::QualType &Type) {
 
 bool BitFieldTypeVisitor::VisitFieldDecl(const clang::FieldDecl *FD) {
   if (FD->isBitField() && !isAllowedBitfieldType(FD->getType()))
-    return !AutocheckDiagnostic::reportWarning(
-                DE, FD->getBeginLoc(),
-                AutocheckWarnings::bitFieldUnsignedIntegral)
+    return !AD.reportWarning(FD->getBeginLoc(),
+                             AutocheckWarnings::bitFieldUnsignedIntegral)
                 .limitReached();
 
   return true;
@@ -2425,87 +2394,87 @@ bool BitFieldTypeVisitor::VisitFieldDecl(const clang::FieldDecl *FD) {
 
 /* DeclarationsVisitor */
 
-DeclarationsVisitor::DeclarationsVisitor(clang::DiagnosticsEngine &DE,
+DeclarationsVisitor::DeclarationsVisitor(AutocheckDiagnostic &AD,
                                          clang::ASTContext &AC,
                                          clang::Sema &SemaRef)
-    : DE(DE) {
-  const AutocheckContext &Context = AutocheckContext::Get();
+    : AD(AD) {
+  const AutocheckContext &Context = AD.GetContext();
   if (ASMDeclarationUsedVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<ASMDeclarationUsedVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<ASMDeclarationUsedVisitor>(AD));
   if (VariadicFunctionUsedVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<VariadicFunctionUsedVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<VariadicFunctionUsedVisitor>(AD));
   if (FunctionRedeclParamsVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<FunctionRedeclParamsVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<FunctionRedeclParamsVisitor>(AD));
   if (AutoVarBracedInitVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<AutoVarBracedInitVisitor>(DE, SemaRef));
+        std::make_unique<AutoVarBracedInitVisitor>(AD, SemaRef));
   if (VarBracedInitVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<VarBracedInitVisitor>(DE, AC, SemaRef));
+        std::make_unique<VarBracedInitVisitor>(AD, AC, SemaRef));
   if (UnusedGlobalTypedef::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<UnusedGlobalTypedef>(DE));
+    AllVisitors.push_front(std::make_unique<UnusedGlobalTypedef>(AD));
   if (CVQualifiersPlacedLeftVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<CVQualifiersPlacedLeftVisitor>(
-        DE.getSourceManager(), DE, SemaRef));
+    AllVisitors.push_front(
+        std::make_unique<CVQualifiersPlacedLeftVisitor>(AD, SemaRef));
   if (AssignmentOperatorReturn::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<AssignmentOperatorReturn>(DE));
+    AllVisitors.push_front(std::make_unique<AssignmentOperatorReturn>(AD));
   if (ConstUnusedForImmutableData::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ConstUnusedForImmutableData>(DE, AC));
+        std::make_unique<ConstUnusedForImmutableData>(AD, AC));
   if (NSDMIAndConsutructorInitUsed::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<NSDMIAndConsutructorInitUsed>(DE));
+    AllVisitors.push_front(std::make_unique<NSDMIAndConsutructorInitUsed>(AD));
   if (BroadScopeIdentifierVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<BroadScopeIdentifierVisitor>(DE, AC));
+        std::make_unique<BroadScopeIdentifierVisitor>(AD, AC));
   if (MissingBracesOrEltsVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<MissingBracesOrEltsVisitor>(DE, SemaRef));
+        std::make_unique<MissingBracesOrEltsVisitor>(AD, SemaRef));
   if (ConstantInitializer::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ConstantInitializer>(DE, AC, SemaRef));
+        std::make_unique<ConstantInitializer>(AD, AC, SemaRef));
   if (RandomEngineDefaultInitialized::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<RandomEngineDefaultInitialized>(DE));
+        std::make_unique<RandomEngineDefaultInitialized>(AD));
   if (MoreThanTwoLevelsOfPointerIndirection::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<MoreThanTwoLevelsOfPointerIndirection>(DE, AC));
+        std::make_unique<MoreThanTwoLevelsOfPointerIndirection>(AD, AC));
   if (NoExceptionVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<NoExceptionVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<NoExceptionVisitor>(AD));
   if (ExitedWithExceptionVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<ExitedWithExceptionVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<ExitedWithExceptionVisitor>(AD));
   if (MismatchedNewDeleteVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<MismatchedNewDeleteVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<MismatchedNewDeleteVisitor>(AD));
   if (CStyleStringUsed::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<CStyleStringUsed>(DE, AC));
+    AllVisitors.push_front(std::make_unique<CStyleStringUsed>(AD, AC));
   if (ExternArrayImplicitSizeVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<ExternArrayImplicitSizeVisitor>(DE, AC));
+        std::make_unique<ExternArrayImplicitSizeVisitor>(AD, AC));
   if (TypedefUsedVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<TypedefUsedVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<TypedefUsedVisitor>(AD));
   if (FriendDeclUsedVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<FriendDeclUsedVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<FriendDeclUsedVisitor>(AD));
   if (EnumTypeNotDefinedVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<EnumTypeNotDefinedVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<EnumTypeNotDefinedVisitor>(AD));
   if (BlockScopeFunctionVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<BlockScopeFunctionVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<BlockScopeFunctionVisitor>(AD));
   if (StaticFunctionRedeclarationVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<StaticFunctionRedeclarationVisitor>(DE));
+        std::make_unique<StaticFunctionRedeclarationVisitor>(AD));
   if (EnumDeclaredScopedVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<EnumDeclaredScopedVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<EnumDeclaredScopedVisitor>(AD));
   if (EnumConstantInitVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<EnumConstantInitVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<EnumConstantInitVisitor>(AD));
   if (MainReusedVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<MainReusedVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<MainReusedVisitor>(AD));
   if (UnnamedNamespaceInHeaderVisitor::isFlagPresent(Context))
     AllVisitors.push_front(
-        std::make_unique<UnnamedNamespaceInHeaderVisitor>(DE));
+        std::make_unique<UnnamedNamespaceInHeaderVisitor>(AD));
   if (UsingDirectiveVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<UsingDirectiveVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<UsingDirectiveVisitor>(AD));
   if (GlobalNamespaceVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<GlobalNamespaceVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<GlobalNamespaceVisitor>(AD));
   if (BitFieldTypeVisitor::isFlagPresent(Context))
-    AllVisitors.push_front(std::make_unique<BitFieldTypeVisitor>(DE));
+    AllVisitors.push_front(std::make_unique<BitFieldTypeVisitor>(AD));
 }
 
 void DeclarationsVisitor::run(clang::TranslationUnitDecl *TUD) {
@@ -2522,7 +2491,7 @@ bool DeclarationsVisitor::TraverseDecl(clang::Decl *D) {
 
   clang::SourceLocation Loc = D->getBeginLoc();
 
-  if (Loc.isInvalid() || appropriateHeaderLocation(DE, Loc)) {
+  if (Loc.isInvalid() || appropriateHeaderLocation(AD, Loc)) {
     AllVisitors.remove_if(
         [D](std::unique_ptr<DeclarationsVisitorInterface> &V) {
           return !V->PreTraverseDecl(D);

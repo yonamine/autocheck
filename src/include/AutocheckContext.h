@@ -30,13 +30,6 @@ namespace autocheck {
 /// AutocheckContext::Get().
 class AutocheckContext {
 public:
-  static AutocheckContext &Get() {
-    static AutocheckContext instance;
-    return instance;
-  }
-
-  AutocheckContext(const AutocheckContext &Context) = delete;
-
   bool enableWarning(const std::string &Warning);
   bool isEnabled(AutocheckWarnings Warning) const;
   const std::unordered_set<AutocheckWarnings> &getEnabledWarnings() const;
@@ -61,9 +54,6 @@ public:
   llvm::StringRef OutputPath;
   // Should output all diagnostics or just the summary.
   bool FullOutput = true;
-
-private:
-  AutocheckContext() = default;
 
 private:
   /// Mapping between command line flags and warning types.

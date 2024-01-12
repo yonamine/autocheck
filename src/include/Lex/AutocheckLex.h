@@ -46,7 +46,7 @@
 #ifndef LEX_AUTOCHECK_LEX_H
 #define LEX_AUTOCHECK_LEX_H
 
-#include "AutocheckContext.h"
+#include "Diagnostics/AutocheckDiagnostic.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Lex/Token.h"
@@ -56,12 +56,13 @@ namespace autocheck {
 namespace lex {
 
 /// Check token for AUTOSAR rule violations.
-void CheckToken(const AutocheckContext &Context, clang::CompilerInstance &CI,
+void CheckToken(AutocheckDiagnostic &AD, clang::CompilerInstance &CI,
                 const clang::Token &Tok);
 
 /// Check file associated with the given FileID for AUTOSAR rule violations that
 /// must be checked before any file preprocessing is done.
-void RunRawLexer(const clang::CompilerInstance &CI, clang::FileID FID);
+void RunRawLexer(AutocheckDiagnostic &AD, const clang::CompilerInstance &CI,
+                 clang::FileID FID);
 
 } // namespace lex
 

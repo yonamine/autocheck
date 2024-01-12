@@ -24,9 +24,12 @@
 #include "AST/StatementsVisitor.h"
 #include "AST/TemplatesVisitor.h"
 #include "AST/TypesVisitor.h"
+#include "AutocheckContext.h"
 #include "Diagnostics/AutocheckDiagnosticConsumer.h"
 #include "Export/DiagExporter.h"
 #include "Lex/AutocheckLex.h"
+#include "Lex/AutocheckPPCallbacks.h"
+#include "StaticAnalyzer/AnalysisDiagConsumer.h"
 #include "StaticAnalyzer/DivZeroChecker.h"
 #include "StaticAnalyzer/RecursionChecker.h"
 #include "StaticAnalyzer/UnreachableCodeChecker.h"
@@ -36,39 +39,41 @@
 #include "clang/StaticAnalyzer/Frontend/AnalysisConsumer.h"
 #include "clang/StaticAnalyzer/Frontend/CheckerRegistry.h"
 #include "llvm/ADT/SmallVector.h"
-#include "llvm/Support/raw_ostream.h"
 
 namespace autocheck {
 
-AutocheckAction::AutocheckAction() : Context(AutocheckContext::Get()){};
+AutocheckAction::AutocheckAction(const AutocheckContext &Context)
+    : Context(Context){};
 
 bool AutocheckAction::usesPreprocessorOnly() const { return false; }
 
 bool AutocheckAction::BeginInvocation(clang::CompilerInstance &CI) {
+  AD = std::make_unique<AutocheckDiagnostic>(Context, CI.getDiagnostics());
   AutocheckDiagnosticConsumer *DiagConsumer =
-      new AutocheckDiagnosticConsumer(CI.getDiagnostics());
+      new AutocheckDiagnosticConsumer(*AD);
   CI.getDiagnostics().setClient(DiagConsumer, /*ShouldOwnClient=*/true);
+
   return true;
 }
 
-static void runVisitors(clang::ASTContext &ASTCtx,
+static void runVisitors(AutocheckDiagnostic &AD, clang::ASTContext &ASTCtx,
                         AutocheckPPCallbacks &Callbacks, clang::Sema &SemaRef) {
   clang::DiagnosticsEngine &DE = ASTCtx.getDiagnostics();
   clang::TranslationUnitDecl *TUD = ASTCtx.getTranslationUnitDecl();
 
-  LexicalRulesVisitor(DE, ASTCtx).run(TUD);
-  StatementsVisitor(DE, ASTCtx, Callbacks).run(TUD);
-  ClassesVisitor(DE, ASTCtx).run(TUD);
-  DeclarationsVisitor(DE, ASTCtx, SemaRef).run(TUD);
-  ExpressionsVisitor(DE, ASTCtx).run(TUD);
-  ConversionsVisitor(DE, ASTCtx).run(TUD);
-  TypesVisitor(DE, ASTCtx).run(TUD);
-  ForLoopVisitor(DE, ASTCtx).run(TUD);
-  HeadersVisitor(DE, Callbacks).run(TUD);
-  TemplatesVisitor(DE, ASTCtx, SemaRef).run(TUD);
+  LexicalRulesVisitor(AD, ASTCtx).run(TUD);
+  StatementsVisitor(AD, ASTCtx, Callbacks).run(TUD);
+  ClassesVisitor(AD, ASTCtx).run(TUD);
+  DeclarationsVisitor(AD, ASTCtx, SemaRef).run(TUD);
+  ExpressionsVisitor(AD, ASTCtx).run(TUD);
+  ConversionsVisitor(AD, ASTCtx).run(TUD);
+  TypesVisitor(AD, ASTCtx).run(TUD);
+  ForLoopVisitor(AD, ASTCtx).run(TUD);
+  HeadersVisitor(AD, Callbacks).run(TUD);
+  TemplatesVisitor(AD, ASTCtx, SemaRef).run(TUD);
 }
 
-static void runMatchers(clang::ASTContext &ASTCtx) {
+static void runMatchers(AutocheckDiagnostic &AD, clang::ASTContext &ASTCtx) {
   // Maximum capacity of AllCallbacks. Should be increased when a new matcher
   // is added.
   constexpr unsigned MatchNum = 2U;
@@ -78,20 +83,19 @@ static void runMatchers(clang::ASTContext &ASTCtx) {
       AllCallbacks;
 
   clang::ast_matchers::MatchFinder MF;
-  clang::DiagnosticsEngine &DE = ASTCtx.getDiagnostics();
-  AutocheckContext &Context = AutocheckContext::Get();
+  const AutocheckContext &Context = AD.GetContext();
 
   // Init all matchers.
   if (UnusedReturnMatcher::isFlagPresent(Context)) {
     UnusedReturnMatcher::Callback *Callback =
-        new UnusedReturnMatcher::Callback(DE);
+        new UnusedReturnMatcher::Callback(AD);
     MF.addMatcher(UnusedReturnMatcher::makeMatcher(), Callback);
     AllCallbacks.push_back(Callback);
   }
 
   if (SelfAssignmentMatcher::isFlagPresent(Context)) {
     SelfAssignmentMatcher::Callback *Callback =
-        new SelfAssignmentMatcher::Callback(DE);
+        new SelfAssignmentMatcher::Callback(AD);
     MF.addMatcher(SelfAssignmentMatcher::makeMatcher(), Callback);
     AllCallbacks.push_back(Callback);
   }
@@ -113,26 +117,25 @@ void AutocheckAction::ExecuteAction() {
   if (!CI.hasPreprocessor())
     return;
 
-  clang::Preprocessor &PP = getCompilerInstance().getPreprocessor();
-  clang::SourceManager &SM = getCompilerInstance().getSourceManager();
+  clang::Preprocessor &PP = CI.getPreprocessor();
+  clang::SourceManager &SM = CI.getSourceManager();
 
   // Create and open exporter to save diagnostics to file.
   std::unique_ptr<DiagExporter> Exporter;
   if (!Context.OutputPath.empty())
-    Exporter = DiagExporter::GetExporterForPath(Context.OutputPath, SM,
+    Exporter = DiagExporter::GetExporterForPath(*AD, Context.OutputPath, SM,
                                                 Context.FullOutput);
   if (Exporter)
     Exporter->Open();
 
   // Create handler to perform lexer checks when each token is lexed.
-  PP.setTokenWatcher([&CI](const clang::Token &Tok) {
-    lex::CheckToken(AutocheckContext::Get(), CI, Tok);
-  });
+  PP.setTokenWatcher(
+      [this, &CI](const clang::Token &Tok) { lex::CheckToken(*AD, CI, Tok); });
 
   // Set up preprocessor callbacks. This will also perform a raw lexer pass for
   // each included file to check tokens before preprocessor directives are
   // executed.
-  auto Callbacks = std::make_unique<AutocheckPPCallbacks>(CI);
+  auto Callbacks = std::make_unique<AutocheckPPCallbacks>(*AD, CI);
   PPCallbacks = Callbacks.get();
   CI.getPreprocessor().addPPCallbacks(std::move(Callbacks));
 
@@ -142,8 +145,8 @@ void AutocheckAction::ExecuteAction() {
   clang::ParseAST(CI.getSema(), CI.getFrontendOpts().ShowStats,
                   CI.getFrontendOpts().SkipFunctionBodies);
 
-  runVisitors(CI.getASTContext(), *PPCallbacks, CI.getSema());
-  runMatchers(CI.getASTContext());
+  runVisitors(*AD, CI.getASTContext(), *PPCallbacks, CI.getSema());
+  runMatchers(*AD, CI.getASTContext());
 
   // Close and save diagnostic output file.
   if (Exporter)
@@ -153,9 +156,16 @@ void AutocheckAction::ExecuteAction() {
 std::unique_ptr<clang::ASTConsumer>
 AutocheckAction::CreateASTConsumer(clang::CompilerInstance &CI,
                                    llvm::StringRef InFile) {
-  // Run static analysis checks:
+  // Disable the default analysis diagnostics consumer.
+  CI.getAnalyzerOpts()->AnalysisDiagOpt = clang::AnalysisDiagClients::PD_NONE;
+
+  // Set up an analysis consumer.
   std::unique_ptr<clang::ento::AnalysisASTConsumer> AnalysisConsumer =
       clang::ento::CreateAnalysisConsumer(CI);
+  AnalysisConsumer->AddDiagnosticConsumer(
+      new AutocheckAnalysisDiagConsumer(*AD));
+
+  // Register and enable static analysis checks.
   AnalysisConsumer->AddCheckerRegistrationFn(
       [](clang::ento::CheckerRegistry &Registry) {
         Registry.addChecker<DivZeroChecker>("autosar.DivZeroChecker",

@@ -44,10 +44,10 @@ bool HVI::VisitVarDecl(const clang::VarDecl *) { return true; }
 
 /* Implementation of HeadersUnusedVisitor */
 
-HeadersUnusedVisitor::HeadersUnusedVisitor(clang::DiagnosticsEngine &DE,
+HeadersUnusedVisitor::HeadersUnusedVisitor(AutocheckDiagnostic &AD,
                                            const AutocheckContext &Context,
                                            IncludeInfo &IncludeData)
-    : DE(DE), IncludeData(IncludeData),
+    : AD(AD), IncludeData(IncludeData),
       SystemSmart(
           Context.isEnabled(AutocheckWarnings::headersUnusedSystemSmart)),
       SystemOff(Context.isEnabled(AutocheckWarnings::headersUnusedSystemOff)) {
@@ -67,13 +67,12 @@ void HeadersUnusedVisitor::PostWork() {
           IncludeData.SubSystemHeaderIncludes.find(It.first);
       if (SubInclude != IncludeData.SubSystemHeaderIncludes.end()) {
         bool stopVisitor =
-            AutocheckDiagnostic::reportWarning(
-                DE, It.second, AutocheckWarnings::headersUnused, It.first.str())
+            AD.reportWarning(It.second, AutocheckWarnings::headersUnused,
+                             It.first.str())
                 .limitReached();
-        AutocheckDiagnostic::reportWarning(
-            DE, SubInclude->second.second,
-            AutocheckWarnings::noteHeadersUnusedIncluded,
-            SubInclude->second.first.str());
+        AD.reportWarning(SubInclude->second.second,
+                         AutocheckWarnings::noteHeadersUnusedIncluded,
+                         SubInclude->second.first.str());
         if (stopVisitor)
           return;
         continue;
@@ -86,11 +85,10 @@ void HeadersUnusedVisitor::PostWork() {
       // directives.
       if (SubincludeUsed.count(It.first) != 0) {
         bool stopVisitor =
-            AutocheckDiagnostic::reportWarning(
-                DE, It.second, AutocheckWarnings::headersUnused, It.first.str())
+            AD.reportWarning(It.second, AutocheckWarnings::headersUnused,
+                             It.first.str())
                 .limitReached();
-        AutocheckDiagnostic::reportWarning(
-            DE, It.second, AutocheckWarnings::noteHeadersUnusedUsed);
+        AD.reportWarning(It.second, AutocheckWarnings::noteHeadersUnusedUsed);
         if (stopVisitor)
           return;
         continue;
@@ -98,8 +96,8 @@ void HeadersUnusedVisitor::PostWork() {
     }
 
     // Report a regular warning in all other cases.
-    if (AutocheckDiagnostic::reportWarning(
-            DE, It.second, AutocheckWarnings::headersUnused, It.first.str())
+    if (AD.reportWarning(It.second, AutocheckWarnings::headersUnused,
+                         It.first.str())
             .limitReached())
       return;
   }
@@ -119,7 +117,7 @@ bool HeadersUnusedVisitor::VisitTranslationUnitDecl(
 }
 
 bool HeadersUnusedVisitor::VisitDeclRefExpr(const clang::DeclRefExpr *DRE) {
-  if (DE.getSourceManager().isInMainFile(DRE->getLocation())) {
+  if (AD.GetSourceManager().isInMainFile(DRE->getLocation())) {
     const clang::NamedDecl *ND = DRE->getFoundDecl();
     return removeFromIncludes(ND->getBeginLoc());
   }
@@ -128,7 +126,7 @@ bool HeadersUnusedVisitor::VisitDeclRefExpr(const clang::DeclRefExpr *DRE) {
 
 bool HeadersUnusedVisitor::VisitCXXConstructExpr(
     const clang::CXXConstructExpr *CCE) {
-  if (DE.getSourceManager().isInMainFile(CCE->getLocation())) {
+  if (AD.GetSourceManager().isInMainFile(CCE->getLocation())) {
     const clang::CXXConstructorDecl *CD = CCE->getConstructor();
     return removeFromIncludes(CD->getLocation());
   }
@@ -136,7 +134,7 @@ bool HeadersUnusedVisitor::VisitCXXConstructExpr(
 }
 
 bool HeadersUnusedVisitor::VisitCallExpr(const clang::CallExpr *CE) {
-  if (DE.getSourceManager().isInMainFile(CE->getBeginLoc())) {
+  if (AD.GetSourceManager().isInMainFile(CE->getBeginLoc())) {
     if (const clang::FunctionDecl *FD = CE->getDirectCallee()) {
       const clang::SourceLocation SLDecl = FD->getNameInfo().getLoc();
       return removeFromIncludes(SLDecl);
@@ -147,7 +145,7 @@ bool HeadersUnusedVisitor::VisitCallExpr(const clang::CallExpr *CE) {
 
 bool HeadersUnusedVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) {
   const clang::SourceLocation SL = CRD->getBeginLoc();
-  if (!DE.getSourceManager().isInMainFile(SL))
+  if (!AD.GetSourceManager().isInMainFile(SL))
     CXXRecords.insert(std::make_pair(CRD->getIdentifier(), SL));
   else {
     const IdentifierMap::iterator It = CXXRecords.find(CRD->getIdentifier());
@@ -159,13 +157,13 @@ bool HeadersUnusedVisitor::VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) {
 
 bool HeadersUnusedVisitor::VisitTypedefDecl(const clang::TypedefDecl *TD) {
   const clang::SourceLocation SL = TD->getBeginLoc();
-  if (!DE.getSourceManager().isInMainFile(SL))
+  if (!AD.GetSourceManager().isInMainFile(SL))
     Typedefs.insert(std::make_pair(TD->getQualifiedNameAsString(), SL));
   return true;
 }
 
 bool HeadersUnusedVisitor::VisitVarDecl(const clang::VarDecl *VD) {
-  if (DE.getSourceManager().isInMainFile(VD->getLocation())) {
+  if (AD.GetSourceManager().isInMainFile(VD->getLocation())) {
     const clang::IdentifierInfo *II = VD->getType().getBaseTypeIdentifier();
     const IdentifierMap::iterator MapIt = CXXRecords.find(II);
     if (MapIt != CXXRecords.end())
@@ -183,21 +181,21 @@ bool HeadersUnusedVisitor::VisitVarDecl(const clang::VarDecl *VD) {
 
 bool HeadersUnusedVisitor::VisitUsingDirectiveDecl(
     const clang::UsingDirectiveDecl *UDD) {
-  if (DE.getSourceManager().isInMainFile(UDD->getUsingLoc()))
+  if (AD.GetSourceManager().isInMainFile(UDD->getUsingLoc()))
     if (const clang::NamespaceDecl *ND = UDD->getNominatedNamespace())
       return removeFromIncludes(ND->getLocation());
   return true;
 }
 
 bool HeadersUnusedVisitor::VisitGNUNullExpr(const clang::GNUNullExpr *GNE) {
-  const clang::SourceManager &SM = DE.getSourceManager();
+  const clang::SourceManager &SM = AD.GetSourceManager();
   if (SM.isInMainFile(GNE->getBeginLoc()))
     return removeFromIncludes(SM.getSpellingLoc(GNE->getTokenLocation()));
   return true;
 }
 
 bool HeadersUnusedVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
-  if (DE.getSourceManager().isInMainFile(ED->getBeginLoc())) {
+  if (AD.GetSourceManager().isInMainFile(ED->getBeginLoc())) {
     const clang::QualType PT = ED->getPromotionType();
     if (const clang::TypedefType *TDT =
             PT.getTypePtr()->getAs<clang::TypedefType>())
@@ -208,7 +206,7 @@ bool HeadersUnusedVisitor::VisitEnumDecl(const clang::EnumDecl *ED) {
 }
 
 bool HeadersUnusedVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
-  if (DE.getSourceManager().isInMainFile(TL.getBeginLoc())) {
+  if (AD.GetSourceManager().isInMainFile(TL.getBeginLoc())) {
     const clang::Type *T = TL.getTypePtr();
     if (const clang::TypedefType *TDT = T->getAs<clang::TypedefType>()) {
       if (const clang::TypedefNameDecl *TDND = TDT->getDecl())
@@ -227,10 +225,10 @@ bool HeadersUnusedVisitor::VisitTypeLoc(const clang::TypeLoc &TL) {
 
 bool HeadersUnusedVisitor::removeFromIncludes(
     const clang::SourceLocation &Loc) {
-  if (DE.getSourceManager().isInMainFile(Loc))
+  if (AD.GetSourceManager().isInMainFile(Loc))
     return true;
 
-  const llvm::StringRef Id = DE.getSourceManager().getFilename(Loc);
+  const llvm::StringRef Id = AD.GetSourceManager().getFilename(Loc);
   return removeFromIncludes(Id);
 }
 
@@ -290,12 +288,12 @@ inline bool HeadersUnusedVisitor::startsWith(const std::string &Str,
 
 /* Implementation of HeadersVisitor */
 
-HeadersVisitor::HeadersVisitor(clang::DiagnosticsEngine &DE,
+HeadersVisitor::HeadersVisitor(AutocheckDiagnostic &AD,
                                AutocheckPPCallbacks &Callbacks) {
-  const AutocheckContext &Context = AutocheckContext::Get();
+  const AutocheckContext &Context = AD.GetContext();
   if (HeadersUnusedVisitor::isFlagPresent(Context))
     AllVisitors.push_front(std::make_unique<HeadersUnusedVisitor>(
-        DE, Context, Callbacks.getIncludeInfo()));
+        AD, Context, Callbacks.getIncludeInfo()));
 }
 
 void HeadersVisitor::run(clang::TranslationUnitDecl *TUD) {

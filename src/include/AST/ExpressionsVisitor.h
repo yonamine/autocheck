@@ -63,6 +63,8 @@
 
 namespace autocheck {
 
+class AutocheckDiagnostic;
+
 /// Common interface for all expression related visitors.
 class ExpressionsVisitorInterface {
 public:
@@ -88,10 +90,10 @@ public:
 
 /// [A5-1-2] Variables shall not be implicitly captured in a lambda expression.
 class ImplicitlyCapturedVarVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit ImplicitlyCapturedVarVisitor(clang::DiagnosticsEngine &DE);
+  explicit ImplicitlyCapturedVarVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitLambdaExpr(const clang::LambdaExpr *LE) override;
@@ -100,11 +102,11 @@ public:
 /// [M5-2-10] The increment (++) and decrement (--) operators shall not be mixed
 /// with other operators in an expression.
 class IncDecOpMixedVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &ASTCtx;
 
 public:
-  explicit IncDecOpMixedVisitor(clang::DiagnosticsEngine &DE,
+  explicit IncDecOpMixedVisitor(AutocheckDiagnostic &AD,
                                 clang::ASTContext &ASTCtx);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -117,11 +119,11 @@ private:
 /// [A5-16-1] The ternary conditional operator shall not be used as a
 /// sub-expression.
 class TernaryOpSubExprVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &ASTCtx;
 
 public:
-  explicit TernaryOpSubExprVisitor(clang::DiagnosticsEngine &DE,
+  explicit TernaryOpSubExprVisitor(AutocheckDiagnostic &AD,
                                    clang::ASTContext &ASTCtx);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -133,11 +135,11 @@ private:
 
 /// [M6-2-1] Assignment operators shall not be used in sub-expressions.
 class AssignmentOpSubExprVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit AssignmentOpSubExprVisitor(clang::DiagnosticsEngine &DE,
+  explicit AssignmentOpSubExprVisitor(AutocheckDiagnostic &AD,
                                       clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -150,11 +152,11 @@ private:
 /// [A5-1-8] Lambda expressions should not be defined inside another lambda
 /// expression.
 class NestedLambdaVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   unsigned LambdaCounter;
 
 public:
-  explicit NestedLambdaVisitor(clang::DiagnosticsEngine &DE);
+  explicit NestedLambdaVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool PreTraverseStmt(clang::Stmt *S) override;
@@ -164,11 +166,11 @@ public:
 /// [A5-1-6] Return type of a non-void return type lambda expression should be
 /// explicitly specified.
 class LambdaReturnTypeVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   llvm::SmallVector<bool, 0> ReturnStmtSeenVector;
 
 public:
-  explicit LambdaReturnTypeVisitor(clang::DiagnosticsEngine &DE);
+  explicit LambdaReturnTypeVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool PreTraverseStmt(clang::Stmt *S) override;
@@ -180,10 +182,10 @@ public:
 /// [A18-9-3] The std::move shall not be used on objects declared const or
 /// const&.
 class StdMoveUsedConstVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit StdMoveUsedConstVisitor(clang::DiagnosticsEngine &DE);
+  explicit StdMoveUsedConstVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCallExpr(const clang::CallExpr *CE) override;
@@ -192,11 +194,11 @@ public:
 /// [A21-8-1] Arguments to character-handling functions shall be representable
 /// as an unsigned char.
 class CharacterHandlingFunctionsVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::SourceManager &SM;
 
 public:
-  explicit CharacterHandlingFunctionsVisitor(clang::DiagnosticsEngine &DE);
+  explicit CharacterHandlingFunctionsVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCallExpr(const clang::CallExpr *CE) override;
@@ -215,17 +217,17 @@ public:
 ///
 /// [A26-5-1] Pseudorandom numbers shall not be generated using std::rand().
 class StdFunctionUsed : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
   llvm::SmallSet<std::string, 4> StdlibMemFuncs;
   llvm::SmallSet<std::string, 4> StdlibFuncs;
   llvm::SmallSet<std::string, 11> StringFuncs;
-  std::forward_list<bool (*)(clang::DiagnosticsEngine &, const std::string &,
+  std::forward_list<bool (*)(AutocheckDiagnostic &, const std::string &,
                              clang::SourceLocation &, const std::string &)>
       AllFunctions;
 
 public:
-  explicit StdFunctionUsed(clang::DiagnosticsEngine &DE);
+  explicit StdFunctionUsed(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCallExpr(const clang::CallExpr *CE) override;
@@ -235,13 +237,13 @@ public:
 /// same underlying type.
 class ImplicitBitwiseBinOpConversionVisitor
     : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &ASTCtx;
 
   llvm::SmallSet<clang::BinaryOperator::Opcode, 10> AllowedBitwiseBinaryOps;
 
 public:
-  explicit ImplicitBitwiseBinOpConversionVisitor(clang::DiagnosticsEngine &DE,
+  explicit ImplicitBitwiseBinOpConversionVisitor(AutocheckDiagnostic &AD,
                                                  clang::ASTContext &ASTCtx);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -251,11 +253,11 @@ public:
 /// [M5-3-4] Evaluation of the operand to the sizeof operator shall not contain
 /// side effects.
 class SizeofSideEffectVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit SizeofSideEffectVisitor(clang::DiagnosticsEngine &DE,
+  explicit SizeofSideEffectVisitor(AutocheckDiagnostic &AD,
                                    clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -265,10 +267,10 @@ public:
 
 /// [M5-0-14] The first operand of a conditional-operator shall have type bool.
 class ConditionalOpVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit ConditionalOpVisitor(clang::DiagnosticsEngine &DE);
+  explicit ConditionalOpVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitConditionalOperator(const clang::ConditionalOperator *CO) override;
@@ -277,10 +279,10 @@ public:
 /// [M5-3-1] Each operand of the ! operator, the logical && or the logical ||
 /// operators shall have type bool.
 class LogicalOpBoolOperandVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit LogicalOpBoolOperandVisitor(clang::DiagnosticsEngine &DE);
+  explicit LogicalOpBoolOperandVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitUnaryOperator(const clang::UnaryOperator *UO) override;
@@ -290,10 +292,10 @@ public:
 /// [M5-3-2] The unary minus operator shall not be applied to an expression
 /// whose underlying type is unsigned.
 class UnaryMinusOnUnsignedVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit UnaryMinusOnUnsignedVisitor(clang::DiagnosticsEngine &DE);
+  explicit UnaryMinusOnUnsignedVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitUnaryOperator(const clang::UnaryOperator *UO) override;
@@ -301,10 +303,10 @@ public:
 
 /// [A15-1-2] An exception object shall not be a pointer.
 class ExceptionObjectPtrVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit ExceptionObjectPtrVisitor(clang::DiagnosticsEngine &DE);
+  explicit ExceptionObjectPtrVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXThrowExpr(const clang::CXXThrowExpr *TE) override;
@@ -312,10 +314,10 @@ public:
 
 /// [M15-1-2] NULL shall not be thrown explicitly.
 class ExceptionObjectNullVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit ExceptionObjectNullVisitor(clang::DiagnosticsEngine &DE);
+  explicit ExceptionObjectNullVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXThrowExpr(const clang::CXXThrowExpr *TE) override;
@@ -324,10 +326,10 @@ public:
 /// [M5-0-21] Bitwise operators shall only be applied to operands of unsigned
 /// underlying type.
 class BitwiseUnsignedOperandsVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit BitwiseUnsignedOperandsVisitor(clang::DiagnosticsEngine &DE);
+  explicit BitwiseUnsignedOperandsVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitUnaryOperator(const clang::UnaryOperator *UO) override;
@@ -336,10 +338,10 @@ public:
 
 /// [M5-18-1] The comma operator shall not be used.
 class CommaOperatorVisitor : public ExpressionsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit CommaOperatorVisitor(clang::DiagnosticsEngine &DE);
+  explicit CommaOperatorVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitBinaryOperator(const clang::BinaryOperator *BO) override;
@@ -350,13 +352,12 @@ public:
 /// Runs all Expression Visitors with one AST traversal.
 class ExpressionsVisitor
     : public clang::RecursiveASTVisitor<ExpressionsVisitor> {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
   std::forward_list<std::unique_ptr<ExpressionsVisitorInterface>> AllVisitors;
 
 public:
-  explicit ExpressionsVisitor(clang::DiagnosticsEngine &DE,
-                              clang::ASTContext &AC);
+  explicit ExpressionsVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC);
   void run(clang::TranslationUnitDecl *TUD);
 
   bool TraverseDecl(clang::Decl *D);

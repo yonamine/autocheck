@@ -73,7 +73,6 @@
 #define AST_DECLARATIONS_VISITOR_H
 
 #include "AutocheckContext.h"
-#include "Diagnostics/AutocheckDiagnostic.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Basic/Diagnostic.h"
 #include "llvm/ADT/SmallSet.h"
@@ -82,6 +81,8 @@
 #include <stack>
 
 namespace autocheck {
+
+class AutocheckDiagnostic;
 
 /// Common interface for all declaration related visitors.
 class DeclarationsVisitorInterface {
@@ -129,10 +130,10 @@ public:
 
 /// [A7-4-1] The asm declaration shall not be used.
 class ASMDeclarationUsedVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit ASMDeclarationUsedVisitor(clang::DiagnosticsEngine &DE);
+  explicit ASMDeclarationUsedVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitGCCAsmStmt(const clang::GCCAsmStmt *GAS) override;
@@ -140,10 +141,10 @@ public:
 
 /// [A8-4-1] Functions shall not be defined using the ellipsis notation.
 class VariadicFunctionUsedVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit VariadicFunctionUsedVisitor(clang::DiagnosticsEngine &DE);
+  explicit VariadicFunctionUsedVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
@@ -152,10 +153,10 @@ public:
 /// [M8-4-2] The identifiers used for the parameters in a re-declaration of a
 /// function shall be identical to those in the declaration.
 class FunctionRedeclParamsVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit FunctionRedeclParamsVisitor(clang::DiagnosticsEngine &DE);
+  explicit FunctionRedeclParamsVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
@@ -164,11 +165,11 @@ public:
 /// [A8-5-3] A variable of type auto shall not be initialized using {} or ={}
 /// braced-initialization.
 class AutoVarBracedInitVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::Sema &SemaRef;
 
 public:
-  explicit AutoVarBracedInitVisitor(clang::DiagnosticsEngine &DE,
+  explicit AutoVarBracedInitVisitor(AutocheckDiagnostic &AD,
                                     clang::Sema &SemaRef);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -178,13 +179,13 @@ public:
 /// [A8-5-2] Braced-initialization {}, without equals sign, shall be used for
 /// variable initialization.
 class VarBracedInitVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
   clang::Sema &SemaRef;
 
 public:
-  explicit VarBracedInitVisitor(clang::DiagnosticsEngine &DE,
-                                clang::ASTContext &AC, clang::Sema &SemaRef);
+  explicit VarBracedInitVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC,
+                                clang::Sema &SemaRef);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitVarDecl(const clang::VarDecl *VD) override;
@@ -192,11 +193,11 @@ public:
 
 /// [A0-1-6] There should be no unused type declarations.
 class UnusedGlobalTypedef : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   llvm::SmallVector<const clang::TypedefNameDecl *, 0> GlobalTypedefs;
 
 public:
-  explicit UnusedGlobalTypedef(clang::DiagnosticsEngine &DE);
+  explicit UnusedGlobalTypedef(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   /// Emits warnings for all unused global typedefs. Should be called after the
@@ -208,13 +209,12 @@ public:
 /// [A7-1-3] CV-qualifiers shall be placed on the right hand side of the type
 /// that is a typedef or a using name.
 class CVQualifiersPlacedLeftVisitor : public DeclarationsVisitorInterface {
+  AutocheckDiagnostic &AD;
   clang::SourceManager &SM;
-  clang::DiagnosticsEngine &DE;
   clang::Sema &SemaRef;
 
 public:
-  explicit CVQualifiersPlacedLeftVisitor(clang::SourceManager &SM,
-                                         clang::DiagnosticsEngine &DE,
+  explicit CVQualifiersPlacedLeftVisitor(AutocheckDiagnostic &AD,
                                          clang::Sema &SemaRef);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -223,10 +223,10 @@ public:
 
 /// [A13-2-1] An assignment operator shall return a reference to "this".
 class AssignmentOperatorReturn : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit AssignmentOperatorReturn(clang::DiagnosticsEngine &DE);
+  explicit AssignmentOperatorReturn(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXMethodDecl(const clang::CXXMethodDecl *CMD) override;
@@ -239,14 +239,14 @@ private:
 /// [A7-1-1] Constexpr or const specifiers shall be used for immutable data
 /// declaration.
 class ConstUnusedForImmutableData : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
   /// Set of all declared non const or non constexpr variables that are
   /// candidates to be immutable.
   std::set<clang::SourceLocation> ImmutableVarCandidates;
 
 public:
-  explicit ConstUnusedForImmutableData(clang::DiagnosticsEngine &DE,
+  explicit ConstUnusedForImmutableData(AutocheckDiagnostic &AD,
                                        clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -273,10 +273,10 @@ private:
 /// [A12-1-2] Both NSDMI and a non-static member initializer in a constructor
 /// shall not be used in the same type.
 class NSDMIAndConsutructorInitUsed : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit NSDMIAndConsutructorInitUsed(clang::DiagnosticsEngine &DE);
+  explicit NSDMIAndConsutructorInitUsed(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXRecordDecl(const clang::CXXRecordDecl *CRD) override;
@@ -285,7 +285,7 @@ public:
 /// [M3-4-1] An identifier declared to be an object or type shall be defined in
 /// a block that minimizes its visibility.
 class BroadScopeIdentifierVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &ASTCtx;
 
   bool isNewScope(const clang::Stmt *S);
@@ -316,7 +316,7 @@ class BroadScopeIdentifierVisitor : public DeclarationsVisitorInterface {
   llvm::SmallVector<const clang::Stmt *, 16> StmtScopes;
 
 public:
-  explicit BroadScopeIdentifierVisitor(clang::DiagnosticsEngine &DE,
+  explicit BroadScopeIdentifierVisitor(AutocheckDiagnostic &AD,
                                        clang::ASTContext &ASTCtx);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -342,7 +342,7 @@ public:
 /// [M8-5-2] Braces shall be used to indicate and match the structure in the
 /// non-zero initialization of arrays and structures.
 class MissingBracesOrEltsVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::SourceManager &SM;
   clang::Sema &SemaRef;
 
@@ -378,7 +378,7 @@ class MissingBracesOrEltsVisitor : public DeclarationsVisitorInterface {
   bool reportMissingEltOrBraces(InitListInfo &ILI, std::stringstream &EltHint);
 
 public:
-  explicit MissingBracesOrEltsVisitor(clang::DiagnosticsEngine &DE,
+  explicit MissingBracesOrEltsVisitor(AutocheckDiagnostic &AD,
                                       clang::Sema &SemaRef);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -387,13 +387,13 @@ public:
 
 /// [A3-3-2] Static and thread-local objects shall be constant-initialized.
 class ConstantInitializer : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
   clang::Sema &SemaRef;
 
 public:
-  explicit ConstantInitializer(clang::DiagnosticsEngine &DE,
-                               clang::ASTContext &AC, clang::Sema &SemaRef);
+  explicit ConstantInitializer(AutocheckDiagnostic &AD, clang::ASTContext &AC,
+                               clang::Sema &SemaRef);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitVarDecl(const clang::VarDecl *VD) override;
@@ -404,7 +404,7 @@ private:
 
 /// [A26-5-2] Random number engines shall not be default-initialized.
 class RandomEngineDefaultInitialized : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
   llvm::StringRef randomDeviceName = "random_device";
 
@@ -417,7 +417,7 @@ class RandomEngineDefaultInitialized : public DeclarationsVisitorInterface {
       "independent_bits_engine",    "shuffle_order_engine"};
 
 public:
-  explicit RandomEngineDefaultInitialized(clang::DiagnosticsEngine &DE);
+  explicit RandomEngineDefaultInitialized(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitCXXConstructExpr(const clang::CXXConstructExpr *CCE) override;
@@ -431,7 +431,7 @@ private:
 class MoreThanTwoLevelsOfPointerIndirection
     : public DeclarationsVisitorInterface {
 
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
   /// This method helps us get to the pointer part of a type.
@@ -460,7 +460,7 @@ class MoreThanTwoLevelsOfPointerIndirection
   bool checkType(clang::QualType QT, const clang::SourceLocation &SL);
 
 public:
-  explicit MoreThanTwoLevelsOfPointerIndirection(clang::DiagnosticsEngine &DE,
+  explicit MoreThanTwoLevelsOfPointerIndirection(AutocheckDiagnostic &AD,
                                                  clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -472,12 +472,12 @@ public:
 /// [A15-4-2] If a function is declared to be noexcept, noexcept(true) or
 /// noexcept(<true condition>), then it shall not exit with an exception.
 class NoExceptionVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   llvm::SmallVector<const clang::FunctionDecl *, 4> FunctionDeclStack;
   llvm::SmallVector<const clang::CXXTryStmt *, 4> CXXTryStmtStack;
 
 public:
-  explicit NoExceptionVisitor(clang::DiagnosticsEngine &DE);
+  explicit NoExceptionVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool PreTraverseDecl(clang::Decl *D) override;
@@ -494,14 +494,14 @@ public:
 /// with an exception. A noexcept exception specification shall be added to
 /// these functions as appropriate.
 class ExitedWithExceptionVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   const clang::FunctionDecl *InFunction = nullptr;
   llvm::SmallVector<const clang::CXXTryStmt *, 4> CXXTryStmtStack;
 
   bool isTemplatedWithDependentNoexcept(const clang::CXXMethodDecl *MD);
 
 public:
-  explicit ExitedWithExceptionVisitor(clang::DiagnosticsEngine &DE);
+  explicit ExitedWithExceptionVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool PreTraverseDecl(clang::Decl *D) override;
@@ -514,7 +514,7 @@ public:
 /// [A18-5-3], the form of delete operator shall match the form of new operator
 /// used to allocate the memory.
 class MismatchedNewDeleteVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
   /// Set of pointer variables dynamically allocated with the 'new' operator.
   std::map<const clang::VarDecl *, const clang::CXXNewExpr *> VarDeclsWithNew;
@@ -523,7 +523,7 @@ class MismatchedNewDeleteVisitor : public DeclarationsVisitorInterface {
   std::map<const clang::FieldDecl *, const clang::CXXNewExpr *> FieldsWithNew;
 
 public:
-  explicit MismatchedNewDeleteVisitor(clang::DiagnosticsEngine &DE);
+  explicit MismatchedNewDeleteVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   /// Collects variables initialized with CXXNewExpr. Will report mismatches of
@@ -577,14 +577,13 @@ private:
 
 /// [A27-0-4] C-style strings shall not be used.
 class CStyleStringUsed : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
   llvm::SmallSet<const clang::ValueDecl *, 16> PotentiallyBadVars;
 
 public:
-  explicit CStyleStringUsed(clang::DiagnosticsEngine &DE,
-                            clang::ASTContext &AC);
+  explicit CStyleStringUsed(AutocheckDiagnostic &AD, clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitVarDecl(const clang::VarDecl *VD) override;
@@ -598,11 +597,11 @@ private:
 /// [A3-1-4] When an array with external linkage is declared, its size shall be
 /// stated explicitly.
 class ExternArrayImplicitSizeVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
   clang::ASTContext &AC;
 
 public:
-  explicit ExternArrayImplicitSizeVisitor(clang::DiagnosticsEngine &DE,
+  explicit ExternArrayImplicitSizeVisitor(AutocheckDiagnostic &AD,
                                           clang::ASTContext &AC);
   static bool isFlagPresent(const AutocheckContext &Context);
 
@@ -611,10 +610,10 @@ public:
 
 /// [A7-1-6] The typedef specifier shall not be used.
 class TypedefUsedVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit TypedefUsedVisitor(clang::DiagnosticsEngine &DE);
+  explicit TypedefUsedVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitTypedefDecl(const clang::TypedefDecl *TD) override;
@@ -622,10 +621,10 @@ public:
 
 /// [A11-3-1] Friend declarations shall not be used.
 class FriendDeclUsedVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit FriendDeclUsedVisitor(clang::DiagnosticsEngine &DE);
+  explicit FriendDeclUsedVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitFriendDecl(const clang::FriendDecl *FD) override;
@@ -633,10 +632,10 @@ public:
 
 /// [A7-2-2] Enumeration underlying base type shall be explicitly defined.
 class EnumTypeNotDefinedVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit EnumTypeNotDefinedVisitor(clang::DiagnosticsEngine &DE);
+  explicit EnumTypeNotDefinedVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitEnumDecl(const clang::EnumDecl *ED) override;
@@ -644,10 +643,10 @@ public:
 
 /// [M3-1-2] Functions shall not be declared at block scope.
 class BlockScopeFunctionVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit BlockScopeFunctionVisitor(clang::DiagnosticsEngine &DE);
+  explicit BlockScopeFunctionVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
@@ -656,10 +655,10 @@ public:
 /// [M3-3-2] If a function has internal linkage then all re-declarations shall
 /// include the static storage class specifier.
 class StaticFunctionRedeclarationVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit StaticFunctionRedeclarationVisitor(clang::DiagnosticsEngine &DE);
+  explicit StaticFunctionRedeclarationVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
@@ -667,10 +666,10 @@ public:
 
 /// [A7-2-3] Enumerations shall be declared as scoped enum classes.
 class EnumDeclaredScopedVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit EnumDeclaredScopedVisitor(clang::DiagnosticsEngine &DE);
+  explicit EnumDeclaredScopedVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitEnumDecl(const clang::EnumDecl *ED) override;
@@ -679,10 +678,10 @@ public:
 /// [A7-2-4] In an enumeration, either (1) none, (2) the first or (3) all
 /// enumerators shall be initialized.
 class EnumConstantInitVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit EnumConstantInitVisitor(clang::DiagnosticsEngine &DE);
+  explicit EnumConstantInitVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitEnumDecl(const clang::EnumDecl *ED) override;
@@ -691,10 +690,10 @@ public:
 /// [M7-3-2] The identifier main shall not be used for a function other than the
 /// global function main.
 class MainReusedVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit MainReusedVisitor(clang::DiagnosticsEngine &DE);
+  explicit MainReusedVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitFunctionDecl(const clang::FunctionDecl *FD) override;
@@ -702,10 +701,10 @@ public:
 
 /// [A7-3-3] There shall be no unnamed namespaces in header files.
 class UnnamedNamespaceInHeaderVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit UnnamedNamespaceInHeaderVisitor(clang::DiagnosticsEngine &DE);
+  explicit UnnamedNamespaceInHeaderVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitNamespaceDecl(const clang::NamespaceDecl *ND) override;
@@ -713,10 +712,10 @@ public:
 
 /// [M7-3-4] Using-directives shall not be used.
 class UsingDirectiveVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit UsingDirectiveVisitor(clang::DiagnosticsEngine &DE);
+  explicit UsingDirectiveVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitUsingDirectiveDecl(const clang::UsingDirectiveDecl *UDD) override;
@@ -725,10 +724,10 @@ public:
 /// [M7-3-1] The global namespace shall only contain main, namespace
 /// declarations and extern "C" declarations.
 class GlobalNamespaceVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit GlobalNamespaceVisitor(clang::DiagnosticsEngine &DE);
+  explicit GlobalNamespaceVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitTranslationUnitDecl(const clang::TranslationUnitDecl *TUD) override;
@@ -740,10 +739,10 @@ private:
 /// [A9-6-1] Bit-fields shall be either unsigned integral, or enumeration (with
 /// underlying type of unsigned integral type).
 class BitFieldTypeVisitor : public DeclarationsVisitorInterface {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
 public:
-  explicit BitFieldTypeVisitor(clang::DiagnosticsEngine &DE);
+  explicit BitFieldTypeVisitor(AutocheckDiagnostic &AD);
   static bool isFlagPresent(const AutocheckContext &Context);
 
   bool VisitFieldDecl(const clang::FieldDecl *FD) override;
@@ -754,13 +753,13 @@ public:
 /// found. Runs all Declaration Visitors with one AST traversal.
 class DeclarationsVisitor
     : public clang::RecursiveASTVisitor<DeclarationsVisitor> {
-  clang::DiagnosticsEngine &DE;
+  AutocheckDiagnostic &AD;
 
   std::forward_list<std::unique_ptr<DeclarationsVisitorInterface>> AllVisitors;
 
 public:
-  explicit DeclarationsVisitor(clang::DiagnosticsEngine &DE,
-                               clang::ASTContext &AC, clang::Sema &SemaRef);
+  explicit DeclarationsVisitor(AutocheckDiagnostic &AD, clang::ASTContext &AC,
+                               clang::Sema &SemaRef);
   void run(clang::TranslationUnitDecl *TUD);
 
   bool TraverseDecl(clang::Decl *D);

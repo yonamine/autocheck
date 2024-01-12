@@ -37,6 +37,7 @@
 #define LEX_AUTOCHECK_PP_CALLBACKS_H
 
 #include "AutocheckContext.h"
+#include "Diagnostics/AutocheckDiagnostic.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Frontend/CompilerInstance.h"
@@ -65,9 +66,9 @@ struct IncludeInfo {
 };
 
 class AutocheckPPCallbacks : public clang::PPCallbacks {
-  AutocheckContext &Context;
+  AutocheckDiagnostic &AD;
+  const AutocheckContext &Context;
   clang::CompilerInstance &CI;
-  clang::DiagnosticsEngine &DE;
   const clang::SourceManager &SM;
 
   IncludeInfo IncludeData; // All data gathered about #include directives
@@ -84,7 +85,7 @@ class AutocheckPPCallbacks : public clang::PPCallbacks {
   llvm::SmallSet<clang::SourceLocation, 0> DoWhileMacros;
 
 public:
-  AutocheckPPCallbacks(clang::CompilerInstance &CI);
+  AutocheckPPCallbacks(AutocheckDiagnostic &AD, clang::CompilerInstance &CI);
 
   void LexedFileChanged(clang::FileID FID,
                         clang::PPCallbacks::LexedFileChangeReason Reason,

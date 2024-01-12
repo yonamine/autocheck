@@ -113,7 +113,7 @@ int main(int argc, const char **argv) {
   }
 
   // Initialize context.
-  autocheck::AutocheckContext &Context = autocheck::AutocheckContext::Get();
+  autocheck::AutocheckContext Context;
   if (Warnings.getNumOccurrences() > 0) {
     for (const std::string &Warning : Warnings) {
       if (!Context.enableWarning(Warning)) {
@@ -178,8 +178,8 @@ int main(int argc, const char **argv) {
     return 1;
   }
 
-  AutocheckTool Tool(OptionsParser.getCompilations(),
-                     OptionsParser.getSourcePathList()[0]);
+  autocheck::AutocheckTool Tool(Context, OptionsParser.getCompilations(),
+                                OptionsParser.getSourcePathList()[0]);
 
   // Set up verify mode.
   if (Verify.getNumOccurrences() > 0) {
@@ -191,7 +191,7 @@ int main(int argc, const char **argv) {
   // We ship our own clang headers and specify where to find them. This is done
   // to support systems where those headers might not be available in the
   // package manager.
-  Tool.appendArgumentsAdjuster(getResourceDirAdjuster(argv[0]));
+  Tool.appendArgumentsAdjuster(autocheck::getResourceDirAdjuster(argv[0]));
 
   return Tool.run();
 }
