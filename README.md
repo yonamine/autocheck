@@ -51,16 +51,15 @@ $ git submodule init
 $ git submodule update src/llvm-project
 ```
 
-If you have access to the private `vscode-autocheck-plugins` repository, clone it as well. By default, this uses the HTTP protocol which requires a Personal Access Token with write access to the repository:
+If you have access to the private `autocheck-plugins` repository, clone it as well. By default, this uses the HTTP protocol which requires a Personal Access Token with write access to the repository:
 ```
-$ git submodule update src/tools/vscode-autocheck
+$ git submodule update src/tools/autocheck-plugins
 ```
 If you want to use SSH instead, you can change the URL locally:
 ```
-$ git config submodule.vscode-autocheck.url git@github.com:syrmia/vscode-autocheck-plugins.git
-$ git submodule update src/tools/vscode-autocheck
+$ git config submodule.autocheck-plugins.url git@github.com:syrmia/autocheck-plugins.git
+$ git submodule update src/tools/autocheck-plugins
 ```
-
 
 ## Automated build
 
